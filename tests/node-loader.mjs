@@ -11,6 +11,10 @@
  * Os doubles só substituem importações vindas de dentro de `src/`. Quem importa de fora — os
  * próprios testes e as bibliotecas em node_modules — usa os pacotes a sério, para que por
  * exemplo os testes das regras continuem a falar com o Firebase verdadeiro.
+ *
+ * Com INOVAPP_TEST_REAL_FIREBASE=1 (ver tests/data/preload.mjs) os doubles do Firebase e do
+ * `src/lib/firebase.ts` ficam desligados: é o que os testes da camada de dados precisam, para
+ * exercitarem o SDK verdadeiro contra os emuladores, com as regras a sério pelo meio.
  */
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
@@ -20,12 +24,17 @@ const testsDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.dirname(testsDir);
 const srcDir = path.join(rootDir, 'src');
 
+const FIREBASE_REAL = process.env.INOVAPP_TEST_REAL_FIREBASE === '1';
+
 const DOUBLES = new Map([
   ['@react-native-async-storage/async-storage', path.join(testsDir, 'doubles', 'async-storage.mjs')],
-  ['firebase/firestore', path.join(testsDir, 'doubles', 'firebase-firestore.mjs')],
-  ['@/lib/firebase', path.join(testsDir, 'doubles', 'lib-firebase.mjs')],
   ['@/constants/courses.json', path.join(testsDir, 'doubles', 'courses-json.mjs')],
 ]);
+
+if (!FIREBASE_REAL) {
+  DOUBLES.set('firebase/firestore', path.join(testsDir, 'doubles', 'firebase-firestore.mjs'));
+  DOUBLES.set('@/lib/firebase', path.join(testsDir, 'doubles', 'lib-firebase.mjs'));
+}
 
 const EXTENSIONS = ['.ts', '.tsx', '.mts', '.js', '.mjs', '.json'];
 

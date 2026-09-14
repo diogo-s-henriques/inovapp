@@ -54,16 +54,26 @@ alternativa, cria só os que faltam no link que o erro da consola apresenta.
 | `npm run lint` | `expo lint` (ESLint) |
 | `npx tsc --noEmit` | verificação de tipos da app, sem gerar output |
 | `npm run typecheck:tests` | verificação de tipos dos testes (ambiente de Node, config própria) |
-| `npm test` | corre `test:lib` e `test:rules` |
-| `npm run test:lib` | testes da lógica pura de `src/lib` e do i18n (Node, sem emulador nem rede) |
+| `npm test` | corre as quatro suites abaixo, por esta ordem |
+| `npm run test:lib` | testes da lógica pura de `src/lib` e do i18n (Node, sem emulador nem rede, ~150 ms) |
+| `npm run test:components` | testes de render de componentes (Jest + Testing Library, ~2 s) |
+| `npm run test:data` | testes da camada de dados contra os emuladores de Firestore e Auth (precisa de Java) |
 | `npm run test:rules` | testes das regras do Firestore no emulador (precisa de Java) |
 | `npm run cleanup:legacy-profiles` | migração pontual dos perfis antigos (ver [Migração](#migração)) |
 | `npm run reset-project` | utilitário do template `create-expo-app`, não usado neste projeto |
 
-Antes de dar como terminado qualquer trabalho: `npx tsc --noEmit`, `npm run lint` e
-`npm run test:lib` devem correr sem erros. Se mexeste em `firestore.rules`, acrescenta
-`npm run test:rules`. Se mexeste em ecrãs ou em fluxos de navegação, testa no dispositivo: é a
-única parte da app que nenhum teste automático cobre.
+Antes de dar como terminado qualquer trabalho: `npx tsc --noEmit`, `npm run lint`,
+`npm run test:lib` e `npm run test:components` devem correr sem erros (nenhum dos dois últimos
+precisa de emuladores). Se mexeste em `firestore.rules`, acrescenta `npm run test:rules`; se
+mexeste na camada de dados, `npm run test:data`. O que continuar por cobrir são os ecrãs
+inteiros e a navegação — para isso, testa no dispositivo.
+
+> **Porque é que o `package.json` tem um `overrides`** — `jest-expo@57` declara
+> `@react-native/jest-preset@^0.86.3`, mas o `react-native@0.86.0` que o SDK 57 usa exige
+> exatamente `0.86.0`. O npm não consegue satisfazer os dois e o `npm install` falha com
+> `ERESOLVE`. O `overrides` fixa a versão que o React Native espera; é a solução indicada pela
+> própria Expo no issue <https://github.com/expo/expo/issues/47435>. Quando o `jest-expo`
+> corrigir o intervalo, este bloco pode sair.
 
 ## Estrutura do projeto
 
@@ -105,10 +115,13 @@ src/components/
 src/constants/       valores fixos (disciplinas, cursos, regras de email institucional, tema)
 src/i18n/            traduções (pt, en), contrato `Translations` e store do idioma
 src/types/           tipos TypeScript partilhados
-tests/               testes automáticos: lib/ (lógica pura e i18n, em Node, sem emulador)
-                     e firestore-rules.test.mts (regras, no emulador); doubles/ e
-                     node-loader.mjs dão aos testes de Node o alias `@/` e substitutos
-                     para o AsyncStorage e para a inicialização do Firebase
+tests/               testes automáticos, um diretório por suite (ver "Scripts"):
+                       lib/         lógica pura e i18n (Node)
+                       components/  render de componentes (Jest)
+                       data/        camada de dados contra os emuladores
+                       firestore-rules.test.mts   regras, no emulador
+                     doubles/ e node-loader.mjs dão aos testes de Node o alias `@/` e
+                     substitutos para o AsyncStorage e para a inicialização do Firebase
 firestore.rules      regras de segurança do Firestore (fonte de verdade de autorização)
 firestore.indexes.json   índices compostos exigidos pelas consultas
 scripts/             utilitários (limpeza de perfis antigos, gerador de componentes)

@@ -2,9 +2,12 @@
   "//": "Os testes correm em Node (não no React Native), por isso têm os seus próprios tipos. O tsconfig da app exclui esta pasta para não lhe dar globais de Node.",
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "types": ["node"],
-    "noEmit": true
+    "types": ["node", "jest"],
+    "noEmit": true,
+    // Os testes importam os helpers pelo nome real do ficheiro (`./emulator.mts`), que é o que o
+    // Node precisa para os resolver em tempo de execução.
+    "allowImportingTsExtensions": true
   },
-  "include": ["**/*.mts"],
+  "include": ["**/*.mts", "**/*.ts", "**/*.tsx"],
   "exclude": []
 }
