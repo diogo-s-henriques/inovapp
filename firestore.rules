@@ -1,0 +1,185 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // O role deriva sempre do domínio do email institucional do token autenticado
+    // (student = @alunos.iseclisboa.pt, professor = @iseclisboa.pt) — nunca de uma escolha
+    // do cliente.
+    function roleMatchesEmailDomain(role) {
+      return (role == 'student' && request.auth.token.email.matches('(?i)^[^@]+@alunos\\.iseclisboa\\.pt$'))
+        || (role == 'professor' && request.auth.token.email.matches('(?i)^[^@]+@iseclisboa\\.pt$'));
+    }
+
+    // Campos privados da conta. Nunca podem ser criados em `users`, que é legível por qualquer
+    // utilizador autenticado — o sítio deles é userAccounts/{uid}.
+    function hasNoPrivateAccountFields(data) {
+      return !('email' in data) && !('lastLoginAt' in data) && !('rememberSession' in data);
+    }
+
+    // Perfis criados antes da separação userAccounts ainda têm estes campos dentro de `users`.
+    // Não se exige que desapareçam já (senão qualquer update a um perfil antigo falhava), mas
+    // também não podem ser alterados nem acrescentados. A limpeza acontece no primeiro login
+    // a seguir à atualização (ver signIn em src/auth/actions.ts).
+    function privateFieldsUnchanged(data, current) {
+      return (!('email' in data) || data.email == current.get('email', null))
+        && (!('lastLoginAt' in data) || data.lastLoginAt == current.get('lastLoginAt', null))
+        && (!('rememberSession' in data) || data.rememberSession == current.get('rememberSession', null));
+    }
+
+    match /users/{userId} {
+      // Perfis são legíveis por qualquer utilizador autenticado (pesquisa/matching precisam de ver
+      // outros perfis) — por isso este documento só pode conter o que é partilhado dentro da
+      // comunidade: nada de email, última entrada ou "lembrar sessão" (ver userAccounts).
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId
+        && hasNoPrivateAccountFields(request.resource.data)
+        && roleMatchesEmailDomain(request.resource.data.role);
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        && privateFieldsUnchanged(request.resource.data, resource.data);
+    }
+
+    match /userAccounts/{userId} {
+      // Dados privados da conta: email institucional, data da última entrada e se a sessão
+      // deve ser prolongada. Só o próprio os lê.
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // O email gravado tem de ser o mesmo do token autenticado (impede um cliente feito à mão
+      // de se registar com o email de outra pessoa).
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && roleMatchesEmailDomain(request.resource.data.role);
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.role == resource.data.role;
+      allow delete: if false;
+    }
+
+    match /connectionRequests/{requestId} {
+      allow read: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      // Só o Tutorando (from) inicia o pedido; nunca o Mentor/Tutor (to != from garante um sentido só).
+      allow create: if request.auth != null
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.status == 'pending'
+        && requestId == request.resource.data.from + '_' + request.resource.data.to;
+      // Só o destinatário (to) aceita/recusa, e só enquanto ainda estiver pendente.
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.to
+        && resource.data.status == 'pending'
+        && request.resource.data.from == resource.data.from
+        && request.resource.data.to == resource.data.to
+        && request.resource.data.status in ['accepted', 'declined'];
+      allow delete: if false;
+    }
+
+    match /sessionRequests/{requestId} {
+      allow read: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      // Qualquer um dos dois lados de uma ligação já aceite pode pedir uma sessão ao outro
+      // (ao contrário do connectionRequest, que é sempre Tutorando -> Mentor).
+      allow create: if request.auth != null
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.status == 'pending'
+        // Só é possível pedir sessão se já existir um pedido de conexão aceite entre os dois
+        // (nos dois sentidos possíveis, porque o pedido de sessão pode partir de qualquer lado).
+        && (
+          (exists(/databases/$(database)/documents/connectionRequests/$(request.resource.data.from + '_' + request.resource.data.to))
+            && get(/databases/$(database)/documents/connectionRequests/$(request.resource.data.from + '_' + request.resource.data.to)).data.status == 'accepted')
+          ||
+          (exists(/databases/$(database)/documents/connectionRequests/$(request.resource.data.to + '_' + request.resource.data.from))
+            && get(/databases/$(database)/documents/connectionRequests/$(request.resource.data.to + '_' + request.resource.data.from)).data.status == 'accepted')
+        );
+      // Só o destinatário (to) aceita/recusa, e só enquanto ainda estiver pendente.
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.to
+        && resource.data.status == 'pending'
+        && request.resource.data.from == resource.data.from
+        && request.resource.data.to == resource.data.to
+        && request.resource.data.status in ['accepted', 'declined'];
+      allow delete: if false;
+    }
+
+    match /sessions/{sessionId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.participants;
+      // Só quem aceitou o pedido (o mentor) pode criar a sessão, e só se existir mesmo um
+      // sessionRequest por trás, com o par from/to correspondente. A condição verifica
+      // status == 'pending' (não 'accepted'): esta escrita acontece no mesmo writeBatch que
+      // marca o sessionRequest como aceite, e get()/exists() em regras leem sempre o estado
+      // anterior ao batch, nunca as escritas ainda pendentes desse mesmo batch — exigir
+      // 'accepted' aqui faria esta condição falhar sempre. Continua seguro porque só o próprio
+      // destinatário (to == mentorUid, já garantido acima) pode desencadear isto.
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.mentorUid
+        && request.resource.data.participants.size() == 2
+        && (
+          request.resource.data.participants == [request.resource.data.studentUid, request.resource.data.mentorUid]
+          || request.resource.data.participants == [request.resource.data.mentorUid, request.resource.data.studentUid]
+        )
+        && get(/databases/$(database)/documents/sessionRequests/$(request.resource.data.sessionRequestId)).data.from == request.resource.data.studentUid
+        && get(/databases/$(database)/documents/sessionRequests/$(request.resource.data.sessionRequestId)).data.to == request.resource.data.mentorUid
+        && get(/databases/$(database)/documents/sessionRequests/$(request.resource.data.sessionRequestId)).data.status == 'pending';
+      // Só o mentor pode terminar a sessão, só de 'scheduled' para 'completed' (nunca o
+      // contrário), e só isso muda — nenhum outro campo pode ser alterado no mesmo update.
+      // get('status', 'scheduled') trata sessões antigas sem o campo 'status' (criadas antes
+      // desta funcionalidade existir) como 'scheduled' — sem isto, essa leitura direta rebentava
+      // para esses documentos e o mentor nunca conseguia terminá-las.
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.mentorUid
+        && resource.data.get('status', 'scheduled') == 'scheduled'
+        && request.resource.data.status == 'completed'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt']);
+      allow delete: if false;
+    }
+
+    match /ratings/{sessionId} {
+      // ID = ID da sessão (não de quem avalia) e o documento nunca guarda quem escreveu —
+      // a regra confirma que quem escreve é o Tutorando da sessão sem persistir essa ligação.
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/sessions/$(sessionId)).data.studentUid == request.auth.uid
+        && request.resource.data.mentorUid == get(/databases/$(database)/documents/sessions/$(sessionId)).data.mentorUid
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+      allow update, delete: if false;
+    }
+
+    match /conversations/{conversationId} {
+      allow read, update: if request.auth != null && request.auth.uid in resource.data.participants;
+      // Só é possível criar a conversa se existir um pedido de conexão pendente entre os dois
+      // participantes, dirigido a quem está a criar a conversa (nos dois sentidos possíveis,
+      // porque o ID do pedido é sempre tutorandoUid_mentorUid, enquanto o ID da conversa vem
+      // ordenado). A condição verifica status == 'pending' (não 'accepted'): esta escrita
+      // acontece no mesmo writeBatch que marca o connectionRequest como aceite, e get()/exists()
+      // em regras leem sempre o estado anterior ao batch, nunca as escritas ainda pendentes
+      // desse mesmo batch — exigir 'accepted' aqui faria esta condição falhar sempre. Continua
+      // seguro porque exige também que quem cria seja o destinatário (to) desse pedido, ou seja,
+      // a mesma pessoa que só podia aceitá-lo de qualquer forma.
+      allow create: if request.auth != null
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2
+        && conversationId == request.resource.data.participants[0] + '_' + request.resource.data.participants[1]
+        && (
+          (exists(/databases/$(database)/documents/connectionRequests/$(request.resource.data.participants[0] + '_' + request.resource.data.participants[1]))
+            && get(/databases/$(database)/documents/connectionRequests/$(request.resource.data.participants[0] + '_' + request.resource.data.participants[1])).data.status == 'pending'
+            && get(/databases/$(database)/documents/connectionRequests/$(request.resource.data.participants[0] + '_' + request.resource.data.participants[1])).data.to == request.auth.uid)
+          ||
+          (exists(/databases/$(database)/documents/connectionRequests/$(request.resource.data.participants[1] + '_' + request.resource.data.participants[0]))
+            && get(/databases/$(database)/documents/connectionRequests/$(request.resource.data.participants[1] + '_' + request.resource.data.participants[0])).data.status == 'pending'
+            && get(/databases/$(database)/documents/connectionRequests/$(request.resource.data.participants[1] + '_' + request.resource.data.participants[0])).data.to == request.auth.uid)
+        );
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if request.auth != null
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow update, delete: if false;
+      }
+    }
+  }
+}
