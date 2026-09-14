@@ -40,7 +40,8 @@
         {
           "photosPermission": "Permite que a INOVAPP aceda às tuas fotos para definires a foto de perfil."
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,

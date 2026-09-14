@@ -85,12 +85,14 @@ inteiros e a navegação — para isso, testa no dispositivo.
 > "1 test, 1 fail" em vez de 69, sem nada de errado no `firestore.rules`. Corre outra vez; se
 > persistir, confirma que não ficou nenhum emulador preso na porta antes de procurares mais longe.
 
-> **Porque é que o `package.json` tem um `overrides`** — `jest-expo@57` declara
-> `@react-native/jest-preset@^0.86.3`, mas o `react-native@0.86.0` que o SDK 57 usa exige
-> exatamente `0.86.0`. O npm não consegue satisfazer os dois e o `npm install` falha com
-> `ERESOLVE`. O `overrides` fixa a versão que o React Native espera; é a solução indicada pela
-> própria Expo no issue <https://github.com/expo/expo/issues/47435>. Quando o `jest-expo`
-> corrigir o intervalo, este bloco pode sair.
+> **Antes de testar no telemóvel, corre `npx expo install --check`.** O Expo Go da loja é
+> compilado com os patches mais recentes do SDK, e um projeto atrasado em relação a eles não dá
+> um erro legível: o Expo Go **fecha**. Custou uma sessão a perceber isso, quando o problema eram
+> 20 pacotes desalinhados (entre eles o `react-native-worklets`, que é a parte nativa do
+> reanimated). O `--check` lista-os e o `--fix` atualiza-os.
+>
+> Nada disto substitui uma build própria: o Expo Go só corre o SDK que traz, o que chega para
+> desenvolvimento, mas não para publicar.
 
 ## Estrutura do projeto
 
