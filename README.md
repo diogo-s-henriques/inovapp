@@ -5,14 +5,15 @@
 - Node.js e npm
 - Uma conta/projeto [Firebase](https://console.firebase.google.com/) com **Authentication**
   (método Email/Password) e **Firestore Database** ativados
-- Para publicar regras do Firestore: `npx firebase-tools` (não é preciso instalação global —
-  ver [Firestore rules](#firestore-rules-e-segurança))
+- Para publicar regras e índices: `npx firebase-tools` (não é preciso instalação global — ver
+  [Firestore rules](#firestore-rules-e-segurança))
+- **Java**, só para correr os testes das regras: o emulador do Firestore é um processo Java
 
 ### Instalar e correr
 
 ```bash
 npm install
-# preenche o .env com os dados projeto Firebase
+cp .env.example .env     # .env.example lista as variáveis a preencher com os dados do Firebase
 npx expo start
 ```
 
@@ -25,7 +26,24 @@ npx firebase-tools deploy --only firestore:rules --dry-run   # valida sem public
 npx firebase-tools deploy --only firestore:rules
 ```
 
-`.firebaserc` e `firebase.json` já apontam para o projeto do ISEC (`inovapp-68021`);
+`.firebaserc` e `firebase.json` já apontam para o projeto do ISEC (`inovapp-68021`).
+
+> **Ordem importa:** `users` e `userAccounts` são publicados em conjunto com o código que os
+> escreve. Publicar as regras novas e continuar a correr um bundle antigo faz o registo e o
+> login falharem (o bundle antigo grava campos privados dentro de `users`). Depois de publicar,
+> reinicia o Metro com `npx expo start -c`.
+
+### Índices do Firestore
+
+`firestore.indexes.json` descreve os índices compostos que as consultas da app exigem (o
+Firestore recusa consultas que misturam filtros e ordenação sem um índice). Alguns destes
+índices foram criados a partir do link que o próprio erro da consola dá, e é isso que este
+ficheiro vem corrigir: passa a haver um sítio onde estão declarados.
+
+Antes do primeiro `deploy --only firestore:indexes`, corre `npx firebase-tools firestore:indexes`
+para ver o que já está publicado no projeto. O deploy compara o ficheiro com o que existe e
+**propõe apagar** os índices que não estejam no ficheiro — confirma antes de aceitar. Como
+alternativa, cria só os que faltam no link que o erro da consola apresenta.
 
 ### Scripts
 
@@ -34,11 +52,14 @@ npx firebase-tools deploy --only firestore:rules
 | `npm start` | inicia o Metro bundler (Expo) |
 | `npm run android` / `ios` / `web` | inicia numa plataforma específica |
 | `npm run lint` | `expo lint` (ESLint) |
-| `npx tsc --noEmit` | verificação de tipos, sem gerar output |
+| `npx tsc --noEmit` | verificação de tipos da app, sem gerar output |
+| `npm run typecheck:tests` | verificação de tipos dos testes (ambiente de Node, config própria) |
+| `npm run test:rules` | testes das regras do Firestore no emulador (precisa de Java) |
+| `npm run cleanup:legacy-profiles` | migração pontual dos perfis antigos (ver [Migração](#migração)) |
 | `npm run reset-project` | utilitário do template `create-expo-app`, não usado neste projeto |
 
 Antes de dar como terminado qualquer trabalho: `npx tsc --noEmit` e `npm run lint` devem correr
-sem erros.
+sem erros. Se mexeste em `firestore.rules`, acrescenta `npm run test:rules`.
 
 ## Estrutura do projeto
 
@@ -47,6 +68,7 @@ Rotas em `src/app/` (Expo Router, ficheiro = rota):
 ```
 src/app/
   login.tsx, create-account.tsx      autenticação
+  forgot-password.tsx                pedido de reposição de palavra-passe
   profile-setup.tsx                  onboarding obrigatório após 1º login
   (tabs)/                            navegação principal, 5 separadores
     index.tsx                        Home
@@ -60,7 +82,7 @@ src/app/
   notifications.tsx                  Pedidos de conexão + de sessão pendentes
   sessions.tsx                       Agenda (calendário + lista)
   session-request.tsx                Formulário "Pedir sessão"
-  materials.tsx                      Materiais partilhados por disciplina
+  materials.tsx                      Material (links) partilhado nas conversas
 ```
 
 Resto do código-fonte:
@@ -68,16 +90,21 @@ Resto do código-fonte:
 ```
 src/auth/          estado de sessão (store Zustand, listener do Firebase Auth, ações)
 src/lib/            acesso a dados — um ficheiro por domínio (chat.ts, sessions.ts,
-                     requests.ts, matching.ts, materials.ts, ratings.ts), mais firebase.ts
-                     (inicialização), storage.ts (fotos em base64), initials.ts, time.ts,
+                     requests.ts, matching.ts, materials.ts, ratings.ts, activity.ts),
+                     mais firebase.ts (inicialização), storage.ts (fotos em base64),
+                     initials.ts, time.ts, url.ts (validação de links), navigation.ts,
                      recent-searches.ts (AsyncStorage)
 src/components/
   ui/                componentes genéricos reutilizáveis (Button, Checkbox, Pill, StarRating…)
   domain/            componentes específicos do domínio da app (NavBar, CalendarMonth,
                      EvaluationModal, RequestCard, ProfileSetup/…)
 src/constants/       valores fixos (disciplinas, cursos, regras de email institucional, tema)
+src/i18n/            traduções (pt, en), contrato `Translations` e store do idioma
 src/types/           tipos TypeScript partilhados
-firestore.rules       regras de segurança do Firestore (fonte de verdade de autorização)
+tests/               testes das regras do Firestore (emulador)
+firestore.rules      regras de segurança do Firestore (fonte de verdade de autorização)
+firestore.indexes.json   índices compostos exigidos pelas consultas
+scripts/             utilitários (limpeza de perfis antigos, gerador de componentes)
 ```
 
 ## Autenticação e papéis
@@ -92,6 +119,9 @@ Um utilizador pode ainda escolher o seu `participationMode` no onboarding (`lear
 `both`) — é isto que decide se aparece como Tutorando, Mentor, ou ambos, dentro da app; ser
 elegível a ensinar exige estar a partir do 2º ano (`isEligibleToTeach`).
 
+O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no dispositivo
+(AsyncStorage), sendo retomado no arranque seguinte.
+
 ## Funcionalidades
 
 - **Pesquisa de mentores/tutorandos** — por disciplina, com filtros; sem leitura ao Firestore ao
@@ -100,69 +130,128 @@ elegível a ensinar exige estar a partir do 2º ano (`isEligibleToTeach`).
 - **Matches / pedidos de conexão** — o Tutorando desliza e carrega em "Conectar", o que envia um
   **pedido de conexão** ao Mentor (não é match automático por like mútuo). Só o Tutorando inicia;
   o Mentor nunca envia pedido a um Tutorando.
-- **Notificações in-app** — sino na Home com badge de contagem; ecrã dedicado
-  (`notifications.tsx`) com pedidos de conexão e de sessão pendentes, Aceitar/Recusar.
+- **Notificações in-app** — sino na Home com contagem (pedidos de conexão + pedidos de sessão +
+  conversas por ler); ecrã dedicado (`notifications.tsx`) com pedidos pendentes, Aceitar/Recusar,
+  e um histórico "Recentes" derivado de pedidos já aceites e sessões de amanhã.
 - **Chat em tempo real** — só desbloqueado depois de um pedido de conexão aceite; mensagens via
-  Firestore `onSnapshot` (`conversations/{id}/messages`).
+  Firestore `onSnapshot` (`conversations/{id}/messages`). Abre com as últimas 50 mensagens e um
+  botão para carregar as anteriores.
 - **Agenda / sessões** — calendário mensal + lista do dia; pedido de sessão
   (disciplina/data/hora/modalidade/mensagem) a partir do perfil do outro utilizador ou do chat.
   Ao contrário do pedido de conexão, o pedido de sessão pode partir de qualquer um dos dois lados
-  de uma ligação já aceite.
-- **Materiais** — mentores partilham um link externo (Google Drive, YouTube, etc.) por
-  disciplina; lista filtrável por chips, em tempo real.
+  de uma ligação já aceite — e **quem aceita fica como Mentor dessa sessão**, sendo a única parte
+  que a pode terminar (ver [Decisões tomadas](#decisões-tomadas)).
+- **Materiais** — um material é um **link http/https partilhado dentro de uma conversa** (não há
+  coleção `materials` nem upload de ficheiros). O ecrã de Materiais agrega, em tempo real, os
+  anexos das conversas do utilizador, filtráveis por enviados/recebidos. O link é validado ao ser
+  escrito e outra vez ao ser aberto (`src/lib/url.ts`), porque vem de outro utilizador.
 - **Avaliação por estrelas pós-sessão** — anónima, aparece automaticamente ao Tutorando quando
   uma sessão passada ainda não foi avaliada nem dispensada; 1 avaliação por sessão.
+- **Recuperação de palavra-passe** — botão nos ecrãs de autenticação; o Firebase envia o email
+  com o link. A reposição acontece na página web do Firebase e a pessoa volta à app para entrar
+  com a palavra-passe nova (não há deep link de regresso). A confirmação mostrada é sempre a
+  mesma, exista ou não conta, para não permitir descobrir que emails estão registados.
 
 ## Modelo de dados (Firestore)
 
 | coleção | descrição |
 |---|---|
-| `users/{uid}` | perfil (nome, foto base64, role, participationMode, disciplinas, disponibilidade…) |
+| `users/{uid}` | perfil **visível a quem tem sessão iniciada** (nome, foto base64, role, participationMode, disciplinas, disponibilidade…). Nunca contém dados privados da conta. |
+| `userAccounts/{uid}` | dados **privados** da conta: `email`, `lastLoginAt`, `rememberSession`. Legível só pelo próprio. |
 | `connectionRequests/{tutorandoUid_mentorUid}` | pedido de conexão Tutorando → Mentor; `status: pending\|accepted\|declined` |
 | `sessionRequests/{id}` (ID automático) | pedido de sessão entre dois utilizadores já ligados; qualquer um dos dois pode iniciar |
 | `sessions/{id}` | sessão agendada, criada ao aceitar um `sessionRequest`; guarda `sessionRequestId` para a regra de segurança conseguir validar a origem |
 | `conversations/{uidA_uidB}` (ID ordenado alfabeticamente) | conversa 1-para-1, criada só ao aceitar um `connectionRequest` |
-| `conversations/{id}/messages/{id}` | mensagens da conversa |
-| `materials/{id}` | material partilhado (link externo), por disciplina |
+| `conversations/{id}/messages/{id}` | mensagens da conversa (e os anexos de links que alimentam os Materiais) |
 | `ratings/{sessionId}` (ID = ID da sessão) | avaliação anónima pós-sessão; nunca guarda quem avaliou |
+
+Não existe coleção de notificações: o ecrã de Notificações deriva tudo do que já existe
+(`src/lib/activity.ts`).
 
 ## Firestore rules e segurança
 
 `firestore.rules` é a fonte de verdade da autorização — **nenhuma regra de negócio de segurança
 depende só da UI**. Pontos a destacar:
 
-- `users`: `create` valida que o `role` gravado bate com o domínio do email do token
-  autenticado (impede um cliente feito à mão criar-se com `role` arbitrário).
+- `users`: `create` valida que o `role` gravado bate com o domínio do email do token autenticado
+  (impede um cliente feito à mão criar-se com `role` arbitrário) e recusa qualquer campo privado
+  da conta; `update` nunca deixa mudar o `role`.
+- `userAccounts`: só o próprio lê, e o `create` exige que o `email` gravado seja o do token.
+  Foi esta a razão da separação: `users` é legível por toda a comunidade autenticada (a pesquisa
+  e o matching precisam disso), portanto o email e a última entrada não podem viver lá.
 - `connectionRequests`: só o Tutorando (`from`) cria; só o destinatário (`to`) aceita/recusa.
 - `sessionRequests` / `conversations`: `create` exige um `connectionRequests` aceite entre as
   duas partes (verificado nos dois sentidos possíveis do ID, já que os dois documentos usam
   convenções de ID diferentes).
 - `sessions`: `create` exige um `sessionRequests` aceite por trás (via `sessionRequestId`
-  gravado na sessão) e que só o mentor que aceitou o pedido a possa criar.
+  gravado na sessão) e que só o mentor que aceitou o pedido a possa criar. `update` só permite
+  passar de `scheduled` para `completed`, e só pelo mentor — nenhum outro campo pode mudar.
 - `ratings`: `create` confirma via `get()` que quem escreve é o `studentUid` da sessão, sem
   persistir essa relação no documento — garante o anonimato mesmo para quem lê a coleção depois.
-- `materials`: `create` só permitido a quem tem `participationMode` `teach` ou `both`.
+- Nenhuma coleção permite `delete`.
+
+Há testes destas invariantes em `tests/firestore-rules.test.mts`, que correm contra o emulador
+com o mesmo `firestore.rules` que é publicado:
+
+```bash
+npm run test:rules        # arranca o emulador, corre os testes e desliga-o (precisa de Java)
+```
+
+## Migração dos perfis antigos
+
+Antes da separação `users`/`userAccounts`, o perfil guardava `email`, `lastLoginAt` e
+`rememberSession` — legíveis por qualquer utilizador autenticado. Duas coisas tratam disto:
+
+- **No login seguinte**, a app limpa o próprio perfil e garante o documento em `userAccounts`
+  (`signIn`, em `src/auth/actions.ts`). As regras toleram a presença desses campos antigos
+  (para não bloquear a edição de perfil dessas contas) mas nunca deixam alterá-los.
+- **Para quem nunca mais entrar**, há um script de uma vez só:
+
+```bash
+# Consola Firebase > Definições do projeto > Contas de serviço > Gerar nova chave privada
+export GOOGLE_APPLICATION_CREDENTIALS=/caminho/para/chave.json
+npm run cleanup:legacy-profiles              # só mostra o que faria
+npm run cleanup:legacy-profiles -- --apply   # aplica (cria userAccounts e limpa o perfil)
+```
+
+Usa o `firebase-admin`, que passa por cima das regras — por isso é um script manual e não faz
+parte da app.
 
 ## Decisões tomadas
 
 - **Materiais por link, não por upload de ficheiro** — o projeto não usa Firebase Storage
-  (exige plano Blaze/pago); o mentor cola um link externo (Google Drive, YouTube…) e
-  "Descarregar" abre esse link. Pela mesma razão, fotos de perfil são guardadas em base64
-  diretamente no Firestore (`src/lib/storage.ts`).
-- **Rating não está ligado aos perfis** — `PLACEHOLDER_RATING` em `src/lib/matching.ts`
-  continua fixo; a avaliação por estrelas (pós-sessão) fica isolada em `ratings/{sessionId}` e
-  não alimenta uma média visível no perfil do mentor. Ligar isto exigiria abrir uma exceção na
-  regra de `users/{userId}` para deixar outra pessoa (o aluno) escrever no perfil do mentor —
-  decisão de segurança deixada de fora por agora, propositadamente.
-  "Entrar" (na agenda) é no-op — não há ainda infraestrutura de videochamada.
+  (exige plano Blaze/pago); um material é um link externo (Google Drive, YouTube…) partilhado
+  numa conversa. Pela mesma razão, fotos de perfil são guardadas em base64 diretamente no
+  Firestore, redimensionadas no dispositivo para 400px (`src/lib/storage.ts`).
+- **Só links http/https** — `Linking.openURL` abre o que lhe derem, e o URL vem de outro
+  utilizador; esquemas arbitrários (`intent://`, `file://`) seriam um caminho para lançar outra
+  app. A validação está na escrita e na abertura.
+- **Rating não está ligado aos perfis** — a avaliação por estrelas fica isolada em
+  `ratings/{sessionId}` e não alimenta uma média visível no perfil do mentor. Ligar isto exigiria
+  abrir uma exceção na regra de `users/{userId}` para deixar outra pessoa (o aluno) escrever no
+  perfil do mentor — decisão de segurança deixada de fora, propositadamente.
+- **Quem aceita o pedido de sessão fica como Mentor dessa sessão** — o pedido pode partir de
+  qualquer lado, mas só quem o aceita pode terminar a sessão e é essa parte que o ecrã de agenda
+  apresenta como Mentor. Consequência a rever: se um professor pedir a sessão a um aluno, é o
+  professor que aparece como "Tutorando" nessa sessão.
+- **Limites nas leituras** — nenhuma lista da app lê uma coleção inteira: o chat abre com 50
+  mensagens (com "carregar anteriores"), os Materiais leem as últimas 50 mensagens de cada
+  conversa, o feed de notificações está limitado e ordenado no servidor, e o conjunto de
+  candidatos de pesquisa/matches tem um teto (`CANDIDATE_POOL_LIMIT`, em `src/lib/matching.ts`).
+  Consequência conhecida: acima desse teto, a pesquisa deixa de ver toda a gente, porque filtra
+  no cliente — a solução é passar a pesquisa para o servidor.
 - **Sem Cloud Functions / cron** — "sessão já terminou" (para disparar o pedido de avaliação) é
-  calculado no cliente, comparando data+hora da sessão com a hora atual.
-- **`sessionRequests` com ID automático vs. `connectionRequests` com ID determinístico** — o
-  mesmo par de utilizadores pode pedir várias sessões ao longo do tempo, por isso o ID não pode
-  ser fixo como em `connectionRequests` (`tutorandoUid_mentorUid`, que só permite 1 pedido ativo
-  de cada vez).
-- **Sem apagar sessões/pedidos** — todas as coleções têm `allow delete: if false`; registos de
-  teste ou dados obsoletos só se removem manualmente pela consola do Firebase.
+  calculado no cliente, comparando data+hora da sessão com a hora atual. A expiração da sessão
+  (30 dias com "Lembrar", 1 dia sem) também: é uma decisão de UX, não uma fronteira de segurança
+  — o refresh token do Firebase continua válido para um cliente modificado.
+- **Materiais, sessões e pedidos não se apagam** — todas as coleções têm `allow delete: if false`;
+  registos de teste ou dados obsoletos só se removem manualmente pela consola do Firebase.
+- **Sem modo escuro** — `useTheme()` devolve sempre a paleta clara e o `app.json` está em
+  `userInterfaceStyle: light`. É intencional, não é esquecimento.
+- **Limitações conhecidas** — as estatísticas do perfil (sessões dadas/recebidas) mostram 0 e
+  `sessionsGiven`/`responseTime` dos cartões são placeholders; "Entrar" numa sessão é no-op, não
+  há infraestrutura de videochamada; disciplinas, modalidades e períodos de disponibilidade são
+  guardados no Firestore como texto em português, por isso não acompanham a mudança de idioma.
 
 ## Contas de teste
 
