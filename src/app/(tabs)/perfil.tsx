@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +9,7 @@ import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { AvailabilityChips } from '@/components/domain/Profile/AvailabilityChips';
@@ -21,6 +23,7 @@ export default function ProfileScreen() {
   const i18n = useI18n();
   const router = useRouter();
   const profile = useAuthStore((state) => state.profile);
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
 
   if (!profile) return null;
 
@@ -93,8 +96,27 @@ export default function ProfileScreen() {
           onPress={() => router.push('/profile-edit')}
         />
 
-        <Button label={i18n.myProfile.signOut} variant="ghost" style={styles.editButton} onPress={() => signOutUser()} />
+        <Button
+          label={i18n.myProfile.signOut}
+          variant="ghost"
+          style={styles.editButton}
+          onPress={() => setConfirmingSignOut(true)}
+        />
       </ScrollView>
+
+      <ConfirmModal
+        visible={confirmingSignOut}
+        onRequestClose={() => setConfirmingSignOut(false)}
+        title={i18n.myProfile.signOutConfirmTitle}
+        description={i18n.myProfile.signOutConfirmDescription}
+        confirmLabel={i18n.myProfile.signOutConfirm}
+        cancelLabel={i18n.common.cancel}
+        onConfirm={() => {
+          setConfirmingSignOut(false);
+          signOutUser();
+        }}
+        onCancel={() => setConfirmingSignOut(false)}
+      />
     </SafeAreaView>
   );
 }

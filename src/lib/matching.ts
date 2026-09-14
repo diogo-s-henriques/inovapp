@@ -142,11 +142,28 @@ export async function sendConnectionRequest(fromUid: string, toUid: string): Pro
   });
 }
 
-/** Exclui do deck de swipe quem já foi pedido (pendente, aceite ou recusado). */
+/**
+ * IDs de quem já não pode aparecer na descoberta (deck de Matches e pesquisa) por existir um
+ * pedido de conexão entre os dois — **nos dois sentidos e em qualquer estado**.
+ *
+ * Nos dois sentidos porque os pedidos que eu recebi estão em cima do Matches à espera da minha
+ * decisão: sem isto, a mesma pessoa aparecia em cima (o pedido) e em baixo (o deck), e "Conectar"
+ * criava um segundo pedido entre as mesmas duas pessoas, no sentido contrário. Só acontece entre
+ * quem ensina e aprende ao mesmo tempo, porque é quem aprende que pede e só quem ensina entra no
+ * deck.
+ *
+ * Em qualquer estado porque recusar também é uma decisão: um pedido recusado não deve voltar a
+ * bater à porta pelo outro lado.
+ */
 export async function fetchExcludedCandidateIds(uid: string): Promise<Set<string>> {
-  const snapshot = await getDocs(query(collection(db, 'connectionRequests'), where('from', '==', uid)));
+  const [enviados, recebidos] = await Promise.all([
+    getDocs(query(collection(db, 'connectionRequests'), where('from', '==', uid))),
+    getDocs(query(collection(db, 'connectionRequests'), where('to', '==', uid))),
+  ]);
+
   const ids = new Set<string>();
-  snapshot.forEach((docSnap) => ids.add(docSnap.data().to as string));
+  enviados.forEach((docSnap) => ids.add(docSnap.data().to as string));
+  recebidos.forEach((docSnap) => ids.add(docSnap.data().from as string));
   return ids;
 }
 

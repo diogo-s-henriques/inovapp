@@ -25,7 +25,8 @@ export default function CreateAccountScreen() {
   const [accountCreated, setAccountCreated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const logo = require('../../assets/logo_dark.png');
+  // Versão reduzida (331x72) — ver a nota em src/app/login.tsx.
+  const logo = require('../../assets/images/logo_dark.png');
 
   const handleSubmit = async () => {
     setError(null);

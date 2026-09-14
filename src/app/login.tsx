@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { LanguageSwitcher } from '@/components/domain/LanguageSwitcher';
+import { PartnersMarquee } from '@/components/domain/PartnersMarquee';
 import { Link } from 'expo-router';
 import { signIn, getAuthErrorMessage } from '@/auth/actions';
 
@@ -22,7 +23,10 @@ export default function LoginScreen() {
   const [remember, setRemember] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const logo = require('../../assets/logo_dark.png');
+  // Versão reduzida do logótipo (331x72), do tamanho a que é desenhado aqui (120x24 pt a 3x):
+  // o ficheiro de origem tem 1898x413 px, o que obrigava a descodificar 3 MB de bitmap para
+  // mostrar uma miniatura — era isso que fazia o logótipo aparecer com atraso.
+  const logo = require('../../assets/images/logo_dark.png');
 
   const handleSubmit = async () => {
     setError(null);
@@ -94,6 +98,8 @@ export default function LoginScreen() {
           </Link>
         </View>
       </View>
+
+      <PartnersMarquee />
     </SafeAreaView>
   );
 }

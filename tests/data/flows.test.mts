@@ -21,7 +21,13 @@ import { signIn, signUp } from '@/auth/actions';
 import { pt } from '@/i18n/pt';
 import { conversationExists, markConversationRead, sendMessage } from '@/lib/chat';
 import { auth, db } from '@/lib/firebase';
-import { connectionRequestId, fetchMentorCandidates, matchId, sendConnectionRequest } from '@/lib/matching';
+import {
+  connectionRequestId,
+  fetchExcludedCandidateIds,
+  fetchMentorCandidates,
+  matchId,
+  sendConnectionRequest,
+} from '@/lib/matching';
 import { hasRatingForSession, submitRating } from '@/lib/ratings';
 import {
   respondToConnectionRequest,
@@ -34,7 +40,9 @@ import type { AgendaSession, SessionRequest } from '@/types/session';
 import {
   CONTAS,
   SENHA_DE_TESTE,
+  configurarPerfil,
   criarCenario,
+  criarConta,
   entrarComo,
   esperarPor,
   lerDocumento,
@@ -464,5 +472,74 @@ describe('descoberta de mentores', () => {
     // O Bruno ensina Matemática (a disciplina que a Ana quer aprender) e a Carla ensina Física,
     // por isso o Bruno vem primeiro.
     assert.equal(candidatos[0].subjects[0], 'Matemática');
+  });
+});
+
+describe('quem fica fora da descoberta', () => {
+  it('um pedido meu põe quem o recebeu fora do meu deck', async () => {
+    await entrarComo(CONTAS.aluna);
+    await sendConnectionRequest(cenario.ana, cenario.bruno);
+
+    assert.deepEqual([...(await fetchExcludedCandidateIds(cenario.ana))], [cenario.bruno]);
+  });
+
+  it('um pedido que recebi põe quem mo fez fora do meu deck, antes de eu decidir', async () => {
+    // O pedido está em cima do Matches à espera de decisão: quem o enviou não pode aparecer em
+    // baixo, no deck, como se não existisse nenhum pedido entre os dois.
+    await entrarComo(CONTAS.aluna);
+    await sendConnectionRequest(cenario.ana, cenario.bruno);
+
+    await entrarComo(CONTAS.alunoQueEnsina);
+    assert.ok((await fetchExcludedCandidateIds(cenario.bruno)).has(cenario.ana));
+  });
+
+  it('o mesmo par continua fora depois de recusado e depois de aceite', async () => {
+    await entrarComo(CONTAS.aluna);
+    await sendConnectionRequest(cenario.ana, cenario.bruno);
+
+    await entrarComo(CONTAS.alunoQueEnsina);
+    await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, false);
+    assert.ok(
+      (await fetchExcludedCandidateIds(cenario.bruno)).has(cenario.ana),
+      'um pedido recusado não deve voltar a aparecer pelo outro lado',
+    );
+
+    await entrarComo(CONTAS.aluna);
+    await sendConnectionRequest(cenario.ana, cenario.carla);
+
+    await entrarComo(CONTAS.professora);
+    await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.carla), cenario.ana, cenario.carla, true);
+    assert.ok(
+      (await fetchExcludedCandidateIds(cenario.carla)).has(cenario.ana),
+      'uma ligação já aceite também não volta a aparecer no deck',
+    );
+  });
+
+  it('quem me pediu conexão não aparece no deck mesmo que ensine', async () => {
+    // Só quem aprende pode pedir, e só quem ensina entra no deck — é entre quem faz as duas
+    // coisas que o mesmo par podia acabar em cima (o pedido) e em baixo (o deck).
+    const elsa = await criarConta('elsa.ambos@alunos.iseclisboa.pt');
+    await configurarPerfil(elsa, {
+      fullName: 'Elsa Ambos',
+      participationMode: 'both',
+      teachingSubjects: ['Matemática'],
+      learningSubjects: ['Física'],
+    });
+
+    await sendConnectionRequest(elsa, cenario.bruno);
+
+    await entrarComo(CONTAS.alunoQueEnsina);
+    const semExclusao = await fetchMentorCandidates({ currentUid: cenario.bruno, learningSubjects: [] });
+    assert.ok(
+      semExclusao.some((candidato) => candidato.id === elsa),
+      'sem a exclusão a Elsa aparecia no deck, por isso este teste não prova nada',
+    );
+
+    const comExclusao = await fetchMentorCandidates({
+      currentUid: cenario.bruno,
+      learningSubjects: [],
+      excludeIds: await fetchExcludedCandidateIds(cenario.bruno),
+    });
+    assert.ok(!comExclusao.some((candidato) => candidato.id === elsa));
   });
 });

@@ -56,7 +56,8 @@ export default function SearchScreen() {
     let cancelled = false;
 
     (async () => {
-      // Quem já foi pedido/ligado começa com o "+" já marcado (não é possível pedir outra vez).
+      // Quem já tem um pedido de conexão connosco (em qualquer sentido e estado) começa com o "+"
+      // já marcado — não é possível pedir duas vezes a mesma ligação.
       const excludeIds = await fetchExcludedCandidateIds(user.uid);
       if (cancelled) return;
       setAddedIds((current) => Array.from(new Set([...current, ...excludeIds])));

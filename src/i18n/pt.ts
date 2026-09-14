@@ -349,6 +349,9 @@ export const pt: Translations = {
     aboutEmpty: 'Ainda não escreveste nada sobre ti.',
     editProfile: 'Editar perfil',
     signOut: 'Sair',
+    signOutConfirmTitle: 'Terminar sessão?',
+    signOutConfirmDescription: 'Vais precisar de entrar outra vez com o teu email institucional.',
+    signOutConfirm: 'Sim',
   },
   materials: {
     title: 'Materiais',

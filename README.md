@@ -64,6 +64,7 @@ alternativa, cria só os que faltam no link que o erro da consola apresenta.
 | `npm run test:components` | testes de render de componentes (Jest + Testing Library, ~2 s) |
 | `npm run test:data` | testes da camada de dados contra os emuladores de Firestore e Auth (precisa de Java) |
 | `npm run test:rules` | testes das regras do Firestore no emulador (precisa de Java) |
+| `npm run logcat` | lê o logcat de um Android ligado por USB à procura da causa de um crash |
 | `npm run cleanup:legacy-profiles` | migração pontual dos perfis antigos (ver [Migração](#migração)) |
 | `npm run reset-project` | utilitário do template `create-expo-app`, não usado neste projeto |
 
@@ -93,6 +94,31 @@ inteiros e a navegação — para isso, testa no dispositivo.
 >
 > Nada disto substitui uma build própria: o Expo Go só corre o SDK que traz, o que chega para
 > desenvolvimento, mas não para publicar.
+
+> **`npm audit` — não corras `npm audit fix --force`.** Reporta 25 avisos, todos em ferramentas de
+> build (Metro, Babel, eslint, `@expo/config-plugins`) e nenhum enviado para o telemóvel. O
+> `--force` propõe descer o `expo-splash-screen` para 55.x, o que desfaz o alinhamento com o SDK 57
+> e traz de volta o fecho do Expo Go descrito acima. O `npm audit fix` normal também não é inócuo:
+> mexe em 15 pacotes. Se o correres, confirma a seguir o `npx expo install --check` e a suite.
+
+### Depurar um crash no telemóvel (Android)
+
+Quando o Expo Go **fecha** em vez de mostrar o ecrã vermelho, não há erro de JavaScript nenhum: o
+processo morreu. A causa está no `logcat` do Android, e é isso que o `npm run logcat` lê. Ele
+limpa o buffer, dá-te 30 segundos para reproduzir o crash, e depois destaca o que interessa — o
+stack trace de Java **inteiro** (não só a linha `FATAL EXCEPTION`), o tombstone de um crash nativo,
+e o que o Hermes imprimiu — guardando sempre o dump completo em ficheiro, porque o contexto à volta
+da linha que mata vale tanto como a linha.
+
+```bash
+npm run logcat                  # 30 segundos de captura
+npm run logcat -- --seconds=60  # se precisares de mais tempo
+```
+
+As platform-tools do Android **não são uma dependência do projeto** e não ficam no PATH: o script
+procura-as em `ADB`, depois no PATH, e por fim em `C:\Users\<utilizador>\platform-tools\`. Do lado
+do telemóvel é preciso a **Depuração USB** ligada (Definições → Opções de programador) e o aviso
+"Permitir depuração USB?" aceite uma vez.
 
 ## Estrutura do projeto
 
@@ -278,6 +304,10 @@ parte da app.
   davam duas formas de o fechar, e duas oportunidades de o fechar sem querer (o mesmo raciocínio
   aplicado ao sino da Home, que deixou de contar pedidos de conexão para não apontar para um sítio
   onde já não se decide nada).
+- **Quem já tem um pedido de conexão connosco desaparece da descoberta** (deck e pesquisa) — em
+  qualquer sentido e em qualquer estado: pendente, aceite ou recusado. Excluir apenas o sentido
+  "eu pedi" deixava o mesmo par em cima do Matches (o pedido) e em baixo (o candidato), com o
+  "Conectar" a criar um segundo pedido entre as mesmas duas pessoas.
 - **Quem aceita o pedido de sessão fica como Mentor dessa sessão** — o pedido pode partir de
   qualquer lado, mas só quem o aceita pode terminar a sessão e é essa parte que o ecrã de agenda
   apresenta como Mentor. Consequência a rever: se um professor pedir a sessão a um aluno, é o

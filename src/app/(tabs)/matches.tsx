@@ -58,8 +58,9 @@ export default function MatchesScreen() {
 
     (async () => {
       try {
-        // Exclui perfis já conectados/pedidos (Firestore) e perfis passados neste dispositivo
-        // (local), para nenhum dos dois voltar a aparecer.
+        // Exclui perfis com pedido de conexão entre os dois — em qualquer sentido e estado, para
+        // quem já me pediu não aparecer aqui em baixo depois de estar lá em cima — e perfis
+        // passados neste dispositivo (local), para nenhum voltar a aparecer.
         const [excludeIds, passedIds] = await Promise.all([fetchExcludedCandidateIds(user.uid), getPassedCandidateIds()]);
         passedIds.forEach((id) => excludeIds.add(id));
         const results = await fetchMentorCandidates({ currentUid: user.uid, learningSubjects, excludeIds });

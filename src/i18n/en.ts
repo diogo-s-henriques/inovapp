@@ -349,6 +349,9 @@ export const en: Translations = {
     aboutEmpty: "You haven't written anything about yourself yet.",
     editProfile: 'Edit profile',
     signOut: 'Sign out',
+    signOutConfirmTitle: 'Sign out?',
+    signOutConfirmDescription: 'You will need to sign in again with your institutional email.',
+    signOutConfirm: 'Yes',
   },
   materials: {
     title: 'Materials',

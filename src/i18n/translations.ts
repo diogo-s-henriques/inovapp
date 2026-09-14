@@ -331,6 +331,10 @@ export interface Translations {
     aboutEmpty: string;
     editProfile: string;
     signOut: string;
+    /** Confirmação antes de terminar a sessão (o botão sozinho era um toque sem rede). */
+    signOutConfirmTitle: string;
+    signOutConfirmDescription: string;
+    signOutConfirm: string;
   };
   materials: {
     title: string;
