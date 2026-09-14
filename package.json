@@ -53,6 +53,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "test": "npm run test:lib && npm run test:rules",
+    "test:lib": "node --import ./tests/register-loader.mjs --test \"tests/lib/*.test.mts\"",
     "test:rules": "npx firebase-tools emulators:exec --only firestore --project inovapp-68021 \"node --test tests/firestore-rules.test.mts\"",
     "typecheck:tests": "tsc --noEmit -p tests/tsconfig.json",
     "cleanup:legacy-profiles": "node scripts/cleanup-legacy-profiles.js"
