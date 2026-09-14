@@ -11,7 +11,7 @@ import { subscribeToConversations } from '@/lib/chat';
 import { subscribeToSharedMaterials } from '@/lib/materials';
 import { goBack } from '@/lib/navigation';
 import { dateLocaleTag, formatTimeAgo } from '@/lib/time';
-import { respondToConnectionRequest, subscribePendingConnectionRequests } from '@/lib/requests';
+import { subscribePendingConnectionRequests } from '@/lib/requests';
 import type { ConnectionRequest } from '@/lib/requests';
 import { respondToSessionRequest, subscribePendingSessionRequests } from '@/lib/sessions';
 import type { SessionRequest } from '@/types/session';
@@ -122,19 +122,6 @@ export default function NotificationsScreen() {
     });
   };
 
-  const handleRespondConnection = async (request: ConnectionRequest, accept: boolean) => {
-    if (!user) return;
-    setRespondingId(request.id);
-    setError(null);
-    try {
-      await respondToConnectionRequest(request.id, request.fromUid, user.uid, accept);
-    } catch {
-      setError(i18n.notifications.respondError);
-    } finally {
-      setRespondingId(null);
-    }
-  };
-
   const handleRespondSession = async (request: SessionRequest, accept: boolean) => {
     if (!user) return;
     setRespondingId(request.id);
@@ -201,7 +188,7 @@ export default function NotificationsScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <ThemedText type="smallBold" themeColor="textMuted" style={styles.sectionLabel}>
-                {i18n.notifications.connectionRequestsLabel}
+                {i18n.requests.connectionLabel}
               </ThemedText>
               <View style={[styles.badge, { backgroundColor: theme.primary }]}>
                 <ThemedText type="small" themeColor="onPrimary">
@@ -209,20 +196,31 @@ export default function NotificationsScreen() {
                 </ThemedText>
               </View>
             </View>
-            {connectionRequests.map((request) => (
-              <RequestCard
-                key={request.id}
-                firstName={request.candidate.firstName}
-                lastName={request.candidate.lastName}
-                subtitle={`${request.candidate.role} · ${request.candidate.course}`}
-                timeAgo={request.createdAt ? formatTimeAgo(request.createdAt, i18n.common.now) : undefined}
-                image={request.candidate.image}
-                busy={respondingId === request.id}
-                onAccept={() => handleRespondConnection(request, true)}
-                onDecline={() => handleRespondConnection(request, false)}
-                style={styles.card}
-              />
-            ))}
+            <ThemedText type="small" themeColor="textMuted" style={styles.sectionHint}>
+              {i18n.notifications.connectionRequestHint}
+            </ThemedText>
+            {/* Só o aviso: aceitar/recusar é nos Matches, para não haver duas listas a decidir
+                o mesmo pedido (e para a decisão viver onde está o resto dos matchs). */}
+            <View style={styles.recentList}>
+              {connectionRequests.map((request) => (
+                <Pressable
+                  key={request.id}
+                  onPress={() => router.push('/matches')}
+                  accessibilityRole="button"
+                  accessibilityLabel={i18n.notifications.connectionRequestTitle}>
+                  <ActivityListItem
+                    icon="person-add"
+                    iconColor="primary"
+                    iconBackground="primarySoft"
+                    title={i18n.notifications.connectionRequestTitle}
+                    description={i18n.notifications.connectionRequestAnnouncement(
+                      `${request.candidate.firstName} ${request.candidate.lastName}`.trim(),
+                    )}
+                    timeAgo={request.createdAt ? formatTimeAgo(request.createdAt, i18n.common.now) : ''}
+                  />
+                </Pressable>
+              ))}
+            </View>
           </View>
         )}
 
@@ -318,6 +316,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   recentLabel: {
+    marginBottom: Spacing.three,
+  },
+  sectionHint: {
     marginBottom: Spacing.three,
   },
   recentList: {

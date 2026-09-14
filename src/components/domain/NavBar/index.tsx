@@ -7,6 +7,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuthStore } from '@/auth/store';
 import { subscribeToConversations } from '@/lib/chat';
+import { subscribePendingConnectionRequests } from '@/lib/requests';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import type { Translations } from '@/i18n/translations';
@@ -27,13 +28,24 @@ export default function AppTabs() {
   const i18n = useI18n();
   const user = useAuthStore((state) => state.user);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const [hasPendingRequests, setHasPendingRequests] = useState(false);
 
-  // Bolinha vermelha no separador "Chat" enquanto houver pelo menos uma conversa por ler,
-  // independentemente do ecrã em que o utilizador esteja (a NavBar vive fora dos ecrãs em si).
+  // Bolinha vermelha nos separadores que têm algo à espera: "Chat" enquanto houver pelo menos
+  // uma conversa por ler e "Matches" enquanto houver pedidos de conexão por decidir (é lá que se
+  // aceitam ou recusam). Vive fora dos ecrãs em si, por isso cada separador trata do seu aviso.
   useEffect(() => {
     if (!user) return;
     const unsubscribe = subscribeToConversations(user.uid, (conversations) =>
       setHasUnreadMessages(conversations.some((conversation) => conversation.unread)),
+    );
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribePendingConnectionRequests(user.uid, (requests) =>
+      setHasPendingRequests(requests.length > 0),
     );
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,7 +58,11 @@ export default function AppTabs() {
         <View style={StyleSheet.flatten([styles.pill, { backgroundColor: theme.surface, borderColor: theme.border }])}>
           {TABS.map(({ name, href, labelKey, icon }) => (
             <TabTrigger key={name} name={name} href={href} asChild>
-              <TabButton label={i18n.navTabs[labelKey]} icon={icon} badge={name === 'chat' && hasUnreadMessages} />
+              <TabButton
+                label={i18n.navTabs[labelKey]}
+                icon={icon}
+                badge={(name === 'chat' && hasUnreadMessages) || (name === 'matches' && hasPendingRequests)}
+              />
             </TabTrigger>
           ))}
         </View>

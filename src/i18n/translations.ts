@@ -184,6 +184,13 @@ export interface Translations {
     decline: string;
     accept: string;
   };
+  requests: {
+    /** Cabeçalho dos pedidos de conexão. Usado nos Matches (onde se decide) e nas
+     * Notificações (onde se é avisado). */
+    connectionLabel: string;
+    /** Falha ao aceitar/recusar um pedido. */
+    respondError: string;
+  };
   chat: {
     notFound: string;
     /** Pré-visualização da conversa enquanto ainda não há mensagens. */
@@ -261,12 +268,15 @@ export interface Translations {
     title: string;
     back: string;
     sessionRequestsLabel: string;
-    connectionRequestsLabel: string;
     messagesLabel: string;
     recentLabel: string;
     empty: string;
     respondError: string;
     requestAcceptedTitle: string;
+    /** Aviso de um pedido de conexão recebido. A decisão em si acontece nos Matches. */
+    connectionRequestTitle: string;
+    connectionRequestAnnouncement: (name: string) => string;
+    connectionRequestHint: string;
     connectionAccepted: (name: string) => string;
     sessionAccepted: (name: string, subject: string) => string;
     sessionTomorrowTitle: string;

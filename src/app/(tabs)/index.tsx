@@ -11,7 +11,6 @@ import { useAuthStore } from '@/auth/store';
 import { getInitials } from '@/lib/initials';
 import { subscribeToConversations } from '@/lib/chat';
 import { fetchConnectedMentors } from '@/lib/matching';
-import { subscribePendingConnectionRequests } from '@/lib/requests';
 import { dismissSessionRating, getDismissedSessionIds, hasRatingForSession, submitRating } from '@/lib/ratings';
 import { subscribePendingSessionRequests, subscribeToSessions } from '@/lib/sessions';
 import { dateLocaleTag, toDateKey } from '@/lib/time';
@@ -46,7 +45,6 @@ export default function HomeScreen() {
   const participationMode = useAuthStore((state) => state.profile?.participationMode);
   const firstName = user?.fullName?.trim().split(' ')[0] ?? '';
   const initials = getInitials(user?.fullName ?? '');
-  const [pendingConnectionRequests, setPendingConnectionRequests] = useState(0);
   const [pendingSessionRequests, setPendingSessionRequests] = useState(0);
   const [unreadConversations, setUnreadConversations] = useState(0);
   const [sessions, setSessions] = useState<AgendaSession[]>([]);
@@ -71,13 +69,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = subscribePendingConnectionRequests(user.uid, (requests) => setPendingConnectionRequests(requests.length));
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
-
-  useEffect(() => {
-    if (!user) return;
     const unsubscribe = subscribePendingSessionRequests(user.uid, (requests) => setPendingSessionRequests(requests.length));
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,9 +83,11 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
-  // O sino conta tudo o que o ecrã de notificações apresenta como pendente: pedidos de conexão,
-  // pedidos de sessão e mensagens por ler (antes contava só os pedidos de conexão).
-  const unreadNotifications = pendingConnectionRequests + pendingSessionRequests + unreadConversations;
+  // O sino conta o que o ecrã de notificações apresenta como pendente: pedidos de sessão e
+  // mensagens por ler. Os pedidos de conexão não entram aqui de propósito — esses decidem-se nos
+  // Matches e o aviso é a bolinha do próprio separador (ver NavBar), para o mesmo pedido não ter
+  // dois sítios a pedir a mesma decisão.
+  const unreadNotifications = pendingSessionRequests + unreadConversations;
 
   useEffect(() => {
     if (!user) return;

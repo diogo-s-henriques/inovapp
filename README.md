@@ -168,10 +168,14 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
   (guardadas em AsyncStorage) quando não há pesquisa ativa.
 - **Matches / pedidos de conexão** — o Tutorando desliza e carrega em "Conectar", o que envia um
   **pedido de conexão** ao Mentor (não é match automático por like mútuo). Só o Tutorando inicia;
-  o Mentor nunca envia pedido a um Tutorando.
-- **Notificações in-app** — sino na Home com contagem (pedidos de conexão + pedidos de sessão +
-  conversas por ler); ecrã dedicado (`notifications.tsx`) com pedidos pendentes, Aceitar/Recusar,
-  e um histórico "Recentes" derivado de pedidos já aceites e sessões de amanhã.
+  o Mentor nunca envia pedido a um Tutorando. Os pedidos recebidos **decidem-se no topo deste
+  ecrã**, com Aceitar/Recusar: quem só ensina não tem deck nenhum (não procura mentor, é
+  encontrado), mas continua a ter aqui a lista do que tem para decidir.
+- **Notificações in-app** — o sino da Home conta os pedidos de sessão e as conversas por ler, e
+  cada separador com algo à espera tem a sua bolinha (Matches para pedidos de conexão, Chat para
+  conversas por ler — ver `NavBar`). O ecrã dedicado (`notifications.tsx`) tem os pedidos de sessão
+  com Aceitar/Recusar, **avisa** de cada pedido de conexão recebido (a decisão é nos Matches) e um
+  histórico "Recentes" derivado de pedidos já aceites e sessões de amanhã.
 - **Chat em tempo real** — só desbloqueado depois de um pedido de conexão aceite; mensagens via
   Firestore `onSnapshot` (`conversations/{id}/messages`). Abre com as últimas 50 mensagens e um
   botão para carregar as anteriores.
@@ -269,6 +273,11 @@ parte da app.
   `ratings/{sessionId}` e não alimenta uma média visível no perfil do mentor. Ligar isto exigiria
   abrir uma exceção na regra de `users/{userId}` para deixar outra pessoa (o aluno) escrever no
   perfil do mentor — decisão de segurança deixada de fora, propositadamente.
+- **Um pedido de conexão decide-se num sítio só** — aceitar/recusar vive nos Matches, e as
+  Notificações limitam-se a avisar que chegou um pedido. Duas listas a decidir o mesmo pedido
+  davam duas formas de o fechar, e duas oportunidades de o fechar sem querer (o mesmo raciocínio
+  aplicado ao sino da Home, que deixou de contar pedidos de conexão para não apontar para um sítio
+  onde já não se decide nada).
 - **Quem aceita o pedido de sessão fica como Mentor dessa sessão** — o pedido pode partir de
   qualquer lado, mas só quem o aceita pode terminar a sessão e é essa parte que o ecrã de agenda
   apresenta como Mentor. Consequência a rever: se um professor pedir a sessão a um aluno, é o
