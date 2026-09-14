@@ -149,6 +149,7 @@ export const pt: Translations = {
     materialsTitle: 'Materiais',
     materialsExploreAll: 'Explorar todos',
     tutorsForYou: 'Tutores para ti',
+    tuteesForYou: 'Os teus tutorandos',
   },
   navTabs: {
     home: 'Home',

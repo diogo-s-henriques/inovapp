@@ -23,12 +23,14 @@ import { conversationExists, markConversationRead, sendMessage } from '@/lib/cha
 import { auth, db } from '@/lib/firebase';
 import {
   connectionRequestId,
+  fetchConnectedTutees,
   fetchExcludedCandidateIds,
   fetchMentorCandidates,
   matchId,
   sendConnectionRequest,
 } from '@/lib/matching';
 import { hasRatingForSession, submitRating } from '@/lib/ratings';
+import { getRememberedEmail } from '@/lib/remembered-email';
 import {
   respondToConnectionRequest,
   subscribePendingConnectionRequests,
@@ -182,6 +184,16 @@ describe('criação de conta e entrada', () => {
     await signIn(CONTAS.aluna, SENHA_DE_TESTE, false);
     assert.equal((await lerDocumento(`userAccounts/${cenario.ana}`))?.rememberSession, false);
   });
+
+  it('"Lembrar-me" guarda o email no dispositivo, e desmarcá-lo esquece-o', async () => {
+    // Sair da conta apaga a sessão sempre (é o que `signOut` faz), por isso o que "Lembrar-me"
+    // guarda é o *email*, para o ecrã de entrada voltar a preenchê-lo depois de sair.
+    await signIn(CONTAS.aluna, SENHA_DE_TESTE, true);
+    assert.equal(await getRememberedEmail(), CONTAS.aluna);
+
+    await signIn(CONTAS.aluna, SENHA_DE_TESTE, false);
+    assert.equal(await getRememberedEmail(), null);
+  });
 });
 
 describe('pedido de conexão', () => {
@@ -217,6 +229,36 @@ describe('pedido de conexão', () => {
 
     assert.equal(await conversationExists(cenario.ana, cenario.bruno), true);
     assert.equal(await conversationExists(cenario.bruno, cenario.ana), true);
+  });
+
+  it('o mentor passa a ter a lista dos seus tutorandos', async () => {
+    await ligar(cenario.ana, cenario.bruno);
+
+    // A sessão ficou aberta como Bruno (o mentor) — é a leitura que a app dele faz. Este teste
+    // também fixa o sentido: um pedido vai sempre do Tutorando (`from`) para o Mentor (`to`),
+    // por isso a lista de tutorandos do mentor são os `from` — procurar os `from` do próprio
+    // Bruno devolveria vazio e é isso que este teste apanha.
+    const tutorandos = await fetchConnectedTutees(cenario.bruno);
+    assert.deepEqual(tutorandos.map((tutorando) => tutorando.id), [cenario.ana]);
+    assert.equal(tutorandos[0].firstName, 'Ana');
+  });
+
+  it('um pedido ainda pendente não põe ninguém na lista de tutorandos', async () => {
+    await entrarComo(CONTAS.aluna);
+    await sendConnectionRequest(cenario.ana, cenario.bruno);
+
+    await entrarComo(CONTAS.alunoQueEnsina);
+    assert.deepEqual(await fetchConnectedTutees(cenario.bruno), []);
+  });
+
+  it('um pedido recusado nunca entra na lista de tutorandos', async () => {
+    await entrarComo(CONTAS.aluna);
+    await sendConnectionRequest(cenario.ana, cenario.bruno);
+
+    await entrarComo(CONTAS.alunoQueEnsina);
+    await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, false);
+
+    assert.deepEqual(await fetchConnectedTutees(cenario.bruno), []);
   });
 
   it('recusar não deixa conversa nenhuma', async () => {

@@ -189,6 +189,13 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
 
 ## Funcionalidades
 
+- **Home com as duas listas de ligações aceites** — "Tutores para ti" para quem aprende
+  (os mentores com quem já tem conexão aceite) e "Os teus tutorandos" para quem ensina (os
+  alunos que aceitou). São simétricas e vêm do mesmo `connectionRequests`: como um pedido vai
+  sempre do Tutorando (`from`) para o Mentor (`to`), a lista de tutorandos de um mentor são os
+  `from` dos pedidos de que ele é `to` — ver `fetchConnectedMentors`/`fetchConnectedTutees` em
+  `src/lib/matching.ts`. Sem a segunda, aceitar um pedido não dava ao mentor nenhum sítio onde
+  voltasse a ver o aluno.
 - **Pesquisa de mentores/tutorandos** — por disciplina, com filtros; sem leitura ao Firestore ao
   abrir o ecrã, só disparada por query de texto ou filtro ativo. Mostra "Pesquisas recentes"
   (guardadas em AsyncStorage) quando não há pesquisa ativa.
@@ -331,6 +338,10 @@ parte da app.
   `initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })` — ver
   `src/lib/firebase.ts`. Sem isso o `lastLoginAt` desaparecia com o processo, a app pedia
   credenciais a cada arranque e estas expirações nunca chegavam a ser avaliadas.
+- **"Lembrar-me" decide duas coisas diferentes** — quanto tempo a sessão dura (30 dias com,
+  1 dia sem) e se o **email** fica guardado no dispositivo para o ecrã de entrada o voltar a
+  preencher (`src/lib/remembered-email.ts`). Não significa "não me peças credenciais outra vez":
+  o "Sair" apaga a sessão sempre — é uma decisão explícita da pessoa e nenhum flag a sobrepõe.
 - **Materiais, sessões e pedidos não se apagam** — todas as coleções têm `allow delete: if false`;
   registos de teste ou dados obsoletos só se removem manualmente pela consola do Firebase.
 - **Sem modo escuro** — `useTheme()` devolve sempre a paleta clara e o `app.json` está em

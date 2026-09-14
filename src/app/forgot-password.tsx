@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { SuccessModal } from '@/components/ui/SuccessModal';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { Logo } from '@/components/ui/Logo';
 import { LanguageSwitcher } from '@/components/domain/LanguageSwitcher';
 
 // Reposição de palavra-passe: o Firebase Auth envia o link de redefinição para o email indicado.
@@ -24,8 +25,6 @@ export default function ForgotPasswordScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Versão reduzida (331x72) — ver a nota em src/app/login.tsx.
-  const logo = require('../../assets/images/logo_dark.png');
 
   const handleSubmit = async () => {
     setError(null);
@@ -43,7 +42,7 @@ export default function ForgotPasswordScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
       <View style={styles.header}>
-        <Image source={logo} style={styles.logo} resizeMode="contain" />
+        <Logo />
         <LanguageSwitcher />
       </View>
 
@@ -107,10 +106,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: Spacing.three,
-  },
-  logo: {
-    height: 24,
-    width: 120,
   },
   content: {
     flex: 1,

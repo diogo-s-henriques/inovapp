@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
+import { getRememberedEmail } from '@/lib/remembered-email';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { Logo } from '@/components/ui/Logo';
 import { LanguageSwitcher } from '@/components/domain/LanguageSwitcher';
 import { PartnersMarquee } from '@/components/domain/PartnersMarquee';
 import { Link } from 'expo-router';
@@ -23,10 +25,21 @@ export default function LoginScreen() {
   const [remember, setRemember] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Versão reduzida do logótipo (331x72), do tamanho a que é desenhado aqui (120x24 pt a 3x):
-  // o ficheiro de origem tem 1898x413 px, o que obrigava a descodificar 3 MB de bitmap para
-  // mostrar uma miniatura — era isso que fazia o logótipo aparecer com atraso.
-  const logo = require('../../assets/images/logo_dark.png');
+
+  // Preenche o email da última entrada feita com "Lembrar-me". Só o email: a sessão em si é apagada
+  // pelo "Sair", de propósito — ver src/lib/remembered-email.ts.
+  useEffect(() => {
+    let cancelled = false;
+    getRememberedEmail().then((saved) => {
+      if (cancelled || !saved) return;
+      setEmail(saved);
+      // Se havia um email guardado, foi porque o checkbox estava marcado quando se entrou.
+      setRemember(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async () => {
     setError(null);
@@ -43,7 +56,7 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
       <View style={styles.header}>
-        <Image source={logo} style={styles.logo} resizeMode="contain" />
+        <Logo />
         <LanguageSwitcher />
       </View>
 
@@ -114,10 +127,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: Spacing.three,
-  },
-  logo: {
-    height: 24,
-    width: 120,
   },
   content: {
     flex: 1,

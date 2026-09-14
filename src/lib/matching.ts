@@ -109,6 +109,24 @@ export async function fetchConnectedMentors(uid: string): Promise<MatchCandidate
 }
 
 /**
+ * Tutorandos com quem o utilizador (Mentor) já tem uma conexão aceite — a lista de quem
+ * acompanha. É o simétrico de `fetchConnectedMentors`: um pedido de conexão vai sempre do
+ * Tutorando para o Mentor (ver `sendConnectionRequest`), por isso quem ensina é o `to` e a sua
+ * lista de tutorandos são os `from` aceites.
+ *
+ * Sem isto, aceitar um pedido não dava ao mentor nenhum sítio onde voltasse a ver o aluno: ele
+ * desaparecia da descoberta (é isso que `fetchExcludedCandidateIds` garante) e só voltava a
+ * existir se o mentor se lembrasse de abrir uma conversa que talvez nunca tivesse começado.
+ */
+export async function fetchConnectedTutees(uid: string): Promise<MatchCandidate[]> {
+  const snapshot = await getDocs(
+    query(collection(db, 'connectionRequests'), where('to', '==', uid), where('status', '==', 'accepted')),
+  );
+  const candidates = await Promise.all(snapshot.docs.map((docSnap) => fetchCandidateById(docSnap.data().from as string)));
+  return candidates.filter((candidate): candidate is MatchCandidate => candidate !== null);
+}
+
+/**
  * Cache de perfis com o tempo de vida de UMA subscrição (ex.: enquanto o ecrã de chat/agenda/
  * notificações está montado), não da app inteira — cada chamada a subscribeTo... deve criar a
  * sua própria instância, para que reabrir o ecrã volte a ler perfis entretanto editados.

@@ -13,8 +13,9 @@ export interface TutorCardProps extends Omit<PressableProps, 'style'> {
   image?: string;
 }
 
-/** Cartão de mentor nas listagens de pesquisa. A avaliação por estrelas é interna (ver ratings)
- * e não é para ser mostrada publicamente. */
+/** Cartão de uma pessoa nas listagens de conexões — o mentor em "Tutores para ti" e o tutorando
+ * em "Os teus tutorandos". A avaliação por estrelas é interna (ver ratings) e não é para ser
+ * mostrada publicamente. */
 export function TutorCard({ firstName, lastName, course, year, image, ...rest }: TutorCardProps) {
   const theme = useTheme();
 

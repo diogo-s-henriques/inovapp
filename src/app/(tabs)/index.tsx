@@ -4,13 +4,13 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
-import { canLearn } from '@/constants/profile';
+import { canLearn, canTeach } from '@/constants/profile';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/auth/store';
 import { getInitials } from '@/lib/initials';
 import { subscribeToConversations } from '@/lib/chat';
-import { fetchConnectedMentors } from '@/lib/matching';
+import { fetchConnectedMentors, fetchConnectedTutees } from '@/lib/matching';
 import { dismissSessionRating, getDismissedSessionIds, hasRatingForSession, submitRating } from '@/lib/ratings';
 import { subscribePendingSessionRequests, subscribeToSessions } from '@/lib/sessions';
 import { dateLocaleTag, toDateKey } from '@/lib/time';
@@ -50,6 +50,7 @@ export default function HomeScreen() {
   const [sessions, setSessions] = useState<AgendaSession[]>([]);
   const [pendingRating, setPendingRating] = useState<AgendaSession | null>(null);
   const [connectedMentors, setConnectedMentors] = useState<MatchCandidate[]>([]);
+  const [connectedTutees, setConnectedTutees] = useState<MatchCandidate[]>([]);
 
   // "Mentores para ti" só faz sentido para quem procura mentor (Tutorando ou Ambos); mostra os
   // mentores com quem já existe uma conexão aceite, não sugestões de estranhos (isso é o Matches).
@@ -60,6 +61,20 @@ export default function HomeScreen() {
     let cancelled = false;
     fetchConnectedMentors(user.uid).then((mentors) => {
       if (!cancelled) setConnectedMentors(mentors);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, participationMode]);
+
+  // Simétrico do bloco acima: quem ensina vê aqui a lista de quem acompanha. Nesta lista o
+  // utilizador é o `to` do pedido (é o Tutorando que pede), e por isso a leitura é a oposta.
+  useEffect(() => {
+    if (!user || !canTeach(participationMode)) return;
+    let cancelled = false;
+    fetchConnectedTutees(user.uid).then((tutees) => {
+      if (!cancelled) setConnectedTutees(tutees);
     });
     return () => {
       cancelled = true;
@@ -193,6 +208,25 @@ export default function HomeScreen() {
                   year={mentor.year}
                   image={mentor.image}
                   onPress={() => router.push({ pathname: '/profile/[id]', params: { id: mentor.id } })}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {canTeach(participationMode) && connectedTutees.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeader title={i18n.home.tuteesForYou} />
+            <View style={styles.tutorList}>
+              {connectedTutees.map((tutee) => (
+                <TutorCard
+                  key={tutee.id}
+                  firstName={tutee.firstName}
+                  lastName={tutee.lastName}
+                  course={tutee.course}
+                  year={tutee.year}
+                  image={tutee.image}
+                  onPress={() => router.push({ pathname: '/profile/[id]', params: { id: tutee.id } })}
                 />
               ))}
             </View>

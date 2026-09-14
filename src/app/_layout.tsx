@@ -10,6 +10,14 @@ import { useLocaleStore } from '@/i18n/store';
 
 SplashScreen.preventAutoHideAsync();
 
+/**
+ * Entrar e sair da app é uma troca de ecrã inteira, não um "avançar dentro" dela — por isso um
+ * `fade` (o ecrã de entrada dissolve-se e o outro aparece), em vez do deslize lateral por omissão,
+ * que sugere navegação entre ecrãs irmãos. Os ecrãs de detalhe (chat, perfil, agenda, materiais…)
+ * ficam com a animação por omissão, que é a certa para eles.
+ */
+const AUTH_SCREEN_ANIMATION = { animation: 'fade' } as const;
+
 /** Raiz da app: aguarda o estado de autenticação/perfil antes de decidir que rotas mostrar. */
 export default function RootLayout() {
   useAuthSync();
@@ -40,17 +48,17 @@ export default function RootLayout() {
           {isReady && (
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Protected guard={!user}>
-                <Stack.Screen name="login" />
-                <Stack.Screen name="create-account" />
-                <Stack.Screen name="forgot-password" />
+                <Stack.Screen name="login" options={AUTH_SCREEN_ANIMATION} />
+                <Stack.Screen name="create-account" options={AUTH_SCREEN_ANIMATION} />
+                <Stack.Screen name="forgot-password" options={AUTH_SCREEN_ANIMATION} />
               </Stack.Protected>
 
               <Stack.Protected guard={!!user && profileCompleted === false}>
-                <Stack.Screen name="profile-setup" />
+                <Stack.Screen name="profile-setup" options={AUTH_SCREEN_ANIMATION} />
               </Stack.Protected>
 
               <Stack.Protected guard={!!user && profileCompleted === true}>
-                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(tabs)" options={AUTH_SCREEN_ANIMATION} />
                 <Stack.Screen name="chat/[id]" />
                 <Stack.Screen name="profile/[id]" />
                 <Stack.Screen name="profile-edit" />

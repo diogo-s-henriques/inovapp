@@ -8,6 +8,7 @@ import {
 import { deleteField, doc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 import { auth, db } from '@/lib/firebase';
+import { setRememberedEmail } from '@/lib/remembered-email';
 import { getAccountRole } from '@/constants/auth';
 import { getTranslations } from '@/i18n/store';
 import type { ProfileSetupData } from '@/types/profile';
@@ -60,6 +61,10 @@ export async function signUp(email: string, password: string, remember: boolean)
     profileCompleted: false,
     createdAt: serverTimestamp(),
   });
+  // "Lembrar-me" também decide se o email fica guardado no dispositivo para o ecrã de entrada o
+  // voltar a preencher (ver src/lib/remembered-email.ts) — a sessão em si é duração, não isto.
+  await setRememberedEmail(remember ? (credential.user.email ?? email) : null);
+
   // O email gravado é o que o Firebase autenticou, não o que foi escrito no formulário: o Auth
   // normaliza-o (fica sempre em minúsculas) e a regra de `userAccounts` exige que seja igual ao
   // do token. A gravar a string do formulário, uma única maiúscula fazia as regras recusarem a
@@ -77,6 +82,11 @@ export async function signIn(email: string, password: string, remember: boolean)
   const credential = await signInWithEmailAndPassword(auth, email, password);
   const { uid } = credential.user;
   const accountEmail = credential.user.email ?? email;
+
+  // Guardado (ou esquecido) antes de qualquer escrita ao Firestore: é uma decisão sobre este
+  // dispositivo, e tem de valer mesmo para contas cujo email não dá um `role` reconhecível.
+  await setRememberedEmail(remember ? accountEmail : null);
+
   const role = getAccountRole(accountEmail);
 
   // Contas sem `role` reconhecível (email fora dos domínios institucionais) continuam a entrar:

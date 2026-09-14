@@ -140,6 +140,7 @@ export interface Translations {
     materialsTitle: string;
     materialsExploreAll: string;
     tutorsForYou: string;
+    tuteesForYou: string;
   };
   navTabs: {
     home: string;

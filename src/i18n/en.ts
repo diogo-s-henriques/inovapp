@@ -149,6 +149,7 @@ export const en: Translations = {
     materialsTitle: 'Materials',
     materialsExploreAll: 'Explore all',
     tutorsForYou: 'Tutors for you',
+    tuteesForYou: 'Your tutees',
   },
   navTabs: {
     home: 'Home',

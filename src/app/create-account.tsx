@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { SuccessModal } from '@/components/ui/SuccessModal';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { Logo } from '@/components/ui/Logo';
 import { LanguageSwitcher } from '@/components/domain/LanguageSwitcher';
 import { Link } from 'expo-router';
 import { signUp, getAuthErrorMessage } from '@/auth/actions';
@@ -25,8 +26,6 @@ export default function CreateAccountScreen() {
   const [accountCreated, setAccountCreated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Versão reduzida (331x72) — ver a nota em src/app/login.tsx.
-  const logo = require('../../assets/images/logo_dark.png');
 
   const handleSubmit = async () => {
     setError(null);
@@ -56,7 +55,7 @@ export default function CreateAccountScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
       <View style={styles.header}>
-        <Image source={logo} style={styles.logo} resizeMode="contain" />
+        <Logo />
         <LanguageSwitcher />
       </View>
 
@@ -144,10 +143,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: Spacing.three,
-  },
-  logo: {
-    height: 24,
-    width: 120,
   },
   content: {
     flex: 1,
