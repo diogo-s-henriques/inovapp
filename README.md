@@ -79,6 +79,12 @@ inteiros e a navegação — para isso, testa no dispositivo.
 > `auth/email-already-in-use` a criar uma conta, ou um documento que desaparece debaixo de um
 > teste. O `--test-concurrency=1` do script força a ordem.
 
+> **Se a suite das regras falhar logo no início, com um único teste** — `test:data` e `test:rules`
+> arrancam emuladores na mesma porta (8080) e, se o primeiro ainda estiver a desligar quando o
+> segundo arranca, o `initializeTestEnvironment` do `before` não chega a ligar-se. O sintoma é
+> "1 test, 1 fail" em vez de 69, sem nada de errado no `firestore.rules`. Corre outra vez; se
+> persistir, confirma que não ficou nenhum emulador preso na porta antes de procurares mais longe.
+
 > **Porque é que o `package.json` tem um `overrides`** — `jest-expo@57` declara
 > `@react-native/jest-preset@^0.86.3`, mas o `react-native@0.86.0` que o SDK 57 usa exige
 > exatamente `0.86.0`. O npm não consegue satisfazer os dois e o `npm install` falha com

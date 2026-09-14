@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
@@ -175,7 +175,9 @@ export default function HomeScreen() {
             tutorName={`${nextSession.firstName} ${nextSession.lastName}`}
             subject={nextSession.subject}
             schedule={formatScheduleLabel(nextSession.date, nextSession.time, i18n, locale)}
-            onPressJoin={() => {}}
+            // A videochamada não existe nesta versão: em vez de um botão que não faz nada,
+            // diz-se o que se passa e o que fazer em alternativa (combinar pelo chat).
+            onPressJoin={() => Alert.alert(i18n.common.callUnavailableTitle, i18n.common.callUnavailableBody)}
           />
         )}
 

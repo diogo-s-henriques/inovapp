@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
@@ -110,6 +110,8 @@ export default function SessionsScreen() {
                 status={session.status}
                 completing={completingId === session.id}
                 onPressComplete={() => handleComplete(session.id)}
+                // A videochamada não existe nesta versão — ver o mesmo aviso no ecrã inicial.
+                onPressJoin={() => Alert.alert(i18n.common.callUnavailableTitle, i18n.common.callUnavailableBody)}
               />
             ))}
           </View>

@@ -18,6 +18,9 @@ export interface Translations {
     new: string;
     user: string;
     addPhoto: string;
+    /** Aviso mostrado ao carregar em "Entrar" numa sessão (home e agenda): não há videochamada. */
+    callUnavailableTitle: string;
+    callUnavailableBody: string;
     starRating: (count: number) => string;
   };
   roles: {

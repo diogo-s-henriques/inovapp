@@ -17,6 +17,10 @@ export const pt: Translations = {
     new: 'Novo',
     user: 'Utilizador',
     addPhoto: 'Adicionar fotografia',
+    /** Aviso mostrado ao carregar em "Entrar" numa sessão (home e agenda): não há videochamada. */
+    callUnavailableTitle: 'Videochamada ainda não disponível',
+    callUnavailableBody:
+      'Esta versão da app ainda não faz videochamadas. Combina com a outra pessoa pelo chat como se vão encontrar.',
     starRating: (count) => `${count} estrela${count === 1 ? '' : 's'}`,
   },
   roles: {
