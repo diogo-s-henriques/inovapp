@@ -62,7 +62,7 @@
     "lint": "expo lint",
     "test": "npm run test:lib && npm run test:data && npm run test:components && npm run test:rules",
     "test:components": "jest",
-    "test:data": "npx firebase-tools emulators:exec --only firestore,auth --project inovapp-68021 \"node --import ./tests/data/preload.mjs --test --test-force-exit tests/data/*.test.mts\"",
+    "test:data": "npx firebase-tools emulators:exec --only firestore,auth --project inovapp-68021 \"node --import ./tests/data/preload.mjs --test --test-concurrency=1 --test-force-exit tests/data/*.test.mts\"",
     "test:lib": "node --import ./tests/register-loader.mjs --test \"tests/lib/*.test.mts\"",
     "test:rules": "npx firebase-tools emulators:exec --only firestore --project inovapp-68021 \"node --test tests/firestore-rules.test.mts\"",
     "typecheck:tests": "tsc --noEmit -p tests/tsconfig.json",

@@ -2,7 +2,7 @@ import { collection, getDocs, limit, orderBy, query, where } from 'firebase/fire
 
 import { db } from '@/lib/firebase';
 import { createProfileResolver } from '@/lib/matching';
-import { toDateKey } from '@/components/domain/CalendarMonth';
+import { toDateKey } from '@/lib/time';
 import type { Translations } from '@/i18n/translations';
 import type { ActivityItem } from '@/types/activity';
 

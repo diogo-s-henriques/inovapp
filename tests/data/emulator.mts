@@ -7,6 +7,12 @@
  *
  * Os emuladores são arrancados pelo `emulators:exec` do `npm run test:data`, que define
  * `FIRESTORE_EMULATOR_HOST` e `FIREBASE_AUTH_EMULATOR_HOST`.
+ *
+ * Os ficheiros correm **um a um** (`--test-concurrency=1`, no script do package.json): todos
+ * partilham o mesmo par de emuladores e cada um chama `limparEmulador()` no início, por isso em
+ * paralelo apagariam as contas uns dos outros a meio — e os erros apareceriam longe da causa
+ * (`auth/email-already-in-use` ao criar uma conta, ou um documento que desaparece debaixo de um
+ * teste).
  */
 import { connectAuthEmulator, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { connectFirestoreEmulator, doc, getDoc } from 'firebase/firestore';

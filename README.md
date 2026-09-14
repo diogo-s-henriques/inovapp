@@ -45,6 +45,11 @@ para ver o que já está publicado no projeto. O deploy compara o ficheiro com o
 **propõe apagar** os índices que não estejam no ficheiro — confirma antes de aceitar. Como
 alternativa, cria só os que faltam no link que o erro da consola apresenta.
 
+> **O emulador não valida isto.** Os testes de `tests/data` correm contra o emulador, que executa
+> as consultas com `where` + `orderBy` mesmo sem índice nenhum. Em produção dariam
+> `The query requires an index`. Por isso, quem mexer numa consulta que ordena por um campo
+> diferente dos que filtra tem de confirmar à mão que o índice está declarado aqui.
+
 ### Scripts
 
 | comando | o que faz |
@@ -67,6 +72,12 @@ Antes de dar como terminado qualquer trabalho: `npx tsc --noEmit`, `npm run lint
 precisa de emuladores). Se mexeste em `firestore.rules`, acrescenta `npm run test:rules`; se
 mexeste na camada de dados, `npm run test:data`. O que continuar por cobrir são os ecrãs
 inteiros e a navegação — para isso, testa no dispositivo.
+
+> **Porque é que o `test:data` corre um ficheiro de cada vez** — os ficheiros de `tests/data/`
+> partilham o mesmo par de emuladores e cada um chama `limparEmulador()` no início. Se corressem em
+> paralelo, apagariam as contas uns dos outros a meio: o sintoma aparece longe da causa, como um
+> `auth/email-already-in-use` a criar uma conta, ou um documento que desaparece debaixo de um
+> teste. O `--test-concurrency=1` do script força a ordem.
 
 > **Porque é que o `package.json` tem um `overrides`** — `jest-expo@57` declara
 > `@react-native/jest-preset@^0.86.3`, mas o `react-native@0.86.0` que o SDK 57 usa exige

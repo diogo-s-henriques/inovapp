@@ -4,11 +4,15 @@
  * `formatTimeAgo` recebe o rótulo de "agora" já traduzido em vez de o fixar em português — foi
  * essa a correcção que tirou os dados do i18n hardcoded. Os testes verificam as fronteiras entre
  * minutos/horas/dias e que o rótulo passa mesmo pelo parâmetro.
+ *
+ * `toDateKey` vivia dentro do componente `CalendarMonth` e mudou-se para aqui: é lógica pura, sem
+ * React, e o `activity.ts` precisa dela para saber quais são as sessões de amanhã — enquanto
+ * estivesse num ficheiro `.tsx`, a camada de dados ficava impossível de testar em Node.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { dateLocaleTag, formatTimeAgo } from '@/lib/time';
+import { dateLocaleTag, formatTimeAgo, toDateKey } from '@/lib/time';
 
 const SEGUNDO = 1_000;
 const MINUTO = 60 * SEGUNDO;
@@ -72,5 +76,35 @@ describe('formatTimeAgo — sufixos', () => {
       const resultado = formatTimeAgo(haQuantoTempo(distancia), 'agora');
       assert.match(resultado, /^\d+[mhd]$/);
     }
+  });
+});
+
+describe('toDateKey', () => {
+  it('põe zeros à esquerda no mês e no dia', () => {
+    assert.equal(toDateKey(new Date(2026, 9, 5)), '2026-10-05');
+    assert.equal(toDateKey(new Date(2026, 0, 9)), '2026-01-09');
+  });
+
+  it('não acrescenta zeros onde já não é preciso', () => {
+    assert.equal(toDateKey(new Date(2026, 11, 31)), '2026-12-31');
+  });
+
+  it('ordena-se alfabeticamente como cronologicamente', () => {
+    // É esta a propriedade que permite comparar dias com `<` em vez de os converter em Date —
+    // ver o comentário do `isDisabled` em CalendarMonth.
+    assert.ok(toDateKey(new Date(2026, 8, 30)) < toDateKey(new Date(2026, 9, 1)));
+    assert.ok(toDateKey(new Date(2026, 11, 31)) < toDateKey(new Date(2027, 0, 1)));
+  });
+
+  it('usa a data local e não a data UTC', () => {
+    // 00:30 locais. Com `toISOString()` (que converte para UTC), qualquer fuso a leste de
+    // Greenwich devolveria aqui o dia anterior — e a agenda marcaria o dia errado. O teste nunca
+    // falha num fuso a oeste, por isso não dá falsos positivos: só apanha a regressão.
+    assert.equal(toDateKey(new Date(2026, 9, 5, 0, 30)), '2026-10-05');
+  });
+
+  it('atravessa corretamente a mudança de ano e de mês', () => {
+    assert.equal(toDateKey(new Date(2026, 11, 31, 23, 59)), '2026-12-31');
+    assert.equal(toDateKey(new Date(2027, 0, 1, 0, 0)), '2027-01-01');
   });
 });

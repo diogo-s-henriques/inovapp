@@ -1,13 +1,14 @@
 /**
  * Testes de `CalendarMonth` — a grelha de datas usada no ecrã de pedido de sessão e na agenda.
  *
- * Duas coisas aqui merecem teste: a chave de data ('YYYY-MM-DD') que o resto da app usa para
- * comparar dias — e que depende do zero à esquerda, fácil de perder — e a navegação de mês, que
- * tem de atravessar a mudança de ano.
+ * O que interessa aqui é a grelha em si (células, dias desativados, marcadores, seleção) e a
+ * navegação de mês, que tem de atravessar a mudança de ano. A chave de data `toDateKey`, que a
+ * grelha usa para comparar dias, vive agora em `src/lib/time.ts` e é testada sem React em
+ * tests/lib/time.test.mts — aqui importa-se, não se testa.
  */
 import { fireEvent, render } from '@testing-library/react-native';
 
-import { CalendarMonth, toDateKey } from '@/components/domain/CalendarMonth';
+import { CalendarMonth } from '@/components/domain/CalendarMonth';
 import { pt } from '@/i18n/pt';
 import { useLocaleStore } from '@/i18n/store';
 
@@ -15,24 +16,6 @@ const OUTUBRO_2026 = new Date(2026, 9, 1);
 
 beforeEach(() => {
   useLocaleStore.getState().setLocale('pt');
-});
-
-describe('toDateKey', () => {
-  it('põe zeros à esquerda no mês e no dia', () => {
-    expect(toDateKey(new Date(2026, 9, 5))).toBe('2026-10-05');
-    expect(toDateKey(new Date(2026, 0, 9))).toBe('2026-01-09');
-  });
-
-  it('não acrescenta zeros onde já não é preciso', () => {
-    expect(toDateKey(new Date(2026, 11, 31))).toBe('2026-12-31');
-  });
-
-  it('ordena-se alfabeticamente como cronologicamente', () => {
-    // É esta a propriedade que permite comparar datas com `<` em vez de as converter — ver o
-    // comentário do `isDisabled` em CalendarMonth.
-    expect(toDateKey(new Date(2026, 8, 30)) < toDateKey(new Date(2026, 9, 1))).toBe(true);
-    expect(toDateKey(new Date(2026, 11, 31)) < toDateKey(new Date(2027, 0, 1))).toBe(true);
-  });
 });
 
 describe('<CalendarMonth /> — grelha', () => {
