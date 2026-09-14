@@ -70,7 +70,7 @@ export default function ConversationScreen() {
 
   if (!id || !otherUid) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <ThemedText themeColor="textMuted" style={styles.notFound}>
           {i18n.chat.notFound}
         </ThemedText>

@@ -166,7 +166,7 @@ export default function SessionRequestScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => goBack(router)} accessibilityRole="button" accessibilityLabel={i18n.sessions.back} hitSlop={8}>
           <Ionicons name="chevron-back" size={24} color={theme.textPrimary} />

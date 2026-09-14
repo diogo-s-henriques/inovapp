@@ -41,8 +41,17 @@ function naoUsadoNestesTestes(nome) {
   };
 }
 
+/**
+ * Só existe porque `src/lib/*.ts` a importa como valor (o `blocking.ts` também a usa como tipo);
+ * nenhum teste de lógica pura a instancia. Exportar a classe evita o erro de "does not provide an
+ * export named 'FirestoreError'" quando um destes módulos passa a ser carregado por um teste.
+ */
+export class FirestoreError extends Error {}
+
 export const collection = naoUsadoNestesTestes('collection');
+export const deleteDoc = naoUsadoNestesTestes('deleteDoc');
 export const getDocs = naoUsadoNestesTestes('getDocs');
+export const onSnapshot = naoUsadoNestesTestes('onSnapshot');
 export const limit = naoUsadoNestesTestes('limit');
 export const query = naoUsadoNestesTestes('query');
 export const serverTimestamp = naoUsadoNestesTestes('serverTimestamp');

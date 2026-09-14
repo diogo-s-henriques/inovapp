@@ -168,7 +168,7 @@ export default function HomeScreen() {
   const nextSession = upcomingSessions[0];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <HomeHeader
           name={firstName}

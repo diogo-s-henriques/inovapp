@@ -26,6 +26,33 @@ service cloud.firestore {
         && (!('rememberSession' in data) || data.rememberSession == current.get('rememberSession', null));
     }
 
+    // Um bloqueio é guardado num sentido só (`blocks/{blocker}_{blocked}`), mas o efeito é
+    // simétrico: basta existir num dos sentidos para o par deixar de se poder ligar, falar ou
+    // pedir sessão. A função é usada, entre outros, por regras em que quem avalia NÃO consegue
+    // ler o documento do bloqueio (a pessoa bloqueada) — get()/exists() em regras correm com
+    // acesso total, não com as permissões de quem fez o pedido, e é isso que permite bloquear
+    // sem revelar o bloqueio.
+    function isBlocked(uidA, uidB) {
+      return exists(/databases/$(database)/documents/blocks/$(uidA + '_' + uidB))
+        || exists(/databases/$(database)/documents/blocks/$(uidB + '_' + uidA));
+    }
+
+    match /blocks/{blockId} {
+      // Legível pelos dois lados. É o que deixa cada um excluir o outro da descoberta sem
+      // falar com o servidor, e é uma consequência assumida: um cliente modificado consegue
+      // descobrir quem o bloqueou. O documento só tem os dois UIDs — nenhum dado pessoal.
+      allow read: if request.auth != null
+        && (resource.data.blocker == request.auth.uid || resource.data.blocked == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.blocker == request.auth.uid
+        && request.resource.data.blocked != request.auth.uid
+        && blockId == request.resource.data.blocker + '_' + request.resource.data.blocked;
+      // Desbloquear. É a única coleção do projeto onde `delete` é permitido — e só pelo autor do
+      // bloqueio: ninguém desfaz o bloqueio de outra pessoa.
+      allow delete: if request.auth != null && resource.data.blocker == request.auth.uid;
+      allow update: if false;
+    }
+
     match /users/{userId} {
       // Perfis são legíveis por qualquer utilizador autenticado (pesquisa/matching precisam de ver
       // outros perfis) — por isso este documento só pode conter o que é partilhado dentro da
@@ -62,14 +89,16 @@ service cloud.firestore {
         && request.resource.data.from == request.auth.uid
         && request.resource.data.to != request.auth.uid
         && request.resource.data.status == 'pending'
-        && requestId == request.resource.data.from + '_' + request.resource.data.to;
+        && requestId == request.resource.data.from + '_' + request.resource.data.to
+        && !isBlocked(request.resource.data.from, request.resource.data.to);
       // Só o destinatário (to) aceita/recusa, e só enquanto ainda estiver pendente.
       allow update: if request.auth != null
         && request.auth.uid == resource.data.to
         && resource.data.status == 'pending'
         && request.resource.data.from == resource.data.from
         && request.resource.data.to == resource.data.to
-        && request.resource.data.status in ['accepted', 'declined'];
+        && request.resource.data.status in ['accepted', 'declined']
+        && !isBlocked(resource.data.from, resource.data.to);
       allow delete: if false;
     }
 
@@ -90,14 +119,16 @@ service cloud.firestore {
           ||
           (exists(/databases/$(database)/documents/connectionRequests/$(request.resource.data.to + '_' + request.resource.data.from))
             && get(/databases/$(database)/documents/connectionRequests/$(request.resource.data.to + '_' + request.resource.data.from)).data.status == 'accepted')
-        );
+        )
+        && !isBlocked(request.resource.data.from, request.resource.data.to);
       // Só o destinatário (to) aceita/recusa, e só enquanto ainda estiver pendente.
       allow update: if request.auth != null
         && request.auth.uid == resource.data.to
         && resource.data.status == 'pending'
         && request.resource.data.from == resource.data.from
         && request.resource.data.to == resource.data.to
-        && request.resource.data.status in ['accepted', 'declined'];
+        && request.resource.data.status in ['accepted', 'declined']
+        && !isBlocked(resource.data.from, resource.data.to);
       allow delete: if false;
     }
 
@@ -119,7 +150,8 @@ service cloud.firestore {
         )
         && get(/databases/$(database)/documents/sessionRequests/$(request.resource.data.sessionRequestId)).data.from == request.resource.data.studentUid
         && get(/databases/$(database)/documents/sessionRequests/$(request.resource.data.sessionRequestId)).data.to == request.resource.data.mentorUid
-        && get(/databases/$(database)/documents/sessionRequests/$(request.resource.data.sessionRequestId)).data.status == 'pending';
+        && get(/databases/$(database)/documents/sessionRequests/$(request.resource.data.sessionRequestId)).data.status == 'pending'
+        && !isBlocked(request.resource.data.studentUid, request.resource.data.mentorUid);
       // Só o mentor pode terminar a sessão, só de 'scheduled' para 'completed' (nunca o
       // contrário), e só isso muda — nenhum outro campo pode ser alterado no mesmo update.
       // get('status', 'scheduled') trata sessões antigas sem o campo 'status' (criadas antes
@@ -169,15 +201,25 @@ service cloud.firestore {
           (exists(/databases/$(database)/documents/connectionRequests/$(request.resource.data.participants[1] + '_' + request.resource.data.participants[0]))
             && get(/databases/$(database)/documents/connectionRequests/$(request.resource.data.participants[1] + '_' + request.resource.data.participants[0])).data.status == 'pending'
             && get(/databases/$(database)/documents/connectionRequests/$(request.resource.data.participants[1] + '_' + request.resource.data.participants[0])).data.to == request.auth.uid)
-        );
+        )
+        && !isBlocked(request.resource.data.participants[0], request.resource.data.participants[1]);
       allow delete: if false;
 
       match /messages/{messageId} {
+        // Um bloqueio entre os dois participantes corta a conversa para ambos: ninguém lê nem
+        // escreve mais nada ali. O histórico não é apagado (nada neste projeto apaga), fica
+        // inacessível — que é o que "bloquear" tem de significar para ser levado a sério.
         allow read: if request.auth != null
-          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          && !isBlocked(
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants[0],
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants[1]);
         allow create: if request.auth != null
           && request.resource.data.senderId == request.auth.uid
-          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          && !isBlocked(
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants[0],
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants[1]);
         allow update, delete: if false;
       }
     }

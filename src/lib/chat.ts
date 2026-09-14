@@ -18,6 +18,7 @@ import {
 
 import { getLocale, getTranslations } from '@/i18n/store';
 import { db } from '@/lib/firebase';
+import { subscribeToBlockedPairs } from '@/lib/blocking';
 import { createProfileResolver, matchId } from '@/lib/matching';
 import { dateLocaleTag } from '@/lib/time';
 import type { ChatAttachment, ChatMessage, ChatSessionRequestInfo, Conversation } from '@/types/chat';
@@ -56,14 +57,39 @@ function formatTimeLabel(date?: Date): string {
   return date.toLocaleDateString(localeTag, { day: '2-digit', month: '2-digit' });
 }
 
-/** Ouve as conversas do utilizador em tempo real, já resolvidas com o perfil do outro participante. */
+/**
+ * Ouve as conversas do utilizador em tempo real, já resolvidas com o perfil do outro participante.
+ *
+ * Conversas com quem tem um bloqueio connosco não entram: bloqueado quer dizer "inacessível para
+ * os dois", e a mensagem mais recente de uma conversa cortada não deve continuar a aparecer no
+ * topo da lista. Isto é filtro de cliente — a regra de `messages` é que impede mesmo ler ou
+ * escrever, mas as regras não conseguem filtrar uma query ("rules are not filters"), por isso a
+ * lista tem de ser escondida aqui.
+ */
 export function subscribeToConversations(uid: string, onChange: (conversations: Conversation[]) => void) {
   const conversationsQuery = query(collection(db, 'conversations'), where('participants', 'array-contains', uid));
   const resolveOtherProfile = createProfileResolver();
   const i18n = getTranslations();
   let latestRequestId = 0;
+  let blockedUids = new Set<string>();
+  // O `otherUid` fica guardado ao lado da conversa (em vez de ser deduzido do ID depois) para o
+  // filtro não depender do formato do ID da conversa.
+  let latestEntries: { conversation: Conversation; otherUid?: string }[] = [];
 
-  return onSnapshot(conversationsQuery, async (snapshot) => {
+  const emit = () => {
+    onChange(
+      latestEntries
+        .filter((entry) => !entry.otherUid || !blockedUids.has(entry.otherUid))
+        .map((entry) => entry.conversation),
+    );
+  };
+
+  const unsubscribeBlocks = subscribeToBlockedPairs(uid, (uids) => {
+    blockedUids = uids;
+    emit();
+  });
+
+  const unsubscribeConversations = onSnapshot(conversationsQuery, async (snapshot) => {
     const requestId = ++latestRequestId;
     const resolved = await Promise.all(
       snapshot.docs.map(async (docSnap) => {
@@ -83,15 +109,23 @@ export function subscribeToConversations(uid: string, onChange: (conversations: 
           timeLabel: formatTimeLabel(orderTimestamp?.toDate()),
           unread: data.unreadFor?.includes(uid) ?? false,
         };
-        return { conversation, sortMillis: orderTimestamp?.toMillis() ?? 0 };
+        return { conversation, otherUid, sortMillis: orderTimestamp?.toMillis() ?? 0 };
       }),
     );
 
     // Uma subscrição async pode resolver fora de ordem (ex.: cache miss vs. cache hit); só a
     // resolução mais recente deve atualizar o estado, para não sobrepor dados frescos com antigos.
     if (requestId !== latestRequestId) return;
-    onChange(resolved.sort((a, b) => b.sortMillis - a.sortMillis).map((entry) => entry.conversation));
+    latestEntries = resolved
+      .sort((a, b) => b.sortMillis - a.sortMillis)
+      .map(({ conversation, otherUid }) => ({ conversation, otherUid }));
+    emit();
   });
+
+  return () => {
+    unsubscribeBlocks();
+    unsubscribeConversations();
+  };
 }
 
 /** Quantas mensagens se leem de uma vez ao abrir uma conversa (ver src/app/chat/[id].tsx). */

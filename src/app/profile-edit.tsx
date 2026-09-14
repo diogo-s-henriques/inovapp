@@ -117,7 +117,7 @@ export default function ProfileEditScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => goBack(router, '/perfil')} accessibilityRole="button" accessibilityLabel={i18n.profileEdit.cancel} hitSlop={8}>
           <ThemedText type="bodyBold" themeColor="primary">

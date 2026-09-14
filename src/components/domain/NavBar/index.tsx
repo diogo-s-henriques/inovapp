@@ -108,9 +108,11 @@ export function TabButton({ label, icon, badge, isFocused, onPressIn, onPressOut
       style={({ pressed: isPressed }) => [styles.tabButton, isPressed && styles.pressed]}
     >
       <Animated.View style={animatedIconStyle}>
-        <View style={styles.iconWrap}>
-          <Ionicons name={filled ? icon.filled : icon.outline} size={22} color={color} />
-          {badge && <View style={[styles.badgeDot, { backgroundColor: theme.danger, borderColor: theme.surface }]} />}
+        <View style={[styles.iconChip, isFocused && { backgroundColor: theme.primarySoft }]}>
+          <View style={styles.iconWrap}>
+            <Ionicons name={filled ? icon.filled : icon.outline} size={22} color={color} />
+            {badge && <View style={[styles.badgeDot, { backgroundColor: theme.danger, borderColor: theme.surface }]} />}
+          </View>
         </View>
       </Animated.View>
       <ThemedText type="small" themeColor={isFocused ? 'primary' : 'textNav'}>
@@ -150,6 +152,13 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  // O chip existe sempre, com foco ou sem ele, para o ícone não saltar ao mudar de separador;
+  // o que muda é só a cor de fundo.
+  iconChip: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.half,
+    borderRadius: Spacing.two,
   },
   iconWrap: {
     position: 'relative',

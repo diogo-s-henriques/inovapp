@@ -20,7 +20,7 @@ export function BlockedScreen({ icon = 'lock-closed-outline', title, description
 
   return (
     <View style={styles.container}>
-      <View style={[styles.iconCircle, { backgroundColor: theme.surfaceAlt }]}>
+      <View style={[styles.iconCircle, { backgroundColor: theme.primarySoft }]}>
         <Ionicons name={icon} size={28} color={theme.textMuted} />
       </View>
 

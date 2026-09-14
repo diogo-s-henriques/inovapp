@@ -8,6 +8,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Spacing } from '@/constants/theme';
 import { useAuthStore } from '@/auth/store';
 import { conversationExists } from '@/lib/chat';
+import { blockUser, hasBlocked, unblockUser } from '@/lib/blocking';
 import { fetchCandidateById } from '@/lib/matching';
 import { goBack } from '@/lib/navigation';
 import { useI18n } from '@/hooks/use-i18n';
@@ -15,6 +16,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { AvailabilityChips } from '@/components/domain/Profile/AvailabilityChips';
 import { TagList } from '@/components/domain/Profile/TagList';
 import { Button } from '@/components/ui/Button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Pill } from '@/components/ui/Pill';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -33,16 +35,20 @@ export default function OtherUserProfileScreen() {
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [connected, setConnected] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [confirmingBlock, setConfirmingBlock] = useState(false);
+  const [actionFailed, setActionFailed] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
 
-    Promise.all([fetchCandidateById(id), conversationExists(user.uid, id)])
-      .then(([result, isConnected]) => {
+    Promise.all([fetchCandidateById(id), conversationExists(user.uid, id), hasBlocked(user.uid, id)])
+      .then(([result, isConnected, isBlocked]) => {
         if (!cancelled) {
           setCandidate(result);
           setConnected(isConnected);
+          setBlocked(isBlocked);
         }
       })
       // Uma falha real (rede, permissões) deixa de ser lida como "não está ligado" e mostrada
@@ -61,7 +67,7 @@ export default function OtherUserProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, styles.loadingContainer, { backgroundColor: theme.surface }]}>
+      <SafeAreaView style={[styles.container, styles.loadingContainer, { backgroundColor: theme.background }]}>
         <ActivityIndicator color={theme.primary} />
       </SafeAreaView>
     );
@@ -69,7 +75,7 @@ export default function OtherUserProfileScreen() {
 
   if (loadError) {
     return (
-      <SafeAreaView style={[styles.container, styles.loadingContainer, { backgroundColor: theme.surface }]}>
+      <SafeAreaView style={[styles.container, styles.loadingContainer, { backgroundColor: theme.background }]}>
         <ThemedText themeColor="textMuted" style={styles.notFound}>
           {i18n.common.genericError}
         </ThemedText>
@@ -88,7 +94,7 @@ export default function OtherUserProfileScreen() {
 
   if (!candidate) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <ThemedText themeColor="textMuted" style={styles.notFound}>
           {i18n.otherProfile.notFound}
         </ThemedText>
@@ -98,8 +104,39 @@ export default function OtherUserProfileScreen() {
 
   const availabilityItems = candidate.availability.split(' · ');
 
+  // Bloquear corta a ligação toda (o chat fica inacessível para os dois), por isso o ecrã tem de
+  // reflectir isso de imediato — deixar "Chat" clicável depois de bloquear seria mentira.
+  const handleBlock = async () => {
+    if (!user) return;
+    setConfirmingBlock(false);
+    setActionFailed(false);
+    setBlocked(true);
+    setConnected(false);
+    try {
+      await blockUser(user.uid, id);
+    } catch {
+      setBlocked(false);
+      setConnected(true);
+      setActionFailed(true);
+    }
+  };
+
+  const handleUnblock = async () => {
+    if (!user) return;
+    setActionFailed(false);
+    setBlocked(false);
+    try {
+      await unblockUser(user.uid, id);
+      // A conversa pode existir (a ligação nunca chegou a ser apagada) — volta a perguntar-se.
+      setConnected(await conversationExists(user.uid, id));
+    } catch {
+      setBlocked(true);
+      setActionFailed(true);
+    }
+  };
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.photo, { backgroundColor: theme.surfaceAlt }]}>
           {candidate.image ? (
@@ -196,8 +233,37 @@ export default function OtherUserProfileScreen() {
           <SectionCard label={i18n.otherProfile.aboutLabel}>
             <ThemedText type="body">{candidate.description}</ThemedText>
           </SectionCard>
+
+          {actionFailed && (
+            <ThemedText type="small" themeColor="danger">
+              {i18n.otherProfile.blockError}
+            </ThemedText>
+          )}
+
+          {/* Deliberadamente discreto e no fim: é uma saída, não uma ação do ecrã. */}
+          <Pressable
+            onPress={() => (blocked ? handleUnblock() : setConfirmingBlock(true))}
+            accessibilityRole="button"
+            accessibilityLabel={blocked ? i18n.otherProfile.unblock : i18n.otherProfile.block}
+            hitSlop={8}
+            style={styles.blockLink}>
+            <ThemedText type="small" themeColor="danger" style={styles.blockLinkText}>
+              {blocked ? i18n.otherProfile.unblock : i18n.otherProfile.block}
+            </ThemedText>
+          </Pressable>
         </View>
       </ScrollView>
+
+      <ConfirmModal
+        visible={confirmingBlock}
+        onRequestClose={() => setConfirmingBlock(false)}
+        title={i18n.otherProfile.blockConfirmTitle}
+        description={i18n.otherProfile.blockConfirmDescription(candidate.firstName)}
+        confirmLabel={i18n.otherProfile.blockConfirm}
+        cancelLabel={i18n.common.cancel}
+        onConfirm={handleBlock}
+        onCancel={() => setConfirmingBlock(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -293,5 +359,12 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: Spacing.two,
+  },
+  blockLink: {
+    alignSelf: 'center',
+    marginTop: Spacing.two,
+  },
+  blockLinkText: {
+    textDecorationLine: 'underline',
   },
 });

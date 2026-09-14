@@ -53,7 +53,8 @@ export function HomeHeader({
         accessibilityRole="button"
         accessibilityLabel={i18n.home.notifications}
         hitSlop={8}
-        style={[styles.bellButton, { backgroundColor: theme.surfaceAlt }]}>
+        // Branco com contorno: sobre o fundo azulado do ecrã, um círculo do mesmo tom diluía-se.
+        style={[styles.bellButton, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <Ionicons name="notifications-outline" size={22} color={theme.textPrimary} />
         {/* Ponto de aviso só aparece quando há notificações por ler. */}
         {unreadNotifications > 0 && <View style={[styles.badge, { backgroundColor: theme.danger }]} />}
@@ -78,6 +79,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

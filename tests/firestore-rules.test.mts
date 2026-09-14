@@ -638,6 +638,115 @@ describe('conversations — só existem depois de a conexão ser aceite', () => 
   });
 });
 
+describe('blocks — um bloqueio corta a ligação para os dois', () => {
+  const BLOCK_ID = `${ALUNO.uid}_${PROFESSOR.uid}`;
+
+  function blockData(blocker: string, blocked: string) {
+    return { blocker, blocked };
+  }
+
+  it('cada um cria o seu bloqueio', async () => {
+    await assertSucceeds(
+      setDoc(doc(dbAs(ALUNO), 'blocks', BLOCK_ID), blockData(ALUNO.uid, PROFESSOR.uid)),
+    );
+  });
+
+  it('NÃO se cria um bloqueio em nome de outra pessoa', async () => {
+    await assertFails(setDoc(doc(dbAs(ALUNO), 'blocks', BLOCK_ID), blockData(ALUNO_B.uid, PROFESSOR.uid)));
+  });
+
+  it('NÃO se cria um bloqueio sobre si próprio', async () => {
+    await assertFails(
+      setDoc(doc(dbAs(ALUNO), 'blocks', `${ALUNO.uid}_${ALUNO.uid}`), blockData(ALUNO.uid, ALUNO.uid)),
+    );
+  });
+
+  it('NÃO se cria um bloqueio com um ID que não seja blocker_blocked', async () => {
+    await assertFails(setDoc(doc(dbAs(ALUNO), 'blocks', 'id-inventado'), blockData(ALUNO.uid, PROFESSOR.uid)));
+  });
+
+  it('os dois lados leem o bloqueio, e um terceiro não', async () => {
+    await seed(`blocks/${BLOCK_ID}`, blockData(ALUNO.uid, PROFESSOR.uid));
+    // Quem foi bloqueado também o lê: é o que lhe permite excluir o outro da descoberta.
+    await assertSucceeds(getDoc(doc(dbAs(ALUNO), 'blocks', BLOCK_ID)));
+    await assertSucceeds(getDoc(doc(dbAs(PROFESSOR), 'blocks', BLOCK_ID)));
+    await assertFails(getDoc(doc(dbAs(ALUNO_B), 'blocks', BLOCK_ID)));
+  });
+
+  it('só o autor desfaz o bloqueio', async () => {
+    await seed(`blocks/${BLOCK_ID}`, blockData(ALUNO.uid, PROFESSOR.uid));
+    await assertFails(deleteDoc(doc(dbAs(PROFESSOR), 'blocks', BLOCK_ID)));
+    await assertSucceeds(deleteDoc(doc(dbAs(ALUNO), 'blocks', BLOCK_ID)));
+  });
+
+  it('impede o pedido de conexão, nos dois sentidos', async () => {
+    await seed(`blocks/${BLOCK_ID}`, blockData(ALUNO.uid, PROFESSOR.uid));
+
+    await assertFails(
+      setDoc(doc(dbAs(ALUNO), 'connectionRequests', CONNECTION_ID), {
+        from: ALUNO.uid,
+        to: PROFESSOR.uid,
+        status: 'pending',
+      }),
+    );
+
+    // O sentido contrário prova a simetria: quem foi bloqueado também não consegue pedir.
+    const contraId = `${PROFESSOR.uid}_${ALUNO.uid}`;
+    await assertFails(
+      setDoc(doc(dbAs(PROFESSOR), 'connectionRequests', contraId), {
+        from: PROFESSOR.uid,
+        to: ALUNO.uid,
+        status: 'pending',
+      }),
+    );
+  });
+
+  it('impede aceitar um pedido que ainda estava pendente', async () => {
+    await seed(`connectionRequests/${CONNECTION_ID}`, { from: ALUNO.uid, to: PROFESSOR.uid, status: 'pending' });
+    await seed(`blocks/${BLOCK_ID}`, blockData(ALUNO.uid, PROFESSOR.uid));
+
+    await assertFails(
+      updateDoc(doc(dbAs(PROFESSOR), 'connectionRequests', CONNECTION_ID), { status: 'accepted' }),
+    );
+  });
+
+  it('impede o pedido de sessão', async () => {
+    await seedAcceptedConnection();
+    await seed(`blocks/${BLOCK_ID}`, blockData(ALUNO.uid, PROFESSOR.uid));
+
+    await assertFails(
+      setDoc(doc(dbAs(ALUNO), 'sessionRequests', 'pedidoBloqueado'), {
+        from: ALUNO.uid,
+        to: PROFESSOR.uid,
+        subject: 'Matemática',
+        date: '2099-01-01',
+        time: '10:00',
+        modality: 'Online',
+        message: '',
+        status: 'pending',
+      }),
+    );
+  });
+
+  it('torna inacessível a conversa que já existia — para os dois', async () => {
+    const participants = [ALUNO.uid, PROFESSOR.uid].sort();
+    await seed(`conversations/${CONVERSATION_ID}`, { participants });
+    await seed(`conversations/${CONVERSATION_ID}/messages/m1`, { text: 'Olá', senderId: ALUNO.uid });
+    await seed(`blocks/${BLOCK_ID}`, blockData(ALUNO.uid, PROFESSOR.uid));
+
+    // O histórico continua na base de dados (nada neste projeto apaga), mas deixa de ser legível.
+    await assertFails(getDoc(doc(dbAs(ALUNO), 'conversations', CONVERSATION_ID, 'messages', 'm1')));
+    await assertFails(getDoc(doc(dbAs(PROFESSOR), 'conversations', CONVERSATION_ID, 'messages', 'm1')));
+    await assertFails(
+      addDoc(collection(dbAs(ALUNO), 'conversations', CONVERSATION_ID, 'messages'), {
+        text: 'Ainda aqui?',
+        senderId: ALUNO.uid,
+        createdAt: 1,
+      }),
+    );
+  });
+});
+
 describe('ratings — anónimas, uma por sessão, só pelo tutorando', () => {
   async function seedCompletedSession() {
     await seed('sessions/sessao1', { ...sessionData('pedidoSessao1'), status: 'completed' });

@@ -223,6 +223,11 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
   escrito e outra vez ao ser aberto (`src/lib/url.ts`), porque vem de outro utilizador.
 - **Avaliação por estrelas pós-sessão** — anónima, aparece automaticamente ao Tutorando quando
   uma sessão passada ainda não foi avaliada nem dispensada; 1 avaliação por sessão.
+- **Bloquear utilizadores** — a partir do perfil de outra pessoa, com confirmação. Um bloqueio
+  corta a ligação nos dois sentidos: os dois deixam de se encontrar na descoberta, de se poder
+  ligar ou pedir sessões, e a conversa que tivessem fica inacessível para ambos (o histórico não
+  é apagado). Gerem-se em **Definições**, um ecrã sem separador próprio que se alcança por uma
+  linha discreta no fim do Perfil, e que também tem o idioma e um contacto de ajuda.
 - **Recuperação de palavra-passe** — botão nos ecrãs de autenticação; o Firebase envia o email
   com o link. A reposição acontece na página web do Firebase e a pessoa volta à app para entrar
   com a palavra-passe nova (não há deep link de regresso). A confirmação mostrada é sempre a
@@ -240,6 +245,7 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
 | `conversations/{uidA_uidB}` (ID ordenado alfabeticamente) | conversa 1-para-1, criada só ao aceitar um `connectionRequest` |
 | `conversations/{id}/messages/{id}` | mensagens da conversa (e os anexos de links que alimentam os Materiais) |
 | `ratings/{sessionId}` (ID = ID da sessão) | avaliação anónima pós-sessão; nunca guarda quem avaliou |
+| `blocks/{blockerUid_blockedUid}` | bloqueio entre dois utilizadores; o documento tem um sentido, o efeito é simétrico (ver Decisões) |
 
 Não existe coleção de notificações: o ecrã de Notificações deriva tudo do que já existe
 (`src/lib/activity.ts`).
@@ -342,6 +348,19 @@ parte da app.
   1 dia sem) e se o **email** fica guardado no dispositivo para o ecrã de entrada o voltar a
   preencher (`src/lib/remembered-email.ts`). Não significa "não me peças credenciais outra vez":
   o "Sair" apaga a sessão sempre — é uma decisão explícita da pessoa e nenhum flag a sobrepõe.
+- **Bloqueio é simétrico, e só as regras o garantem** — o documento é criado num sentido só
+  (`blocks/{blocker}_{blocked}`), mas basta existir um para o par deixar de poder ligar-se, falar
+  ou pedir sessões. As regras avaliam-no com `exists()` (que corre com acesso total, não com as
+  permissões de quem fez o pedido), por isso bloquear funciona sem revelar o bloqueio — quem foi
+  bloqueado não consegue ler o documento. Consequência assumida: a coleção é legível **pelos dois
+  lados** (é o que permite a cada um excluir o outro da descoberta sem falar com o servidor), o que
+  quer dizer que um cliente modificado consegue descobrir quem o bloqueou; e a lista de
+  *bloqueados* mostra só quem eu bloqueei, nunca quem me bloqueou.
+- **A lista de conversas esconde o que as regras não podem filtrar** — *rules are not filters*: uma
+  regra não consegue tirar linhas de uma query, por isso um bloqueio é aplicado nas regras
+  (mensagens ilegíveis e impossíveis de escrever) **e** filtrado no cliente (a conversa sai da
+  lista). O documento da conversa em si continua legível — só os participantes e datas, sem
+  conteúdo.
 - **Materiais, sessões e pedidos não se apagam** — todas as coleções têm `allow delete: if false`;
   registos de teste ou dados obsoletos só se removem manualmente pela consola do Firebase.
 - **Sem modo escuro** — `useTheme()` devolve sempre a paleta clara e o `app.json` está em

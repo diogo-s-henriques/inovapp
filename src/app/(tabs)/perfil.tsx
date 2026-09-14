@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
@@ -35,9 +35,14 @@ export default function ProfileScreen() {
       ? i18n.participationModes[profile.participationMode].role
       : i18n.myProfile.memberLabel;
   const availability = [...profile.availabilityPeriods, ...profile.availabilityModality];
+  // "INTERESSES" é o que a pessoa quer aprender, não o que ensina — o que ensina já vive na
+  // descoberta (é o que a faz aparecer nos Matches e na pesquisa) e é lá que faz sentido.
+  // Um professor não tem este campo (não o edita — ver profile-edit.tsx), por isso a secção
+  // desaparece em vez de ficar com uma etiqueta e nada por baixo.
+  const interests = isProfessor ? [] : profile.learningSubjects;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <ThemedText type="title" style={styles.headerTitle}>
@@ -68,18 +73,14 @@ export default function ProfileScreen() {
           </View>
         </SectionCard>
 
-        <SectionCard label={i18n.myProfile.subjectsLabel}>
-          <View style={styles.subjectGroup}>
-            <ThemedText type="bodyBold">{i18n.myProfile.teaches}</ThemedText>
-            <TagList items={profile.teachingSubjects} />
-          </View>
-          {!isProfessor && (
+        {interests.length > 0 && (
+          <SectionCard label={i18n.myProfile.subjectsLabel}>
             <View style={styles.subjectGroup}>
               <ThemedText type="bodyBold">{i18n.myProfile.learning}</ThemedText>
-              <TagList items={profile.learningSubjects} />
+              <TagList items={interests} />
             </View>
-          )}
-        </SectionCard>
+          </SectionCard>
+        )}
 
         <SectionCard label={i18n.myProfile.availabilityLabel}>
           <AvailabilityChips items={availability} />
@@ -102,6 +103,19 @@ export default function ProfileScreen() {
           style={styles.editButton}
           onPress={() => setConfirmingSignOut(true)}
         />
+
+        {/* Entrada discreta para as Definições: texto pequeno, sem ícone e sem caixa, para não
+            competir com "Editar perfil" e "Sair" — que são o que se vem fazer aqui. */}
+        <Pressable
+          onPress={() => router.push('/settings')}
+          accessibilityRole="button"
+          accessibilityLabel={i18n.myProfile.settings}
+          hitSlop={8}
+          style={styles.settingsLink}>
+          <ThemedText type="small" themeColor="textMuted" style={styles.settingsLinkText}>
+            {i18n.myProfile.settings}
+          </ThemedText>
+        </Pressable>
       </ScrollView>
 
       <ConfirmModal
@@ -152,5 +166,11 @@ const styles = StyleSheet.create({
   },
   editButton: {
     alignSelf: 'stretch',
+  },
+  settingsLink: {
+    alignSelf: 'center',
+  },
+  settingsLinkText: {
+    textDecorationLine: 'underline',
   },
 });

@@ -19,10 +19,13 @@ import { collection, doc, getDoc, getDocs, query, terminate, where } from 'fireb
 
 import { signIn, signUp } from '@/auth/actions';
 import { pt } from '@/i18n/pt';
+import { blockUser, fetchBlockedUids, hasBlocked, unblockUser } from '@/lib/blocking';
 import { conversationExists, markConversationRead, sendMessage } from '@/lib/chat';
 import { auth, db } from '@/lib/firebase';
 import {
   connectionRequestId,
+  fetchBlockedUsers,
+  fetchConnectedMentors,
   fetchConnectedTutees,
   fetchExcludedCandidateIds,
   fetchMentorCandidates,
@@ -259,6 +262,76 @@ describe('pedido de conexão', () => {
     await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, false);
 
     assert.deepEqual(await fetchConnectedTutees(cenario.bruno), []);
+  });
+
+  it('quem bloqueia e quem foi bloqueado deixam de se encontrar na descoberta', async () => {
+    await entrarComo(CONTAS.aluna);
+    await blockUser(cenario.ana, cenario.bruno);
+
+    assert.equal((await fetchExcludedCandidateIds(cenario.ana)).has(cenario.bruno), true);
+
+    // O sentido contrário: quem foi bloqueado exclui o outro mesmo sem poder criar o bloqueio.
+    await entrarComo(CONTAS.alunoQueEnsina);
+    assert.equal((await fetchExcludedCandidateIds(cenario.bruno)).has(cenario.ana), true);
+  });
+
+  it('um bloqueio tira a ligação aceite das listas dos dois', async () => {
+    await ligar(cenario.ana, cenario.bruno);
+
+    await entrarComo(CONTAS.aluna);
+    await blockUser(cenario.ana, cenario.bruno);
+
+    // A ligação continua aceite na base de dados — o que muda é deixar de ser apresentada.
+    assert.deepEqual(await fetchConnectedMentors(cenario.ana), []);
+
+    await entrarComo(CONTAS.alunoQueEnsina);
+    assert.deepEqual(await fetchConnectedTutees(cenario.bruno), []);
+  });
+
+  it('bloquear corta a conversa: já não se envia uma mensagem', async () => {
+    await ligar(cenario.ana, cenario.bruno);
+
+    await entrarComo(CONTAS.aluna);
+    await blockUser(cenario.ana, cenario.bruno);
+
+    await assert.rejects(
+      () => sendMessage(matchId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, 'ainda aqui?'),
+      semPermissao,
+    );
+  });
+
+  it('desbloquear volta a deixar tudo como estava', async () => {
+    await entrarComo(CONTAS.aluna);
+    await blockUser(cenario.ana, cenario.bruno);
+    assert.equal(await hasBlocked(cenario.ana, cenario.bruno), true);
+    assert.deepEqual(await fetchBlockedUids(cenario.ana), [cenario.bruno]);
+
+    await unblockUser(cenario.ana, cenario.bruno);
+    assert.equal(await hasBlocked(cenario.ana, cenario.bruno), false);
+    assert.deepEqual(await fetchBlockedUids(cenario.ana), []);
+  });
+
+  it('a lista de bloqueados mostra o perfil de quem bloqueei — e só os meus', async () => {
+    await entrarComo(CONTAS.aluna);
+    await blockUser(cenario.ana, cenario.bruno);
+
+    const bloqueados = await fetchBlockedUsers(cenario.ana);
+    assert.deepEqual(
+      bloqueados.map((bloqueado) => bloqueado.id),
+      [cenario.bruno],
+    );
+    assert.equal(bloqueados[0].firstName, 'Bruno');
+  });
+
+  it('quem foi bloqueado não vê o bloqueio na sua lista', async () => {
+    await entrarComo(CONTAS.aluna);
+    await blockUser(cenario.ana, cenario.bruno);
+
+    // O Bruno foi bloqueado, mas não bloqueou ninguém: a lista dele tem de estar vazia (a lista
+    // não pode transformar-se num aviso de "alguém te bloqueou").
+    await entrarComo(CONTAS.alunoQueEnsina);
+    assert.deepEqual(await fetchBlockedUsers(cenario.bruno), []);
+    assert.equal(await hasBlocked(cenario.bruno, cenario.ana), false);
   });
 
   it('recusar não deixa conversa nenhuma', async () => {

@@ -13,7 +13,9 @@ export function SearchInput({ containerStyle, ...props }: SearchInputProps) {
   const theme = useTheme();
 
   return (
-    <View style={[styles.wrapper, { backgroundColor: theme.surfaceAlt }, containerStyle]}>
+    // Branco com contorno, e não só um preenchimento claro: este campo vive em cima do fundo
+    // azulado dos ecrãs, onde um fundo do mesmo tom desaparecia.
+    <View style={[styles.wrapper, { backgroundColor: theme.surface, borderColor: theme.border }, containerStyle]}>
       <Ionicons name="search-outline" size={18} color={theme.textMuted} />
       <TextInput placeholderTextColor={theme.textMuted} style={[styles.input, { color: theme.textPrimary }]} {...props} />
     </View>
@@ -27,6 +29,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.six,
+    borderWidth: 1,
   },
   input: {
     flex: 1,

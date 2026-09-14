@@ -47,7 +47,7 @@ export function TextField({
         style={[
           isFilled ? styles.filledRow : styles.underlineRow,
           isFilled
-            ? { backgroundColor: theme.surfaceAlt, borderColor: focused ? theme.primary : 'transparent' }
+            ? { backgroundColor: theme.surface, borderColor: focused ? theme.primary : theme.border }
             : { borderBottomColor: focused ? theme.primary : theme.border },
           multiline && styles.multilineRow,
         ]}>

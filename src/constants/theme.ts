@@ -1,8 +1,11 @@
 // Paleta de cores única da app (ver src/hooks/use-theme.ts — não há modo escuro por agora).
+// Os azuis da marca são os de assets/Mockups/colors.txt; os neutros foram arrefecidos para azul
+// claro — antes eram cinzentos e o resultado era branco sobre branco, sem nada onde assentar.
 export const Colors = {
   primary: '#0085CA',
   primaryDark: '#204195',
-  primarySoft: '#EAF4FB',
+  // Azul claro "cheio": é o tom dos chips e cartões que têm de se ver por cima do fundo dos ecrãs.
+  primarySoft: '#D3E7F8',
   borderAccent: '#BFE0F2',
   onPrimary: '#FFFFFF',
 
@@ -20,10 +23,12 @@ export const Colors = {
   textNav: '#4A545F',
   textMuted: '#98A2AC',
 
-  background: '#F7F8FA',
+  // Fundo dos ecrãs: azul muito claro, para os cartões e campos brancos se destacarem dele.
+  background: '#EDF5FC',
   surface: '#FFFFFF',
-  surfaceAlt: '#F3F6F9',
-  border: '#E7ECF1',
+  // Preenchimento secundário dentro de cartões brancos (caixas de estatística, ícones, barras).
+  surfaceAlt: '#E1EEFA',
+  border: '#CFE1F0',
 } as const;
 
 export type ColorToken = keyof typeof Colors;

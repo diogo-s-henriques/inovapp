@@ -258,6 +258,12 @@ export interface Translations {
     chat: string;
     requestSession: string;
     connectHint: (name: string) => string;
+    block: string;
+    unblock: string;
+    blockConfirmTitle: string;
+    blockConfirmDescription: (name: string) => string;
+    blockConfirm: string;
+    blockError: string;
     sessionsGiven: string;
     responseTime: string;
     teaches: string;
@@ -317,15 +323,28 @@ export interface Translations {
     sentTitle: string;
     sentDescription: (name: string) => string;
   };
+  settings: {
+    title: string;
+    back: string;
+    languageLabel: string;
+    blockedLabel: string;
+    blockedEmpty: string;
+    unblock: string;
+    helpLabel: string;
+    helpDescription: string;
+    helpAction: string;
+    loadError: string;
+  };
   myProfile: {
     title: string;
+    /** Entrada discreta para as Definições; o ecrã não tem um separador próprio. */
+    settings: string;
     professorLabel: string;
     memberLabel: string;
     professorCourse: string;
     sessionsGiven: string;
     sessionsReceived: string;
     subjectsLabel: string;
-    teaches: string;
     learning: string;
     availabilityLabel: string;
     aboutLabel: string;

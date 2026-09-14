@@ -3,6 +3,7 @@ import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc
 
 import { getTranslations } from '@/i18n/store';
 import { db } from '@/lib/firebase';
+import { fetchBlockedPairs, fetchBlockedUids } from '@/lib/blocking';
 import type { AccountRole } from '@/constants/auth';
 import { canLearn, canTeach } from '@/constants/profile';
 import type { CourseSelection, ParticipationMode } from '@/types/profile';
@@ -101,11 +102,13 @@ export async function fetchCandidateById(uid: string): Promise<MatchCandidate | 
 /** Mentores com quem o utilizador (Tutorando) já tem uma conexão aceite — usados na secção
  * "Mentores para ti" da home, distinta do deck de descoberta em Matches. */
 export async function fetchConnectedMentors(uid: string): Promise<MatchCandidate[]> {
-  const snapshot = await getDocs(
-    query(collection(db, 'connectionRequests'), where('from', '==', uid), where('status', '==', 'accepted')),
-  );
+  const [snapshot, bloqueados] = await Promise.all([
+    getDocs(query(collection(db, 'connectionRequests'), where('from', '==', uid), where('status', '==', 'accepted'))),
+    fetchBlockedPairs(uid),
+  ]);
   const candidates = await Promise.all(snapshot.docs.map((docSnap) => fetchCandidateById(docSnap.data().to as string)));
-  return candidates.filter((candidate): candidate is MatchCandidate => candidate !== null);
+  // Uma ligação que foi bloqueada deixa de estar ligada: sai daqui como sai do chat.
+  return candidates.filter((candidate): candidate is MatchCandidate => candidate !== null && !bloqueados.has(candidate.id));
 }
 
 /**
@@ -119,11 +122,12 @@ export async function fetchConnectedMentors(uid: string): Promise<MatchCandidate
  * existir se o mentor se lembrasse de abrir uma conversa que talvez nunca tivesse começado.
  */
 export async function fetchConnectedTutees(uid: string): Promise<MatchCandidate[]> {
-  const snapshot = await getDocs(
-    query(collection(db, 'connectionRequests'), where('to', '==', uid), where('status', '==', 'accepted')),
-  );
+  const [snapshot, bloqueados] = await Promise.all([
+    getDocs(query(collection(db, 'connectionRequests'), where('to', '==', uid), where('status', '==', 'accepted'))),
+    fetchBlockedPairs(uid),
+  ]);
   const candidates = await Promise.all(snapshot.docs.map((docSnap) => fetchCandidateById(docSnap.data().from as string)));
-  return candidates.filter((candidate): candidate is MatchCandidate => candidate !== null);
+  return candidates.filter((candidate): candidate is MatchCandidate => candidate !== null && !bloqueados.has(candidate.id));
 }
 
 /**
@@ -161,8 +165,9 @@ export async function sendConnectionRequest(fromUid: string, toUid: string): Pro
 }
 
 /**
- * IDs de quem já não pode aparecer na descoberta (deck de Matches e pesquisa) por existir um
- * pedido de conexão entre os dois — **nos dois sentidos e em qualquer estado**.
+ * IDs de quem já não pode aparecer na descoberta (deck de Matches e pesquisa): quem tem um
+ * **pedido de conexão** connosco, e quem tem um **bloqueio** connosco. Nos dois casos, nos dois
+ * sentidos.
  *
  * Nos dois sentidos porque os pedidos que eu recebi estão em cima do Matches à espera da minha
  * decisão: sem isto, a mesma pessoa aparecia em cima (o pedido) e em baixo (o deck), e "Conectar"
@@ -174,15 +179,27 @@ export async function sendConnectionRequest(fromUid: string, toUid: string): Pro
  * bater à porta pelo outro lado.
  */
 export async function fetchExcludedCandidateIds(uid: string): Promise<Set<string>> {
-  const [enviados, recebidos] = await Promise.all([
+  // Os bloqueios entram aqui, e não numa lista à parte, porque o resultado é o mesmo: quem está
+  // bloqueado não pode aparecer na descoberta — nem para pedir, nem para ser pedido.
+  const [bloqueados, enviados, recebidos] = await Promise.all([
+    fetchBlockedPairs(uid),
     getDocs(query(collection(db, 'connectionRequests'), where('from', '==', uid))),
     getDocs(query(collection(db, 'connectionRequests'), where('to', '==', uid))),
   ]);
 
   const ids = new Set<string>();
+  bloqueados.forEach((blockedUid) => ids.add(blockedUid));
   enviados.forEach((docSnap) => ids.add(docSnap.data().to as string));
   recebidos.forEach((docSnap) => ids.add(docSnap.data().from as string));
   return ids;
+}
+
+/** Perfis de quem o utilizador bloqueou, para a lista em Definições. Só os que ele próprio
+ * bloqueou — quem o bloqueou a ele não aparece, para não transformar a lista num aviso. */
+export async function fetchBlockedUsers(uid: string): Promise<MatchCandidate[]> {
+  const blockedUids = await fetchBlockedUids(uid);
+  const profiles = await Promise.all(blockedUids.map((blockedUid) => fetchCandidateById(blockedUid)));
+  return profiles.filter((candidate): candidate is MatchCandidate => candidate !== null);
 }
 
 /** IDs de candidatos que o utilizador já "passou" no deck de Matches — guardado só no

@@ -126,7 +126,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <SearchBar
           value={query}

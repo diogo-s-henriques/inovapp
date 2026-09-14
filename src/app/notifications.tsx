@@ -139,7 +139,7 @@ export default function NotificationsScreen() {
     connectionRequests.length > 0 || sessionRequests.length > 0 || unreadConversations.length > 0 || recentItems.length > 0;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => goBack(router)} accessibilityRole="button" accessibilityLabel={i18n.notifications.back} hitSlop={8}>
           <Ionicons name="chevron-back" size={24} color={theme.textPrimary} />

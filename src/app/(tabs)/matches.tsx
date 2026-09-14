@@ -124,7 +124,7 @@ export default function MatchesScreen() {
   const onlyBlockedMessage = blocked && requests.length === 0;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <ThemedText type="subtitle">{i18n.matches.title}</ThemedText>
       </View>
@@ -186,7 +186,9 @@ export default function MatchesScreen() {
                   {i18n.matches.connectError}
                 </ThemedText>
               )}
-              <View style={[styles.tray, { backgroundColor: theme.surfaceAlt }]}>
+              {/* Branco com contorno: é a bandeja que dá fundo ao botão "Passar" (o único que
+                  não tem cor própria), por isso não pode diluir-se no fundo azulado do ecrã. */}
+              <View style={[styles.tray, { backgroundColor: theme.surface, borderColor: theme.border }]}>
                 <Button
                   label={i18n.matches.pass}
                   icon="close"
@@ -250,6 +252,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'stretch',
     borderRadius: Spacing.six,
+    borderWidth: 1,
     overflow: 'hidden',
   },
   passarButton: {

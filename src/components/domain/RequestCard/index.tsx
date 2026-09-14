@@ -63,7 +63,7 @@ export function RequestCard({
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.primarySoft }, style]} {...rest}>
+    <View style={[styles.card, { backgroundColor: theme.primarySoft, borderColor: theme.borderAccent }, style]} {...rest}>
       <View style={styles.headerRow}>
         <ProfilePicCard firstName={firstName} lastName={lastName} image={image} size="md" />
         <View style={styles.headerInfo}>
@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
   card: {
     gap: Spacing.three,
     borderRadius: Spacing.four,
+    borderWidth: 1,
     padding: Spacing.three,
   },
   headerRow: {

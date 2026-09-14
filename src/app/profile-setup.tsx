@@ -86,7 +86,7 @@ export default function ProfileSetupScreen() {
       : (step !== 1 || fullName.trim().length > 0) && (step !== 3 || !!participationMode));
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ProgressSteps steps={totalSteps} currentStep={Math.min(step, totalSteps)} style={styles.progress} />
 
       {isComplete ? (
