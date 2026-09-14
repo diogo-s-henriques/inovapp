@@ -276,7 +276,11 @@ parte da app.
   conversa, o feed de notificações está limitado e ordenado no servidor, e o conjunto de
   candidatos de pesquisa/matches tem um teto (`CANDIDATE_POOL_LIMIT`, em `src/lib/matching.ts`).
   Consequência conhecida: acima desse teto, a pesquisa deixa de ver toda a gente, porque filtra
-  no cliente — a solução é passar a pesquisa para o servidor.
+  no cliente. Passar a pesquisa para o servidor ficou por fazer de propósito (setembro de 2026), e
+  há dois caminhos com custos muito diferentes: **só o filtro por disciplina** no servidor não
+  precisa de nada novo (um índice, e o teto desaparece para quem filtra), enquanto uma **pesquisa
+  por nome a sério** obriga a guardar um campo com o nome normalizado no perfil — muda a escrita,
+  as regras, e precisa de migrar os perfis que já existem.
 - **Sem Cloud Functions / cron** — "sessão já terminou" (para disparar o pedido de avaliação) é
   calculado no cliente, comparando data+hora da sessão com a hora atual. A expiração da sessão
   (30 dias com "Lembrar", 1 dia sem) também: é uma decisão de UX, não uma fronteira de segurança
