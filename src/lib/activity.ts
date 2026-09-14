@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 
 import { db } from '@/lib/firebase';
 import { createProfileResolver } from '@/lib/matching';
@@ -10,18 +10,49 @@ const RECENT_LIMIT = 8;
 
 /**
  * Histórico "Recentes" nas notificações — não existe uma coleção de notificações no Firestore;
- * deriva-se, num único fetch, de dados já existentes (pedidos aceites, sessões de amanhã). Os
- * materiais recebidos ficam fora daqui de propósito — já vêm de subscribeToSharedMaterials
- * (lib/materials.ts), que o ecrã de notificações já subscreve para a secção "Mensagens".
+ * deriva-se, de dados já existentes (pedidos aceites, sessões de amanhã). Os materiais recebidos
+ * ficam fora daqui de propósito — já vêm de subscribeToSharedMaterials (lib/materials.ts), que o
+ * ecrã de notificações já subscreve para a secção "Mensagens".
+ *
+ * As três consultas são limitadas e ordenadas no servidor: antes vinha a lista completa de
+ * pedidos aceites e de todas as sessões do utilizador, só para mostrar oito linhas. As que usam
+ * `orderBy` precisam dos índices compostos declarados em firestore.indexes.json.
  */
 export async function fetchRecentActivity(uid: string, i18n: Translations): Promise<ActivityItem[]> {
   const resolveProfile = createProfileResolver();
   const items: ActivityItem[] = [];
 
+  const tomorrowKey = toDateKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
+
   const [connectionsSnap, sessionRequestsSnap, sessionsSnap] = await Promise.all([
-    getDocs(query(collection(db, 'connectionRequests'), where('from', '==', uid), where('status', '==', 'accepted'))),
-    getDocs(query(collection(db, 'sessionRequests'), where('from', '==', uid), where('status', '==', 'accepted'))),
-    getDocs(query(collection(db, 'sessions'), where('participants', 'array-contains', uid))),
+    getDocs(
+      query(
+        collection(db, 'connectionRequests'),
+        where('from', '==', uid),
+        where('status', '==', 'accepted'),
+        // Ordenado no servidor para que o `limit` traga os últimos e não um subconjunto arbitrário.
+        orderBy('respondedAt', 'desc'),
+        limit(RECENT_LIMIT),
+      ),
+    ),
+    getDocs(
+      query(
+        collection(db, 'sessionRequests'),
+        where('from', '==', uid),
+        where('status', '==', 'accepted'),
+        orderBy('respondedAt', 'desc'),
+        limit(RECENT_LIMIT),
+      ),
+    ),
+    // Só as sessões de amanhã — é o único caso futuro que esta lista mostra. Antes lia todas as
+    // sessões do utilizador para depois filtrar as de amanhã no cliente.
+    getDocs(
+      query(
+        collection(db, 'sessions'),
+        where('participants', 'array-contains', uid),
+        where('date', '==', tomorrowKey),
+      ),
+    ),
   ]);
 
   for (const docSnap of connectionsSnap.docs) {
@@ -52,10 +83,8 @@ export async function fetchRecentActivity(uid: string, i18n: Translations): Prom
     });
   }
 
-  const tomorrowKey = toDateKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
   for (const docSnap of sessionsSnap.docs) {
     const data = docSnap.data();
-    if (data.date !== tomorrowKey) continue;
     const otherUid = (data.participants as string[]).find((id: string) => id !== uid);
     if (!otherUid) continue;
     const profile = await resolveProfile(otherUid);
