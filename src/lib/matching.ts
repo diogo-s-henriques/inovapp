@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 
 import { getTranslations } from '@/i18n/store';
 import { db } from '@/lib/firebase';
@@ -10,6 +10,15 @@ import type { MatchCandidate } from '@/types/match';
 
 const PLACEHOLDER_SESSIONS_GIVEN = 0;
 const PASSED_STORAGE_KEY = 'inovapp:passedCandidates';
+
+/**
+ * Teto de perfis lidos de uma vez. Antes não havia limite: cada pesquisa ou abertura do deck de
+ * Matches lia a coleção `users` inteira. Com este teto, a ordem passa a ser a dos IDs — o que
+ * também quer dizer que, a partir de `CANDIDATE_POOL_LIMIT` perfis completos, a pesquisa deixa de
+ * ver toda a gente (filtra este conjunto no cliente). Resolver isso a sério é fazer a pesquisa no
+ * servidor, e é trabalho à parte; aqui o objetivo é só parar de ler a coleção toda.
+ */
+const CANDIDATE_POOL_LIMIT = 100;
 
 interface MentorProfileDoc {
   fullName?: string;
@@ -66,7 +75,13 @@ export async function fetchMentorCandidates(params: {
   learningSubjects: string[];
   excludeIds?: Set<string>;
 }): Promise<MatchCandidate[]> {
-  const snapshot = await getDocs(query(collection(db, 'users'), where('profileCompleted', '==', true)));
+  const snapshot = await getDocs(
+    query(
+      collection(db, 'users'),
+      where('profileCompleted', '==', true),
+      limit(CANDIDATE_POOL_LIMIT),
+    ),
+  );
 
   const candidates = snapshot.docs
     .filter((docSnap) => docSnap.id !== params.currentUid && !params.excludeIds?.has(docSnap.id))

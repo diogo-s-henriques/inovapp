@@ -1,4 +1,4 @@
-import { collection, onSnapshot, orderBy, query, Timestamp, where } from 'firebase/firestore';
+import { collection, limit, onSnapshot, orderBy, query, Timestamp, where } from 'firebase/firestore';
 
 import { getTranslations } from '@/i18n/store';
 import { db } from '@/lib/firebase';
@@ -14,6 +14,12 @@ interface MessageWithAttachmentDoc {
 // Os links são validados na origem (AttachFileSheet recusa o que não seja http/https, ver
 // src/lib/url.ts) e outra vez ao abrir, em src/app/materials.tsx, porque o URL foi escrito por
 // outro utilizador.
+
+/** Mensagens lidas por conversa ao procurar anexos. Sem este limite, o ecrã de Materiais lia o
+ * histórico completo de todas as conversas do utilizador. Custo: um material mais antigo do que
+ * esta janela deixa de aparecer na lista (continua acessível dentro da conversa, onde é possível
+ * carregar mensagens anteriores). */
+const MESSAGES_PER_CONVERSATION_LIMIT = 50;
 
 /**
  * Não existe uma coleção "materials" nem partilha "para todos" — um material é só um anexo
@@ -59,6 +65,7 @@ export function subscribeToSharedMaterials(uid: string, onChange: (materials: Sh
       const messagesQuery = query(
         collection(db, 'conversations', conversationId, 'messages'),
         orderBy('createdAt', 'desc'),
+        limit(MESSAGES_PER_CONVERSATION_LIMIT),
       );
       const unsubscribeMessages = onSnapshot(messagesQuery, (messagesSnapshot) => {
         const items: SharedMaterial[] = [];

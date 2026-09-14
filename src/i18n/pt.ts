@@ -200,6 +200,7 @@ export const pt: Translations = {
     sendMessage: 'Enviar mensagem',
     sendError: 'Não foi possível enviar a mensagem. Tenta novamente.',
     today: 'Hoje',
+    loadEarlierMessages: 'Carregar mensagens anteriores',
     respondError: 'Não foi possível responder ao pedido. Tenta novamente.',
   },
   attachFile: {

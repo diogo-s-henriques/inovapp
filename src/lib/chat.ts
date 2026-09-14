@@ -6,6 +6,7 @@ import {
   doc,
   FirestoreError,
   getDoc,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -93,24 +94,43 @@ export function subscribeToConversations(uid: string, onChange: (conversations: 
   });
 }
 
-/** Ouve as mensagens de uma conversa em tempo real, por ordem cronológica. */
-export function subscribeToMessages(conversationId: string, uid: string, onChange: (messages: ChatMessage[]) => void) {
-  const messagesQuery = query(collection(db, 'conversations', conversationId, 'messages'), orderBy('createdAt', 'asc'));
+/** Quantas mensagens se leem de uma vez ao abrir uma conversa (ver src/app/chat/[id].tsx). */
+export const CHAT_MESSAGE_PAGE_SIZE = 50;
+
+/**
+ * Ouve as mensagens de uma conversa em tempo real, por ordem cronológica. Só as últimas
+ * `pageSize` são lidas: sem limite, abrir uma conversa antiga lia o histórico todo (todos os
+ * meses de mensagens) em cada abertura. O ecrã pede uma página maior quando o utilizador quer
+ * ver mensagens mais antigas.
+ */
+export function subscribeToMessages(
+  conversationId: string,
+  uid: string,
+  onChange: (messages: ChatMessage[]) => void,
+  pageSize: number = CHAT_MESSAGE_PAGE_SIZE,
+) {
+  const messagesQuery = query(
+    collection(db, 'conversations', conversationId, 'messages'),
+    // Descendente + limit traz as últimas N (e não as primeiras N); a lista é invertida logo
+    // abaixo para ficar pela ordem cronológica que o ecrã mostra.
+    orderBy('createdAt', 'desc'),
+    limit(pageSize),
+  );
 
   return onSnapshot(messagesQuery, (snapshot) => {
-    onChange(
-      snapshot.docs.map((docSnap) => {
-        const data = docSnap.data() as MessageDoc;
-        return {
-          id: docSnap.id,
-          text: data.text,
-          fromMe: data.senderId === uid,
-          time: formatTimeLabel(data.createdAt?.toDate()) || getTranslations().common.now,
-          attachment: data.attachment,
-          sessionRequest: data.sessionRequest,
-        };
-      }),
-    );
+    const messages = snapshot.docs.map((docSnap) => {
+      const data = docSnap.data() as MessageDoc;
+      return {
+        id: docSnap.id,
+        text: data.text,
+        fromMe: data.senderId === uid,
+        time: formatTimeLabel(data.createdAt?.toDate()) || getTranslations().common.now,
+        attachment: data.attachment,
+        sessionRequest: data.sessionRequest,
+      };
+    });
+
+    onChange(messages.reverse());
   });
 }
 

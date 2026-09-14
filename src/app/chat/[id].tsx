@@ -15,10 +15,11 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 
 import { Spacing } from '@/constants/theme';
 import { useAuthStore } from '@/auth/store';
-import { markConversationRead, sendMessage, subscribeToMessages } from '@/lib/chat';
+import { CHAT_MESSAGE_PAGE_SIZE, markConversationRead, sendMessage, subscribeToMessages } from '@/lib/chat';
 import { goBack } from '@/lib/navigation';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
+import { Button } from '@/components/ui/Button';
 import { Pill } from '@/components/ui/Pill';
 import { ProfilePicCard } from '@/components/ui/ProfilePicCard';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -45,17 +46,20 @@ export default function ConversationScreen() {
   const otherUid = user ? id.split('_').find((uid) => uid !== user.uid) : undefined;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Página de mensagens pedida ao Firestore; cresce quando se carrega histórico mais antigo.
+  const [pageSize, setPageSize] = useState(CHAT_MESSAGE_PAGE_SIZE);
   const [draft, setDraft] = useState('');
   const [sendError, setSendError] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const attachSheetRef = useRef<BottomSheetModal>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!id || !user) return;
-    const unsubscribe = subscribeToMessages(id, user.uid, setMessages);
+    const unsubscribe = subscribeToMessages(id, user.uid, setMessages, pageSize);
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user?.uid]);
+  }, [id, user?.uid, pageSize]);
 
   useFocusEffect(
     useCallback(() => {
@@ -98,6 +102,15 @@ export default function ConversationScreen() {
     }
   };
 
+  // Só salta para o fundo quando chega uma mensagem nova. Quando o que cresceu foi o histórico
+  // (o utilizador carregou mensagens anteriores), saltar para o fundo perdia-lhe o sítio.
+  const handleContentSizeChange = () => {
+    const lastMessageId = messages[messages.length - 1]?.id ?? null;
+    if (lastMessageId === lastMessageIdRef.current) return;
+    lastMessageIdRef.current = lastMessageId;
+    listRef.current?.scrollToEnd({ animated: false });
+  };
+
   const handleScheduleSession = () => {
     router.push({
       pathname: '/session-request',
@@ -135,20 +148,30 @@ export default function ConversationScreen() {
           keyExtractor={(message) => message.id}
           contentContainerStyle={styles.messages}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+          onContentSizeChange={handleContentSizeChange}
           ListHeaderComponent={
-            <View style={styles.dateSeparator}>
-              <Pill
-                size="sm"
-                style={{
-                  backgroundColor: theme.surfaceAlt,
-                  paddingVertical: Spacing.half,
-                  paddingHorizontal: Spacing.three,
-                }}>
-                <ThemedText type="small" themeColor="textMuted">
-                  {i18n.chat.today}
-                </ThemedText>
-              </Pill>
+            <View style={styles.listHeader}>
+              {/* Só aparece quando a primeira página veio cheia: é sinal de que pode haver mais. */}
+              {messages.length >= pageSize && (
+                <Button
+                  label={i18n.chat.loadEarlierMessages}
+                  variant="link"
+                  onPress={() => setPageSize((size) => size + CHAT_MESSAGE_PAGE_SIZE)}
+                />
+              )}
+              <View style={styles.dateSeparator}>
+                <Pill
+                  size="sm"
+                  style={{
+                    backgroundColor: theme.surfaceAlt,
+                    paddingVertical: Spacing.half,
+                    paddingHorizontal: Spacing.three,
+                  }}>
+                  <ThemedText type="small" themeColor="textMuted">
+                    {i18n.chat.today}
+                  </ThemedText>
+                </Pill>
+              </View>
             </View>
           }
           renderItem={({ item }) =>
@@ -255,6 +278,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.three,
     paddingBottom: Spacing.three,
+  },
+  listHeader: {
+    gap: Spacing.two,
   },
   dateSeparator: {
     alignItems: 'center',

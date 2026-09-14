@@ -192,6 +192,7 @@ export interface Translations {
     sendMessage: string;
     sendError: string;
     today: string;
+    loadEarlierMessages: string;
     respondError: string;
   };
   attachFile: {
