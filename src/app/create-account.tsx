@@ -43,7 +43,7 @@ export default function CreateAccountScreen() {
 
     setSubmitting(true);
     try {
-      await signUp(email, password);
+      await signUp(email, password, remember);
       setAccountCreated(true);
     } catch (err) {
       setError(getAuthErrorMessage(err));

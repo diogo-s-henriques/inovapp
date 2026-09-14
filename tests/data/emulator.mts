@@ -76,7 +76,7 @@ export async function limparEmulador(): Promise<void> {
 /** Cria a conta pelo caminho da app (signUp) e devolve o UID. Fica com essa conta com sessão. */
 export async function criarConta(email: string): Promise<string> {
   await signOut(auth).catch(() => undefined);
-  await signUp(email, SENHA_DE_TESTE);
+  await signUp(email, SENHA_DE_TESTE, false);
   if (!auth.currentUser) throw new Error('O signUp não deixou nenhum utilizador com sessão.');
   return auth.currentUser.uid;
 }

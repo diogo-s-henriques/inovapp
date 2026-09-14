@@ -286,7 +286,12 @@ parte da app.
 - **Sem Cloud Functions / cron** — "sessão já terminou" (para disparar o pedido de avaliação) é
   calculado no cliente, comparando data+hora da sessão com a hora atual. A expiração da sessão
   (30 dias com "Lembrar", 1 dia sem) também: é uma decisão de UX, não uma fronteira de segurança
-  — o refresh token do Firebase continua válido para um cliente modificado.
+  — o refresh token do Firebase continua válido para um cliente modificado. Depende, no entanto,
+  de a sessão estar mesmo guardada no dispositivo: no React Native o `getAuth()` do Firebase fica
+  **só com persistência em memória** (o SDK avisa disso no terminal) e é preciso
+  `initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })` — ver
+  `src/lib/firebase.ts`. Sem isso o `lastLoginAt` desaparecia com o processo, a app pedia
+  credenciais a cada arranque e estas expirações nunca chegavam a ser avaliadas.
 - **Materiais, sessões e pedidos não se apagam** — todas as coleções têm `allow delete: if false`;
   registos de teste ou dados obsoletos só se removem manualmente pela consola do Firebase.
 - **Sem modo escuro** — `useTheme()` devolve sempre a paleta clara e o `app.json` está em

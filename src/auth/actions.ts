@@ -46,7 +46,7 @@ export function getAuthErrorMessage(error: unknown): string {
  *   legíveis só pelo próprio (ver firestore.rules). Sem esta separação, qualquer utilizador
  *   autenticado conseguiria ler o email e a última entrada de todos os outros.
  */
-export async function signUp(email: string, password: string): Promise<void> {
+export async function signUp(email: string, password: string, remember: boolean): Promise<void> {
   const role = getAccountRole(email);
   if (!role) {
     throw new Error(getTranslations().auth.institutionalEmailRequired);
@@ -60,11 +60,15 @@ export async function signUp(email: string, password: string): Promise<void> {
     profileCompleted: false,
     createdAt: serverTimestamp(),
   });
+  // O email gravado é o que o Firebase autenticou, não o que foi escrito no formulário: o Auth
+  // normaliza-o (fica sempre em minúsculas) e a regra de `userAccounts` exige que seja igual ao
+  // do token. A gravar a string do formulário, uma única maiúscula fazia as regras recusarem a
+  // criação do documento — com a conta já criada no Auth e sem perfil.
   batch.set(doc(db, 'userAccounts', credential.user.uid), {
-    email,
+    email: credential.user.email ?? email,
     role,
     lastLoginAt: serverTimestamp(),
-    rememberSession: false,
+    rememberSession: remember,
   });
   await batch.commit();
 }

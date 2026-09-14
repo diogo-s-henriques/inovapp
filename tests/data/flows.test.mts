@@ -17,6 +17,7 @@ import { after, beforeEach, describe, it } from 'node:test';
 import { signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, query, terminate, where } from 'firebase/firestore';
 
+import { signIn, signUp } from '@/auth/actions';
 import { pt } from '@/i18n/pt';
 import { conversationExists, markConversationRead, sendMessage } from '@/lib/chat';
 import { auth, db } from '@/lib/firebase';
@@ -30,7 +31,15 @@ import {
 import { completeSession, respondToSessionRequest, sendSessionRequest, subscribeToSessions } from '@/lib/sessions';
 import type { AgendaSession, SessionRequest } from '@/types/session';
 
-import { CONTAS, criarCenario, entrarComo, esperarPor, lerDocumento, type Cenario } from './emulator.mts';
+import {
+  CONTAS,
+  SENHA_DE_TESTE,
+  criarCenario,
+  entrarComo,
+  esperarPor,
+  lerDocumento,
+  type Cenario,
+} from './emulator.mts';
 
 const DADOS_DA_SESSAO = {
   subject: 'Matemática',
@@ -137,6 +146,34 @@ beforeEach(async () => {
 // o `emulators:exec` que arranca os emuladores fica à espera do fim do script para sempre.
 after(async () => {
   await Promise.all([terminate(db), signOut(auth).catch(() => undefined)]);
+});
+
+describe('criação de conta e entrada', () => {
+  it('a criação guarda o "Lembrar" escolhido e o email que o Firebase autenticou', async () => {
+    // O email leva uma maiúscula de propósito: o Auth normaliza-o para minúsculas e a regra de
+    // `userAccounts` exige que o email gravado seja igual ao do token. Ao gravar a string do
+    // formulário, a conta era criada no Auth e o documento era recusado pelas regras — a pessoa
+    // ficava com uma conta sem perfil, e sem forma de a completar.
+    await signOut(auth).catch(() => undefined);
+    await signUp('Nova.Conta@alunos.iseclisboa.pt', SENHA_DE_TESTE, true);
+
+    const uid = auth.currentUser?.uid;
+    assert.ok(uid, 'o signUp devia ter deixado alguém com sessão');
+
+    const conta = await lerDocumento(`userAccounts/${uid}`);
+    assert.equal(conta?.email, 'nova.conta@alunos.iseclisboa.pt');
+    assert.equal(conta?.role, 'student');
+    assert.equal(conta?.rememberSession, true);
+    assert.equal((await lerDocumento(`users/${uid}`))?.profileCompleted, false);
+  });
+
+  it('cada entrada regrava o "Lembrar" escolhido', async () => {
+    await signIn(CONTAS.aluna, SENHA_DE_TESTE, true);
+    assert.equal((await lerDocumento(`userAccounts/${cenario.ana}`))?.rememberSession, true);
+
+    await signIn(CONTAS.aluna, SENHA_DE_TESTE, false);
+    assert.equal((await lerDocumento(`userAccounts/${cenario.ana}`))?.rememberSession, false);
+  });
 });
 
 describe('pedido de conexão', () => {
