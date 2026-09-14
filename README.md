@@ -274,11 +274,11 @@ parte da app.
 - **Limites nas leituras** — nenhuma lista da app lê uma coleção inteira: o chat abre com 50
   mensagens (com "carregar anteriores"), os Materiais leem as últimas 50 mensagens de cada
   conversa, o feed de notificações está limitado e ordenado no servidor, e o conjunto de
-  candidatos de pesquisa/matches tem um teto (`CANDIDATE_POOL_LIMIT`, em `src/lib/matching.ts`).
-  Consequência conhecida: acima desse teto, a pesquisa deixa de ver toda a gente, porque filtra
+  candidatos de pesquisa/matches tem um tecto (`CANDIDATE_POOL_LIMIT`, em `src/lib/matching.ts`).
+  Consequência conhecida: acima desse tecto, a pesquisa deixa de ver toda a gente, porque filtra
   no cliente. Passar a pesquisa para o servidor ficou por fazer de propósito (setembro de 2026), e
   há dois caminhos com custos muito diferentes: **só o filtro por disciplina** no servidor não
-  precisa de nada novo (um índice, e o teto desaparece para quem filtra), enquanto uma **pesquisa
+  precisa de nada novo (um índice, e o tecto desaparece para quem filtra), enquanto uma **pesquisa
   por nome a sério** obriga a guardar um campo com o nome normalizado no perfil — muda a escrita,
   as regras, e precisa de migrar os perfis que já existem.
 - **Sem Cloud Functions / cron** — "sessão já terminou" (para disparar o pedido de avaliação) é
