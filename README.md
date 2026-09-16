@@ -719,8 +719,11 @@ documentação do RNFB indica para o núcleo pré-compilado.
 (`com.apple.developer.devicecheck.appattest-environment: development`). É ele que autoriza o
 dispositivo a falar com o serviço de atestação da Apple; sem a linha, o `appAttest` falha mesmo com
 tudo o resto certo. Quem o põe no perfil de provisionamento é a build — mais uma razão para ser
-nova. **Antes da build de produção passa a `production`** (o ambiente de desenvolvimento só serve
-enquanto se desenvolve; esquecido lá dentro, o App Attest falha na app da loja).
+nova. **O valor é `production`**, desde que a build de loja ficou a caminho. Ele segue **o perfil que assina
+a build**, não a app: um perfil de desenvolvimento ou ad hoc quer `development`, e o de distribuição
+(App Store / TestFlight) quer `production` - com o valor trocado, a atestação falha de um lado ou do
+outro. Ficou `production` porque é a de loja que está a ser feita; uma build `preview` para testar a
+atestação antes disso quer `development` outra vez.
 
 **Um perfil de aprovisionamento não ganha capacidades novas — tem de nascer depois do direito.** O
 build iOS de desenvolvimento falhou no arquivo do Xcode, com isto:
