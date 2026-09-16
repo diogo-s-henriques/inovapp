@@ -8,10 +8,13 @@ import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/ui/ThemedText';
 
 /**
- * Espera entre fechar a vista em grande e abrir o seletor da galeria. Tem de cobrir a animação de
- * fecho do Modal - a razão está no `handleChange`.
+ * Espera **máxima** entre fechar a vista em grande e abrir o seletor da galeria.
+ *
+ * Não é o mecanismo, é a rede: no iOS quem manda é o `onDismiss` do Modal, que chega quando o modal
+ * desapareceu mesmo - e aí o seletor abre nesse instante, sem espera nenhuma. Isto é para quem não
+ * dispara esse evento (o Android), e é a única razão de ainda existir um número aqui.
  */
-const PICKER_OPEN_DELAY_MS = 350;
+const PICKER_OPEN_FALLBACK_MS = 400;
 
 export interface PhotoPickerProps extends Omit<PressableProps, 'style' | 'onPress'> {
   uri?: string;
@@ -52,6 +55,9 @@ export function PhotoPicker({
   // O timer do seletor pendente: o componente pode sair da árvore antes de ele disparar (voltar
   // para trás com a vista ainda a fechar), e quem fica deve ser ninguém.
   const pickerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Há um pedido de seletor à espera de a vista desaparecer. É o que impede um segundo toque de
+  // abrir dois, mesmo com dois caminhos (o aviso do modal e o temporizador) a poder chegar ao fim.
+  const openingRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -68,19 +74,41 @@ export function PhotoPicker({
     setPreviewing(true);
   };
 
+  /**
+   * Abre o seletor do sistema, uma vez só por pedido.
+   *
+   * Chamado por dois caminhos - o `onDismiss` do Modal (o aviso exato, no iOS) e o temporizador
+   * (a rede, onde esse aviso não chega) - e quem chegar primeiro anula o outro.
+   */
+  const openPicker = () => {
+    if (!openingRef.current) return;
+    openingRef.current = false;
+
+    if (pickerTimerRef.current !== null) {
+      clearTimeout(pickerTimerRef.current);
+      pickerTimerRef.current = null;
+    }
+
+    onPress();
+  };
+
   const handleChange = () => {
     // Um segundo toque antes de o primeiro chegar ao seletor não abre dois.
-    if (pickerTimerRef.current !== null) return;
+    if (openingRef.current) return;
+    openingRef.current = true;
 
     // **Fechar primeiro, abrir depois.** O seletor da galeria é uma apresentação nativa por cima de
     // tudo; se arrancar enquanto este Modal ainda está a desaparecer, o iOS larga a apresentação em
     // silêncio ("present while a presentation is in progress") - o modal fecha e nada se abre, e o
-    // botão parecia morto. A espera é a duração do fade de fecho, mais folga.
+    // botão parecia morto.
+    //
+    // Esteve aqui uma espera fixa de 350 ms a adivinhar quando o modal já tinha desaparecido, e era
+    // isso que se sentia como lentidão no botão: o tempo somava-se à animação de fecho em vez de
+    // esperar por ela. O `onDismiss` diz quando é que ele desapareceu - que é a altura certa para
+    // abrir o seletor, nem antes (a apresentação falhava) nem depois (uns décimos a olhar para
+    // nada).
     setPreviewing(false);
-    pickerTimerRef.current = setTimeout(() => {
-      pickerTimerRef.current = null;
-      onPress();
-    }, PICKER_OPEN_DELAY_MS);
+    pickerTimerRef.current = setTimeout(openPicker, PICKER_OPEN_FALLBACK_MS);
   };
 
   return (
@@ -123,6 +151,7 @@ export function PhotoPicker({
         visible={previewing}
         transparent
         animationType="fade"
+        onDismiss={openPicker}
         onRequestClose={() => setPreviewing(false)}>
         {/* Tocar fora fecha; o cartão abaixo engole o toque para o botão não fechar o modal. */}
         <Pressable

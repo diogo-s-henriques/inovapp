@@ -15,6 +15,25 @@ import { PhotoPicker } from '@/components/ui/PhotoPicker';
 import { pt } from '@/i18n/pt';
 import { useLocaleStore } from '@/i18n/store';
 
+/**
+ * O `Modal` do React Native não deixa o elemento do sistema na árvore de teste (só o conteúdo
+ * dele), e é no elemento do sistema que o `onDismiss` vive - o `Modal` passa-o ao
+ * `RCTModalHostView`, que o chama quando a apresentação acaba (ver Modal.js). Este duplo põe-no
+ * lá, e é o que permite ao teste fazer a pergunta que interessa depois desta mudança: **o
+ * componente entrega mesmo este aviso ao Modal?** Foi ele que substituiu a espera adivinhada, e um
+ * nome de prop trocado era a única forma de esta correção passar despercebida.
+ */
+jest.mock('react-native/Libraries/Modal/Modal', () => {
+  const React = require('react');
+  const { View } = jest.requireActual('react-native');
+
+  return {
+    __esModule: true,
+    default: ({ visible, onDismiss, children }: { visible?: boolean; onDismiss?: () => void; children?: unknown }) =>
+      visible ? React.createElement(View, { onDismiss }, children) : null,
+  };
+});
+
 beforeEach(() => {
   useLocaleStore.getState().setLocale('pt');
   // O "Alterar" espera o fecho da vista em grande antes de abrir o seletor (ver o componente):
@@ -27,6 +46,44 @@ afterEach(() => {
 });
 
 const PHOTO = 'data:image/jpeg;base64,AAAA';
+
+/** O mínimo que se precisa de um nó da árvore para o encontrar por uma das suas props. */
+interface NoDaArvore {
+  props: { onDismiss?: () => void };
+  children?: unknown[];
+}
+
+/** Procura na árvore o primeiro nó que responda ao predicado (as consultas não chegam para isto). */
+function procurar(no: unknown, predicado: (candidato: NoDaArvore) => boolean): NoDaArvore | undefined {
+  if (no === null || typeof no !== 'object') return undefined;
+
+  const candidato = no as NoDaArvore;
+  if (typeof candidato.props !== 'object' || candidato.props === null) return undefined;
+  if (predicado(candidato)) return candidato;
+
+  for (const filho of Array.isArray(candidato.children) ? candidato.children : []) {
+    const encontrado = procurar(filho, predicado);
+    if (encontrado) return encontrado;
+  }
+
+  return undefined;
+}
+
+/**
+ * O `onDismiss` do modal, tal como **o sistema** o chama.
+ *
+ * Chamá-lo é o mais perto que um teste chega do iOS a fechar a vista - e é isso que se quer fixar:
+ * **quando ele chega, o seletor abre na hora**, sem esperar pelo temporizador.
+ *
+ * Procura-se a partir do **contentor** (e não do `root`) porque o modal é irmão do avatar, não seu
+ * filho: o `root` é o primeiro elemento desenhado, e a vista vive ao lado dele.
+ */
+function avisoDeQueOModalDesapareceu(contentor: unknown): () => void {
+  const modal = procurar(contentor, (candidato) => typeof candidato.props.onDismiss === 'function');
+
+  if (!modal?.props.onDismiss) throw new Error('o modal não está na árvore');
+  return modal.props.onDismiss;
+}
 
 describe('<PhotoPicker />', () => {
   it('sem fotografia, o toque vai direito ao seletor', async () => {
@@ -62,6 +119,38 @@ describe('<PhotoPicker />', () => {
     expect(onPress).not.toHaveBeenCalled();
 
     jest.advanceTimersByTime(400);
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('o aviso de que a vista desapareceu abre o seletor no mesmo instante', async () => {
+    const onPress = jest.fn();
+    const { getByLabelText, container } = await render(<PhotoPicker uri={PHOTO} onPress={onPress} />);
+
+    await fireEvent.press(getByLabelText(pt.common.viewPhoto));
+    // O aviso é apanhado com a vista ainda aberta: é o sistema que o dispara **enquanto** a fecha,
+    // e a partir daí o modal já saiu da árvore.
+    const desapareceu = avisoDeQueOModalDesapareceu(container);
+    await fireEvent.press(getByLabelText(pt.common.change));
+
+    // Sem tempo nenhum a passar: é o sinal exato ("o modal desapareceu") que manda, e não a
+    // estimativa que aqui estava. Era esta a lentidão do botão - a espera somava-se à animação de
+    // fecho em vez de esperar por ela.
+    desapareceu();
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('e o temporizador que fica por baixo não volta a abri-lo', async () => {
+    const onPress = jest.fn();
+    const { getByLabelText, container } = await render(<PhotoPicker uri={PHOTO} onPress={onPress} />);
+
+    await fireEvent.press(getByLabelText(pt.common.viewPhoto));
+    const desapareceu = avisoDeQueOModalDesapareceu(container);
+    await fireEvent.press(getByLabelText(pt.common.change));
+    desapareceu();
+
+    // Os dois caminhos chegam ao mesmo sítio; quem chega primeiro anula o outro.
+    jest.advanceTimersByTime(1000);
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 

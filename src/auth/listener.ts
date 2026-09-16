@@ -31,7 +31,7 @@ function scheduleAfter(delayMs: number, callback: () => void): () => void {
  * (`userAccounts/{uid}`, só do próprio - email, última entrada, sessão prolongada), a partir
  * dos quais se faz o logout automático quando a sessão expira. */
 export function useAuthSync(): void {
-  const { setInitializing, setUser, setProfile, setProfileCompleted } = useAuthStore();
+  const { setInitializing, setUser, setProfile, setProfileCompleted, setBootstrapped } = useAuthStore();
 
   useEffect(() => {
     let unsubscribeProfile: (() => void) | null = null;
@@ -55,6 +55,9 @@ export function useAuthSync(): void {
         setProfile(null);
         setProfileCompleted(null);
         setInitializing(false);
+        // "Não há sessão" é uma resposta, e é a primeira que muita gente recebe: a partir daqui
+        // qualquer espera tem um ecrã à frente (ver `bootstrapped` na loja).
+        setBootstrapped(true);
         return;
       }
 
@@ -115,6 +118,7 @@ export function useAuthSync(): void {
             : null,
         );
         setInitializing(false);
+        setBootstrapped(true);
       });
     });
 

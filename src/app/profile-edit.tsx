@@ -11,7 +11,7 @@ import { completeProfileSetup } from '@/auth/actions';
 import { useI18n } from '@/hooks/use-i18n';
 import { getInitials } from '@/lib/initials';
 import { goBack } from '@/lib/navigation';
-import { pickProfilePhoto, preparePhotoForUpload } from '@/lib/storage';
+import { pickPreparedProfilePhoto } from '@/lib/storage';
 import { AvailabilityFields } from '@/components/domain/Profile/AvailabilityFields';
 import { CourseField } from '@/components/domain/Profile/CourseField';
 import { SubjectsField } from '@/components/domain/Profile/SubjectsField';
@@ -83,9 +83,12 @@ export default function ProfileEditScreen() {
 
   const saveDisabled = saving || fullName.trim().length === 0 || !hasChanges;
 
+  // A fotografia vem daqui já redimensionada e comprimida (ver src/lib/storage.ts): é isso que faz
+  // a pré-visualização aparecer de imediato e o "Guardar" não ter trabalho nenhum de imagem pela
+  // frente.
   const pickPhoto = async () => {
-    const uri = await pickProfilePhoto();
-    if (uri) setPhotoUri(uri);
+    const prepared = await pickPreparedProfilePhoto();
+    if (prepared) setPhotoUri(prepared);
   };
 
   const handleSave = async () => {
@@ -94,12 +97,10 @@ export default function ProfileEditScreen() {
     setConfirmVisible(false);
     setSaving(true);
     try {
-      // Só prepara/converte a foto se for uma nova escolhida agora (as já guardadas vêm em data URI).
-      const isNewLocalPhoto = !!photoUri && !photoUri.startsWith('data:');
-      const preparedPhoto = isNewLocalPhoto ? await preparePhotoForUpload(photoUri!) : photoUri;
-
+      // Nada para preparar aqui: uma fotografia acabada de escolher já vem em data URI (é o que
+      // `pickPreparedProfilePhoto` devolve) e a que estava guardada também. Guardar é só escrever.
       await completeProfileSetup(user.uid, {
-        photoUri: preparedPhoto,
+        photoUri,
         fullName,
         course: isProfessor ? undefined : course,
         year: isProfessor ? undefined : year,

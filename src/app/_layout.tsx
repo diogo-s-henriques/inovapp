@@ -108,11 +108,15 @@ function AppTree() {
   // carregado (ver src/push/listener.ts).
   usePushSync();
   const markInteractive = useMarkInteractive();
-  const { initializing, user, profileCompleted } = useAuthStore();
+  const { initializing, user, profileCompleted, bootstrapped } = useAuthStore();
   // O idioma guardado no dispositivo é lido de AsyncStorage de forma assíncrona; esperar pela
   // hidratação evita mostrar a app em português a quem a escolheu em inglês.
   const [localeReady, setLocaleReady] = useState(() => useLocaleStore.persist.hasHydrated());
-  const stage = authStage({ initializing, user, profileCompleted });
+  // Se a app já ouviu a primeira resposta sobre a sessão: é o que separa a espera do arranque
+  // (atrás do splash) da espera depois de um "Entrar" (com o ecrã de entrada à frente). Vive na
+  // loja porque quem a sabe é o `useAuthSync`, no instante em que a resposta chega - e não este
+  // layout, num efeito (que a equipa do React não deixa usar para escrever estado).
+  const stage = authStage({ initializing, user, profileCompleted, bootstrapped });
 
   // O valor inicial já cobre o caso de a hidratação ter terminado antes do primeiro render;
   // este listener apanha a que ainda esteja a decorrer.
@@ -121,6 +125,12 @@ function AppTree() {
   // Só se considera "pronto" depois de saber que ecrãs mostrar - evita mostrar por instantes o ecrã
   // errado (ex.: login antes de saber que já está autenticado). Quem decide isso é o `authStage`
   // (ver src/lib/auth-gate.ts), e não uma corrente de condições espalhada por aqui.
+  //
+  // **Enquanto isto for falso, o `Stack` não existe** - e é por isso que o intervalo a seguir a um
+  // "Entrar" não pode voltar a ser `loading`: desmontar a navegação toda apagava o ecrã de entrada,
+  // deixava o fundo à mostra até a resposta do perfil chegar, e a Home aparecia depois num corte
+  // seco. Com o estágio `signing-in` o `Stack` fica de pé (é o ecrã de entrada que está lá dentro) e
+  // a troca para os separadores passa pela animação - que é o `fade` que se queria desde o início.
   const isReady = localeReady && stage !== 'loading';
 
   // Um aviso tocado **abre a app**: até a app estar utilizável, o destino do toque não existe para
@@ -153,7 +163,10 @@ function AppTree() {
           <BottomSheetModalProvider>
             {isReady && (
               <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Protected guard={stage === 'signed-out'}>
+                {/* `signing-in` mostra os mesmos ecrãs: quem acabou de carregar em "Entrar" ainda
+                    está no formulário, à espera de saber se já tem perfil - e é daí que a Home se
+                    dissolve quando chega. */}
+                <Stack.Protected guard={stage === 'signed-out' || stage === 'signing-in'}>
                   <Stack.Screen name="login" options={AUTH_SCREEN_ANIMATION} />
                   <Stack.Screen name="create-account" options={AUTH_SCREEN_ANIMATION} />
                   <Stack.Screen name="forgot-password" options={AUTH_SCREEN_ANIMATION} />

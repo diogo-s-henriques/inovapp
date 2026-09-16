@@ -16,6 +16,7 @@ import { LanguageSwitcher } from '@/components/domain/LanguageSwitcher';
 import { PartnersMarquee } from '@/components/domain/PartnersMarquee';
 import { Link } from 'expo-router';
 import { signIn, getAuthErrorMessage } from '@/auth/actions';
+import { useAuthStore } from '@/auth/store';
 
 // Ecrã de entrada; só aceita emails institucionais (ver getAccountRole em constants/auth.ts).
 export default function LoginScreen() {
@@ -26,6 +27,19 @@ export default function LoginScreen() {
   const [remember, setRemember] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * A entrada já foi aceite e a app está à espera da resposta sobre o perfil.
+   *
+   * O `signIn` do Firebase resolve antes disso - o que falta é a leitura do documento do perfil -
+   * e é aqui que este ecrã fica nesse intervalo (ver `signing-in` em src/lib/auth-gate.ts). Sem
+   * isto, o botão voltava a dizer "Entrar" e a parecer pronto para outro toque enquanto a app
+   * ainda estava a decidir para onde ir.
+   */
+  const user = useAuthStore((state) => state.user);
+  const profileCompleted = useAuthStore((state) => state.profileCompleted);
+  const signingIn = !!user && profileCompleted === null;
+  const busy = submitting || signingIn;
 
   // Preenche o email da última entrada feita com "Lembrar-me". Só o email: a sessão em si é apagada
   // pelo "Sair", de propósito - ver src/lib/remembered-email.ts.
@@ -100,10 +114,10 @@ export default function LoginScreen() {
 
         <View style={styles.submit}>
           <Button
-            label={submitting ? i18n.auth.signingIn : i18n.auth.signIn}
+            label={busy ? i18n.auth.signingIn : i18n.auth.signIn}
             variant="primary"
             onPress={handleSubmit}
-            disabled={submitting || !email || !password}
+            disabled={busy || !email || !password}
           />
         </View>
 

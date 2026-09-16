@@ -18,7 +18,7 @@ import { StepProfessorSubjects } from '@/components/domain/ProfileSetup/StepProf
 import type { CourseSelection, ParticipationMode } from '@/types/profile';
 import { useAuthStore } from '@/auth/store';
 import { completeProfileSetup } from '@/auth/actions';
-import { pickProfilePhoto, preparePhotoForUpload } from '@/lib/storage';
+import { pickPreparedProfilePhoto } from '@/lib/storage';
 
 // Assistente de configuração inicial do perfil, com passos diferentes para professores.
 export default function ProfileSetupScreen() {
@@ -48,9 +48,10 @@ export default function ProfileSetupScreen() {
 
   const goNext = () => setStep((value) => value + 1);
 
+  // Já preparada na escolha (ver src/lib/storage.ts) - no passo final só se escreve.
   const pickPhoto = async () => {
-    const uri = await pickProfilePhoto();
-    if (uri) setPhotoUri(uri);
+    const prepared = await pickPreparedProfilePhoto();
+    if (prepared) setPhotoUri(prepared);
   };
 
   const goFinish = async () => {
@@ -58,10 +59,8 @@ export default function ProfileSetupScreen() {
 
     setSaving(true);
     try {
-      const preparedPhoto = photoUri ? await preparePhotoForUpload(photoUri) : undefined;
-
       await completeProfileSetup(user.uid, {
-        photoUri: preparedPhoto,
+        photoUri,
         fullName,
         about,
         course: isProfessor ? undefined : course,

@@ -17,7 +17,7 @@ const JPEG_QUALITY = 0.6;
  * the image library"); só para vídeos sem edição é que o iOS exige a permissão, e aqui são sempre
  * imagens.
  */
-export async function pickProfilePhoto(): Promise<string | undefined> {
+async function pickPhotoFromLibrary(): Promise<string | undefined> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsEditing: true,
@@ -31,7 +31,7 @@ export async function pickProfilePhoto(): Promise<string | undefined> {
 // Sem Firebase Storage (exige o plano pago Blaze), por isso a foto de perfil é redimensionada/
 // comprimida no próprio dispositivo e guardada como data uri base64 diretamente no documento do
 // utilizador no Firestore, bem dentro do limite de 1 MiB por documento.
-export async function preparePhotoForUpload(localUri: string): Promise<string> {
+async function preparePhotoForUpload(localUri: string): Promise<string> {
   const context = ImageManipulator.manipulate(localUri);
   context.resize({ width: MAX_DIMENSION });
   const rendered = await context.renderAsync();
@@ -42,4 +42,27 @@ export async function preparePhotoForUpload(localUri: string): Promise<string> {
   });
 
   return `data:image/jpeg;base64,${result.base64}`;
+}
+
+/**
+ * A fotografia escolhida, **já preparada** para o perfil (400 px, JPEG) - que é o que os ecrãs
+ * devem usar.
+ *
+ * A preparação acontece aqui, no momento da escolha, e não no momento de gravar, por duas razões
+ * que se sentem as duas:
+ *
+ * - **a vista é pequena.** O seletor do sistema devolve a fotografia original - numa câmara de
+ *   telemóvel, 12 megapixels. Desenhá-la num quadrado de ~340 px obriga a descodificar tudo isso
+ *   para mostrar pouco, e é trabalho que cai em cima do toque: a fotografia grande demora a
+ *   aparecer e a app fica pesada enquanto isso. Um JPEG de 400 px aparece no mesmo instante;
+ * - **gravar deixa de ser o momento lento.** O redimensionamento e o base64 são o trabalho a sério
+ *   desta funcionalidade, e quem acabou de escolher na galeria já está à espera de alguma coisa -
+ *   enquanto quem carrega em "Guardar" está à espera de que ele guarde. O mesmo trabalho, feito do
+ *   lado certo do toque.
+ */
+export async function pickPreparedProfilePhoto(): Promise<string | undefined> {
+  const localUri = await pickPhotoFromLibrary();
+  if (!localUri) return undefined;
+
+  return preparePhotoForUpload(localUri);
 }

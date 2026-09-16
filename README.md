@@ -1003,6 +1003,26 @@ parte da app.
 
 ## Decisões tomadas
 
+- **Entrar tem de ser um `fade` com os dois ecrãs à vista - e isso dependia de não desmontar a
+  navegação.** Entre o `signIn` e a resposta sobre o perfil há uma espera, e ela era `loading` - o
+  mesmo estágio do arranque. Só que `loading` põe o `isReady` a falso, e `isReady` a falso quer dizer
+  que o `<Stack>` **não existe**: o ecrã de entrada era apagado, ficava o fundo à mostra até a leitura
+  responder, e a Home montava de fresco - um corte seco, e a opção `animation: 'fade'` que já lá
+  estava nunca chegava a correr, porque não houve navegação nenhuma para animar. Passou a haver um
+  estágio próprio, **`signing-in`**: o `Stack` fica de pé, quem está lá dentro é o formulário de
+  entrada (com o botão em "A entrar…"), e é ele que se dissolve quando a Home chega. A espera do
+  arranque continua a ser `loading`, atrás do splash - a diferença entre as duas está no
+  `bootstrapped` da loja de autenticação, escrito pelo `useAuthSync` quando a primeira resposta
+  chega.
+- **A fotografia prepara-se na escolha, não na gravação.** O seletor do sistema devolve a fotografia
+  original (12 megapixels numa câmara de telemóvel), e havia trabalho de imagem a acontecer toda do
+  lado errado do toque: a pré-visualização desenhava o original num quadrado de ~340 px (caro, e
+  exatamente no instante em que se quer ver a resposta ao toque) e o redimensionamento com o base64
+  ficavam para o "Guardar", que era quem demorava. Passou para o momento da escolha
+  (`pickPreparedProfilePhoto` em src/lib/storage.ts): a vista aparece no mesmo instante e gravar é só
+  escrever. E o botão "Alterar" deixou de ter uma espera de 350 ms **adivinhada** a cobrir a animação
+  de fecho da vista - quem sabe quando o modal desapareceu é o próprio sistema (`onDismiss`), e o
+  temporizador ficou só como rede para quem não dispara esse aviso.
 - **`require` com o nome escrito no ficheiro, ou o bundle de produção não passa** - o `observe.ts` e o
   `app-check.ts` carregam módulos nativos à mão (dentro de um `try`) para que a falta deles não deite a
   app abaixo. No `observe.ts` o `require` tem o nome literal; no `app-check.ts` chegou a ser uma função
@@ -1302,6 +1322,32 @@ parte da app.
 
 ## Contas de teste
 
-Duas contas de teste existem no projeto Firebase real (não incluídas aqui por serem específicas
-do ambiente de desenvolvimento) - perguntar a quem geriu o setup se forem necessárias para
-validar fluxos ponta-a-ponta.
+A app só entra com email institucional, e uma revisão precisa de credenciais (a diretriz 2.1 da
+Apple recusa uma app que pede autenticação sem as fornecer). Existem duas contas **no projeto
+Firebase real**, criadas pelo `npm run create:demo-account`, já com o **email confirmado** e o
+**perfil completo** - para o revisor ver a app e não o assistente de configuração:
+
+| conta | papel | o que mostra |
+|---|---|---|
+| `demo@iseclisboa.pt` | **Tutor** (`professor`, modo `teach`) | o lado de quem ensina: tutorandos para si, pedidos de conexão a chegar, sessões |
+| `aluno.demo@alunos.iseclisboa.pt` | **Tutorando** (`student`, modo `both`) | o deck de descoberta inteiro, e as duas metades (aprende e ensina) |
+
+**A palavra-passe não está aqui, e não pode estar**: este repositório é público. É a que foi passada
+em `--password` no dia em que cada conta nasceu, e escreve-se nos dois sítios onde os revisores a vão
+ler (esses sim, privados):
+
+- **App Store Connect** → a versão → *App Review Information* → *Sign-in required*;
+- **Play Console** → *App content* → *App access* → *All functionality is available without special
+  access*: **não**, com as credenciais.
+
+O script é idempotente - corrido outra vez confirma a conta, repõe a palavra-passe e reescreve o
+perfil -, e é assim que se garante que as duas continuam a entrar:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/caminho/para/a/chave.json
+npm run create:demo-account -- --apply --password=<escolhida>
+npm run create:demo-account -- --apply --email=aluno.demo@alunos.iseclisboa.pt --mode=both --password=<escolhida>
+```
+
+São contas como as outras: aparecem na descoberta dos outros utilizadores, por isso vale a pena
+apagá-las quando a revisão acabar.
