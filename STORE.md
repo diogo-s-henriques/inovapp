@@ -9,13 +9,32 @@ prometem avisos no telemóvel. A app sabe recebê-los, mas ainda ninguém os env
 Functions), e uma função anunciada que não acontece é o primeiro sítio onde a revisão da Apple
 tropeça. O mesmo vale para "grátis": diz-se que não há compras dentro da app, que é verdade.
 
-## Antes de submeter: três coisas que as lojas exigem
+## Antes de submeter: as três coisas que as lojas exigem
 
-| | o que falta | onde |
+| | o que é | estado |
 |---|---|---|
-| **URL da política de privacidade** | publicar o `PRIVACY.md` num endereço público | GitHub Pages do repositório (um clique em *Settings → Pages*) |
-| **URL de suporte** | uma página onde se possa pedir ajuda (não serve `mailto:`) | a mesma página, com o email de contacto por baixo |
-| **Conta de demonstração para a revisão** | a app só entra com email institucional e com o email confirmado — o revisor não tem como criar conta, e sem credenciais a revisão é recusada (diretriz 2.1) | **feita** (`npm run create:demo-account`): `demo@iseclisboa.pt`, com o email confirmado e o perfil completo. Falta escrever as credenciais em *App Review Information* / *App access* |
+| **URL da política de privacidade** | um endereço público com a política | **decidido**: `https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf` — ler a nota abaixo antes de o colar |
+| **URL de suporte** | uma página onde se possa pedir ajuda (não serve `mailto:`) | **decidido**: `https://happycampus.pt` |
+| **Conta de demonstração para a revisão** | a app só entra com email institucional e com o email confirmado — o revisor não tem como criar conta, e sem credenciais a revisão é recusada (diretriz 2.1) | **feita** (`npm run create:demo-account`): `aluno.demo@alunos.iseclisboa.pt` e `demo@iseclisboa.pt`, com o email confirmado e o perfil completo. Falta escrever as credenciais em *App Review Information* / *App access* |
+
+### Sobre a política de privacidade que vai ligada (decisão assumida)
+
+O URL é um **PDF publicado pela Universitas/Cooperativa de Ensino Superior** — e é os *Termos e
+Condições da aplicação «Buddy App»*, não desta. Tem uma secção de proteção de dados (RGPD,
+finalidades, direitos), é HTTPS e abre sem autenticação, por isso as duas lojas aceitam-no como
+política. A decisão de o usar foi tomada com isto à frente: **o documento nomeia outra aplicação e
+descreve serviços que a INOVAPP não tem** (apoio psicológico, monitorização emocional, dados de
+bem-estar) e não descreve os que ela tem (email institucional, fotografia, mensagens, token dos
+avisos, Firebase/Expo/EAS Observe).
+
+Duas consequências que ficam desta escolha:
+
+- o **questionário** *App Privacy* (Apple) e *Segurança de dados* (Play) tem de descrever o que a
+  app faz **na mesma** — responder pelo documento alinhado era declarar dados que não existem e
+  calar os que existem, e é essa incoerência que a revisão procura;
+- o `PRIVACY.md` deste repositório continua a ser a descrição exata da app. Se um dia o ISEC
+  publicar o equivalente para a INOVAPP, é trocar **uma linha** aqui (o URL) e alinhar os dois
+  documentos.
 
 ## Nome, subtítulo e categoria
 
@@ -127,7 +146,8 @@ EM PRIVACIDADE
 
 Os dados são guardados no Firebase (Google) e as mensagens entre duas pessoas só são visíveis a
 essas duas. O perfil (nome, fotografia, curso e interesses) é visível para quem tem sessão iniciada
-na app. A política de privacidade completa está em: <URL DA POLÍTICA DE PRIVACIDADE>
+na app. A política de privacidade completa está em:
+https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf
 
 Sem publicidade. Sem compras. Sem recolha de localização, contactos, câmara ou microfone.
 ```

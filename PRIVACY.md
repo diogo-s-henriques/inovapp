@@ -6,10 +6,25 @@ A INOVAPP é uma aplicação de ligação entre estudantes e docentes do ISEC Li
 sessões de apoio académico. Esta política explica que dados a aplicação guarda, para que servem, com
 quem são partilhados e como se pede a sua remoção.
 
-> **Rascunho.** Este texto descreve o que a aplicação faz hoje e está escrito para ser publicado
-> num URL público (é um requisito das duas lojas). Antes de publicar: confirmar o responsável pelo
-> tratamento de dados e a entidade a indicar nos contactos, e rever com quem responde pelos dados
-> no ISEC.
+> **O que está publicado nas lojas é outro documento.** O URL que a App Store e a Google Play vão
+> abrir é `https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf` — os *Termos e Condições da aplicação
+> «Buddy App»*, publicados pela Universitas/Cooperativa de Ensino Superior. Foi uma decisão tomada
+> com os olhos abertos (os dois documentos foram lidos lado a lado), e tem duas consequências:
+>
+> - o documento das lojas **nomeia outra aplicação** e descreve serviços que a INOVAPP não tem
+>   (apoio psicológico, monitorização emocional, dados de bem-estar), e não descreve os desta (email
+>   institucional, fotografia, mensagens, token dos avisos, Firebase/Expo/EAS Observe);
+> - este ficheiro continua a ser a descrição **exata** da INOVAPP, e é ele que serve para responder
+>   ao questionário *App Privacy* (Apple) e à *Segurança de dados* (Play) — responder pelo documento
+>   das lojas era declarar dados que não existem e calar os que existem.
+>
+> Se o ISEC publicar um TC equivalente para a INOVAPP, troca-se o URL nas duas fichas e este aviso
+> desaparece.
+>
+> **Por confirmar antes de publicar seja o que for:** quem é o responsável pelo tratamento. Aqui
+> está Diogo Henriques; no documento que as lojas abrem, o responsável é a **Cooperativa de Ensino
+> Superior** (NIPC 503383082). As duas versões não podem estar certas ao mesmo tempo — e a resposta
+> certa é a de quem responde pelos dados no ISEC.
 
 ## Quem é responsável
 

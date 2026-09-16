@@ -214,10 +214,11 @@ o Play Console à mão, e deixar o `submit` para as seguintes.
 
 | | o que é |
 |---|---|
-| Política de privacidade **num URL público** | `PRIVACY.md` (na raiz) está escrito; falta publicá-lo (um GitHub Pages do repositório serve) e pôr o link nas duas fichas |
+| Política de privacidade **num URL público** | usa-se o PDF que a Universitas publica (`https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf`) — decisão tomada com os olhos abertos: é o TC de **outra** aplicação («Buddy App»), e o que isso implica está escrito em `STORE.md` e no topo do `PRIVACY.md` |
+| URL de suporte | `https://happycampus.pt` |
 | Capturas de ecrã | Apple: iPhone 6,7"; Play: 2 a 8 capturas **e** uma imagem de destaque 1024x500 |
 | Segurança de dados (Play) e App Privacy (Apple) | o que é recolhido, para que serve e se é ligado à identidade — o `PRIVACY.md` é a fonte para responder a isto |
-| Conta de demonstração | a app só aceita email institucional, por isso a **revisão não consegue entrar**: é preciso criar uma conta de teste com email institucional válido e escrevê-la nas notas para a revisão |
+| Conta de demonstração | a app só aceita email institucional, por isso a **revisão não consegue entrar**. Feito: `npm run create:demo-account` cria `aluno.demo@alunos.iseclisboa.pt` (vê o deck inteiro) e `demo@iseclisboa.pt` (o lado do Tutor), com o email confirmado e o perfil completo — falta escrever as credenciais nas duas fichas |
 
 Texto de partida para a ficha (nome, subtítulo e descrição), para não se escrever do zero:
 
@@ -252,8 +253,8 @@ um subtítulo de 31 caracteres recusa o texto todo na loja e não se vê a olho.
 - **Eliminação de conta: feita dentro da app** (Definições → *Apagar conta*, ver "Apagar a conta"
   abaixo). Era o requisito da Apple que faltava — a diretriz 5.1.1(v) exige que quem pode criar
   uma conta a possa apagar no app. Do lado do Play, o formulário de *segurança de dados* pede
-  também um **URL** para pedir a eliminação (além do caminho na app); um GitHub Pages com o
-  `PRIVACY.md` serve para as duas coisas.
+  também um **URL** para pedir a eliminação (além do caminho na app); o URL de suporte já escolhido
+  serve para isso.
 - **Contas no Play criadas como pessoais** só ganham acesso à produção depois de um teste fechado
   com **12 testadores durante 14 dias**. Contas de **organização** (ISEC) estão fora desta regra —
   vale a pena confirmar qual é a tua antes de contar com uma data.
