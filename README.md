@@ -632,12 +632,33 @@ apps em produção usam). O que este alerta pede, em vez de uma rotação, é co
 - a chave **Android** (a de `google-services.json`) tem de ter, em *API restrictions*, **só APIs do
   Firebase** - e nada mais. Uma chave do Firebase com a Places API ou a Generative Language API na
   lista passa a ser usável por qualquer pessoa, e a quota é do projeto;
+- a chave **iOS** (a do `GoogleService-Info.plist`, linha 6, a chave `API_KEY`) - foi o **segundo**
+  alerta do GitHub e é o mesmo caso: viaja dentro de cada IPA;
 - o mesmo para a chave *browser* (`EXPO_PUBLIC_FIREBASE_API_KEY`), que é a que fica no bundle.
 
-Está em **Google Cloud > APIs e serviços > Credenciais**. Enquanto isso for verdade, o alerta do
-GitHub é ruído, e é tratado como ruído: `.github/secret_scanning.yml` fecha-o (e a push protection)
-para este ficheiro **e para o `GoogleService-Info.plist`** (a chave iOS, o mesmo caso), com a razão
-escrita lá dentro.
+**Isto foi verificado, e não ficou pela consola.** Dá para perguntar às próprias chaves: um pedido a
+uma API que a app não usa (das que gastam dinheiro) tem de ser recusado **pela camada da chave**, e
+não por a API estar desligada - é a diferença entre `API_KEY_SERVICE_BLOCKED` (restrição) e
+`SERVICE_DISABLED` (API desligada no projeto), que a resposta traz em `error.details`:
+
+```
+Generative Language (Gemini)  ->  403  API_KEY_SERVICE_BLOCKED                   (as três chaves)
+Places / Cloud Translation    ->  403  API_KEY_SERVICE_BLOCKED
+Firestore (sem autenticação)  ->  403  "Missing or insufficient permissions."   <- a chave passou
+```
+
+A última linha prova a outra metade: a chave **atravessa** a camada de restrição até chegar ao
+Firestore - e é lá que as regras a recusam, por não haver utilizador. Ou seja, a restrição que a
+documentação do Firebase exige para tratar estas chaves como não-secretas **está feita**; e mudá-la
+continua a ser em **Google Cloud > APIs e serviços > Credenciais**.
+
+Enquanto isso for verdade, o alerta do GitHub é ruído, e é tratado como ruído:
+`.github/secret_scanning.yml` fecha-o (e a push protection) para os **dois** ficheiros, com a razão
+escrita lá dentro. A documentação do GitHub diz que estas exclusões **fecham** os alertas
+correspondentes, com o estado *ignored by configuration* - e o aviso do `plist` chegou porque a
+exclusão entrou no **mesmo commit** que o ficheiro: o alerta nasce no push, antes de a configuração
+valer. Se algum deles continuar aberto, o que resta é dispensá-lo à mão (*Security > Secret
+scanning > Dismiss*, motivo **Won't fix**, com a razão escrita).
 
 **O que falta ali é o App Check.** As regras dizem *quem* pode ler e escrever; não dizem que o
 pedido vem da app. Com a chave pública, quem tiver o `projectId` e a chave pode criar contas contra
