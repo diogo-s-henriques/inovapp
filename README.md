@@ -701,6 +701,46 @@ tudo o resto certo. Quem o põe no perfil de provisionamento é a build — mais
 nova. **Antes da build de produção passa a `production`** (o ambiente de desenvolvimento só serve
 enquanto se desenvolve; esquecido lá dentro, o App Attest falha na app da loja).
 
+**Um perfil de aprovisionamento não ganha capacidades novas — tem de nascer depois do direito.** O
+build iOS de desenvolvimento falhou no arquivo do Xcode, com isto:
+
+```
+Provisioning Profile "*[expo] com.diyogo.inovapp AdHoc 1789493976588" does not support the App Attest capability
+Entitlements file defines the value "com.apple.developer.devicecheck.appattest-environment"
+  which is not registered for profile
+```
+
+Não é um erro de configuração do `app.json` — o direito está certo e o `prebuild` gerou o ficheiro de
+direitos com ele (é isso que a segunda linha diz). Duas coisas do `eas-cli` explicam o resto:
+
+1. **O EAS não compara direitos com o perfil.** O `validateProvisioningProfile` confirma só o
+   certificado de distribuição, o bundle identifier, a validade e o estado do perfil na Apple
+   (`eas-cli/build/credentials/ios/validators/validateProvisioningProfile.js`) - nunca os direitos.
+   Um perfil sem o App Attest passa essa validação inteira e só rebenta no `xcodebuild`; nada a
+   jusante o apanha antes.
+2. **O perfil antigo nunca se atualiza sozinho.** Na distribuição interna o EAS pede à Apple para
+   *criar ou reutilizar* o perfil ad hoc e, se o que existe já serve (os dispositivos registados são
+   os mesmos), escreve `Used existing profile` - e um perfil criado antes do direito existir não
+   passa a ter o direito depois.
+
+A ordem que resolve é **capacidade no App ID primeiro, perfil novo depois**:
+
+1. **Ligar a capacidade no App ID** (developer.apple.com > Certificates, Identifiers & Profiles >
+   Identifiers > `com.diyogo.inovapp` > *App Attest* > Save). O EAS também a sincroniza sozinho a
+   partir dos direitos (está em `capabilityList.js`, como `CapabilityType.APP_ATTEST`, e aparece no
+   log como `Synced capabilities: Enabled: App Attest`), mas a consola é verificável e são 30
+   segundos.
+2. **Descartar o perfil antigo** (Apple > Profiles > apagar `*[expo] com.diyogo.inovapp AdHoc …`; ou
+   `npx eas-cli credentials -p ios` > perfil de build > *Provisioning Profile* > Remove). É isto que
+   obriga o EAS a criar um novo em vez de reutilizar o que não serve.
+3. **Build outra vez**, e confirmar a linha `Created new profile: …`.
+
+O mesmo vai ser preciso no perfil de **distribuição** (App Store) quando o App Attest entrar numa
+build de produção: um perfil criado antes do direito falha da mesma maneira. Alternativa que dispensa
+perfis: trocar o atestador do iOS por **DeviceCheck** (tirar o direito do `app.json`, pôr
+`provider: 'deviceCheck'` e carregar uma chave DeviceCheck no Firebase, como a de APNs) - atestação
+mais fraca, mas sem direitos nem perfis pelo caminho.
+
 **O registo no console:** a conta de serviço não conseguia ativar a API do App Check (só o
 utilizador o pode fazer — feito na consola), mas com a API ativa regista sozinha o que não depende
 de impressões digitais: o **App Attest do iOS ficou registado por REST** (TTL de 7 dias). O **Play
@@ -747,7 +787,7 @@ desenvolvimento é o de depuração (abaixo), e não o Play Integrity.
 | 1. ~~ativar a API do App Check~~ **feito** | — | a conta de serviço não podia ativar serviços; ficou ativa na consola |
 | 2. ligar o projeto à Play Console (*Integridade da app > API Play Integrity > Link Cloud project* > `inovapp-68021`) | Play Console | sem a ligação o Play Integrity não emite tokens; exige ser *Owner* do projeto |
 | 3. registar o atestador por plataforma | Consola Firebase > App Check > Apps | **App Attest (iOS): feito** por REST, TTL 7 dias. **Play Integrity (Android): falta a impressão digital SHA-256 da chave de assinatura da Play** (Play Console > Teste e lançamento > Configuração) - e a chave só existe depois do **primeiro AAB subido** à Play |
-| 4. iOS: o direito de App Attest **já está no `app.json`** (com a build nova entra no perfil); alternativa é uma **chave de DeviceCheck** no Firebase (como a de APNs) | — | sem uma das duas o iOS fica sem atestação: o código pede `appAttestWithDeviceCheckFallback`, e sem direito nem chave falham os dois |
+| 4. iOS: o direito de App Attest **já está no `app.json`**, mas o **perfil tem de ser regenerado** (capacidade no App ID + apagar o perfil antigo - ver acima); alternativa é uma **chave de DeviceCheck** no Firebase (como a de APNs) | — | sem uma das duas o iOS fica sem atestação: o código pede `appAttestWithDeviceCheckFallback`, e sem direito nem chave falham os dois |
 | 5. build nova, de desenvolvimento e de produção | `npx eas-cli build` | **módulo nativo novo = build nova** (a lição do EAS Observe) |
 | 6. confirmar que os pedidos chegam atestados | App Check > Firestore | antes de fechar a porta, ver quem lá entra: o painel mostra a percentagem de pedidos verificados |
 | 7. **só então** ligar a fiscalização (Firestore, Auth) | App Check > APIs | com ela ligada antes de os dois telemóveis mandarem atestação, a app fica sem ler nem escrever - e o sintoma é um `permission-denied`, igual ao de uma regra mal escrita |
