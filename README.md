@@ -593,6 +593,35 @@ com o mesmo `firestore.rules` que é publicado:
 npm run test:rules        # arranca o emulador, corre os testes e desliga-o (precisa de Java)
 ```
 
+### A chave de API do Firebase está no repositório, e é para estar
+
+O GitHub sinalizou uma **Google API Key** em `google-services.json` (é de lá que o Android a lê,
+via `android.googleServicesFile` no `app.json`). Não é um segredo, e a documentação da Google diz
+isso por palavras: as chaves de API do Firebase são **públicas por desenho** - identificam o
+projeto, não autorizam nada, e quem autoriza são as regras (acima) e o App Check. A chave viaja
+dentro de cada APK, e a chave *browser* (`EXPO_PUBLIC_FIREBASE_API_KEY`) viaja dentro do bundle
+JavaScript: no momento em que a app é compilada, já não há segredo nenhum para guardar.
+
+Por isso **não se roda**: uma chave nova seria igualmente pública. E o custo de a desativar é real -
+a chave antiga está dentro de cada app já instalada, e essas apps ficariam sem autenticação nem
+leitura de dados até sair uma build nova (a Google avisa para não mexer em restrições de chaves que
+apps em produção usam). O que este alerta pede, em vez de uma rotação, é confirmar as restrições:
+
+- a chave **Android** (a de `google-services.json`) tem de ter, em *API restrictions*, **só APIs do
+  Firebase** - e nada mais. Uma chave do Firebase com a Places API ou a Generative Language API na
+  lista passa a ser usável por qualquer pessoa, e a quota é do projeto;
+- o mesmo para a chave *browser* (`EXPO_PUBLIC_FIREBASE_API_KEY`), que é a que fica no bundle.
+
+Está em **Google Cloud > APIs e serviços > Credenciais**. Enquanto isso for verdade, o alerta do
+GitHub é ruído, e é tratado como ruído: `.github/secret_scanning.yml` fecha-o (e a push protection)
+para este ficheiro, com a razão escrita lá dentro.
+
+**O que falta ali é o App Check.** As regras dizem *quem* pode ler e escrever; não dizem que o
+pedido vem da app. Com a chave pública, quem tiver o `projectId` e a chave pode criar contas contra
+o projeto e consumir quota (as regras continuam a impedir que leia ou escreva dados de outras
+pessoas). Ligar o App Check é o que fecha isso - hoje não está ligado, e é o próximo trabalho de
+segurança a sério nesta app, mais do que qualquer rotação de chave.
+
 ## Confirmação de email
 
 O papel de cada pessoa (Tutorando/Tutor) deriva do **domínio** do email institucional, e isso não
