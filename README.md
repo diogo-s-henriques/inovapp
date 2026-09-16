@@ -220,6 +220,28 @@ No iOS o `submit` pede a chave da App Store Connect API (Users and Access → In
 credenciais Apple; no Android, para a **primeira** versão o caminho simples é arrastar o `.aab` para
 o Play Console à mão, e deixar o `submit` para as seguintes.
 
+#### O primeiro envio no Play Console (e a chave de assinatura)
+
+**A app já está criada na Play Console** (`INOVAPP`, gratuita, tipo *app*). O primeiro `.aab` sobe-se
+à mão e o caminho mais curto é o **teste interno**: não espera revisão, valida o `.aab` contra as
+verificações do Play (que apanham manifestos e `targetSdk` antes de qualquer lançamento a sério) e é
+ele que cria a **chave de assinatura da Play** - que é precisamente a peça que falta ao App Check.
+Outra razão para não deixar isto para o fim.
+
+1. Play Console > **Teste e lançamento > Teste interno > Criar novo lançamento**; aceitar a
+   **Play App Signing** quando pede (é o que gera a chave).
+2. Arrastar o `.aab` (`npx eas-cli build --profile production --platform android`, ou o link da
+   build no expo.dev). Notas do lançamento: uma linha chega.
+3. **Guardar** > **Revisão do lançamento** > **Iniciar lançamento**.
+4. **Teste e lançamento > Configuração > Chave de assinatura de app**: copiar a **SHA-256** do
+   *certificado de assinatura de app* (**não** a de *upload* - com a Play App Signing é a da
+   assinatura que vai no telemóvel, e é essa que o Play Integrity vê) e colar no formulário do Play
+   Integrity na Consola Firebase, com a vida útil de **1 hora**.
+
+O `versionCode` é do EAS (`cli.appVersionSource: remote` + `autoIncrement`), por isso cada `.aab`
+novo entra com o seguinte e nunca há número repetido a resolver. E **um `.aab` que já existe na Play
+não se apaga**: o que se sobe a seguir tem de ter número maior - é o que acontece por construção.
+
 #### O que a ficha das lojas pede
 
 | | o que é |
@@ -686,16 +708,49 @@ Integrity do Android** pede a impressão digital SHA-256 da **chave de assinatur
 Play App Signing, é ela quem assina o que as pessoas instalam — não a keystore do EAS): copia-se em
 *Play Console > Teste e lançamento > Configuração > Chave de assinatura de app*.
 
+**A impressão digital não vive onde se poderia esperar.** Confirmei-o na API: o
+`PlayIntegrityConfig` **não tem campo para ela** (só `tokenTtl`, `appIntegrity`, `deviceIntegrity`,
+`accountDetails`) - o formulário da consola escreve-a nas **impressões digitais da app Android** nas
+definições do projeto, e ali está vazia:
+
+```
+GET firebase.googleapis.com/v1beta1/projects/inovapp-68021/androidApps/1:...:android:768f.../sha
+  -> 200  {}          # nenhuma impressão registada (google-services.json também traz "nenhum")
+GET .../androidApps/1:...:android:768f.../playIntegrityConfig
+  -> 200  { tokenTtl: "3600s", deviceIntegrity: { minDeviceRecognitionLevel: "NO_INTEGRITY" } }
+```
+
+Esse `3600s` é o valor **por omissão** (o mesmo que a API devolve para serviços que nunca foram
+configurados - no iOS é o `604800s` que eu escrevi que se distingue do resto). Ou seja: o Android
+não está registado até alguém colar a impressão digital.
+
+**E há um passo antes disso, que a documentação põe em primeiro lugar e ainda não estava feito:**
+ligar o projeto à Play Console. Em *Play Console > Lançamento > Integridade da app*, na secção da
+API Play Integrity, **Link Cloud project** > `inovapp-68021` (exige ser *Owner* do projeto - és).
+Sem a ligação, o Play Integrity **não emite tokens** e o Android fica sem atestação nenhuma, por
+muito correta que a impressão digital esteja.
+
+**A vida útil do token:** a documentação dá o intervalo de **30 minutos a 7 dias** e diz que **1
+hora (o valor por omissão) é razoável para a maioria das apps**. Fica a de 1 hora no Android - a
+escolha de 7 dias que tinha sugerido era para o iOS, e não é preciso trazê-la para aqui: quanto mais
+longa, maior a janela em que um token apanhado serve a quem o apanhou.
+
+**Uma consequência a saber, escrita na mesma página:** o App Check exige por omissão a etiqueta
+`PLAY_RECOGNIZED`, e *apps que não estejam publicadas na Play não a podem receber*. Um APK de
+desenvolvimento instalado à mão nunca a recebe - é exactamente por isso que o atestador em
+desenvolvimento é o de depuração (abaixo), e não o Play Integrity.
+
 **O que falta, e não é código:**
 
 | passo | onde | porquê |
 |---|---|---|
 | 1. ~~ativar a API do App Check~~ **feito** | — | a conta de serviço não podia ativar serviços; ficou ativa na consola |
-| 2. registar o atestador por plataforma | Consola Firebase > App Check > Apps | **App Attest (iOS): feito** por REST, TTL 7 dias. **Play Integrity (Android): falta a impressão digital SHA-256 da chave de assinatura da Play** (Play Console > Teste e lançamento > Configuração); para emitir tokens, o projeto tem de estar ligado à Play Console |
-| 3. iOS: o direito de App Attest **já está no `app.json`** (com a build nova entra no perfil); alternativa é uma **chave de DeviceCheck** no Firebase (como a de APNs) | — | sem uma das duas o iOS fica sem atestação: o código pede `appAttestWithDeviceCheckFallback`, e sem direito nem chave falham os dois |
-| 4. build nova, de desenvolvimento e de produção | `npx eas-cli build` | **módulo nativo novo = build nova** (a lição do EAS Observe) |
-| 5. confirmar que os pedidos chegam atestados | App Check > Firestore | antes de fechar a porta, ver quem lá entra: o painel mostra a percentagem de pedidos verificados |
-| 6. **só então** ligar a fiscalização (Firestore, Auth) | App Check > APIs | com ela ligada antes de os dois telemóveis mandarem atestação, a app fica sem ler nem escrever - e o sintoma é um `permission-denied`, igual ao de uma regra mal escrita |
+| 2. ligar o projeto à Play Console (*Integridade da app > API Play Integrity > Link Cloud project* > `inovapp-68021`) | Play Console | sem a ligação o Play Integrity não emite tokens; exige ser *Owner* do projeto |
+| 3. registar o atestador por plataforma | Consola Firebase > App Check > Apps | **App Attest (iOS): feito** por REST, TTL 7 dias. **Play Integrity (Android): falta a impressão digital SHA-256 da chave de assinatura da Play** (Play Console > Teste e lançamento > Configuração) - e a chave só existe depois do **primeiro AAB subido** à Play |
+| 4. iOS: o direito de App Attest **já está no `app.json`** (com a build nova entra no perfil); alternativa é uma **chave de DeviceCheck** no Firebase (como a de APNs) | — | sem uma das duas o iOS fica sem atestação: o código pede `appAttestWithDeviceCheckFallback`, e sem direito nem chave falham os dois |
+| 5. build nova, de desenvolvimento e de produção | `npx eas-cli build` | **módulo nativo novo = build nova** (a lição do EAS Observe) |
+| 6. confirmar que os pedidos chegam atestados | App Check > Firestore | antes de fechar a porta, ver quem lá entra: o painel mostra a percentagem de pedidos verificados |
+| 7. **só então** ligar a fiscalização (Firestore, Auth) | App Check > APIs | com ela ligada antes de os dois telemóveis mandarem atestação, a app fica sem ler nem escrever - e o sintoma é um `permission-denied`, igual ao de uma regra mal escrita |
 
 Três decisões que ficaram tomadas no código, para não se perderem no meio dos passos:
 
