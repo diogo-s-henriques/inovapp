@@ -614,13 +614,88 @@ apps em produção usam). O que este alerta pede, em vez de uma rotação, é co
 
 Está em **Google Cloud > APIs e serviços > Credenciais**. Enquanto isso for verdade, o alerta do
 GitHub é ruído, e é tratado como ruído: `.github/secret_scanning.yml` fecha-o (e a push protection)
-para este ficheiro, com a razão escrita lá dentro.
+para este ficheiro **e para o `GoogleService-Info.plist`** (a chave iOS, o mesmo caso), com a razão
+escrita lá dentro.
 
 **O que falta ali é o App Check.** As regras dizem *quem* pode ler e escrever; não dizem que o
 pedido vem da app. Com a chave pública, quem tiver o `projectId` e a chave pode criar contas contra
 o projeto e consumir quota (as regras continuam a impedir que leia ou escreva dados de outras
-pessoas). Ligar o App Check é o que fecha isso - hoje não está ligado, e é o próximo trabalho de
-segurança a sério nesta app, mais do que qualquer rotação de chave.
+pessoas). Ligar o App Check é o que fecha isso - é o próximo trabalho de segurança a sério nesta
+app, mais do que qualquer rotação de chave. Está escrito abaixo.
+
+### App Check (o código está pronto, o serviço ainda não está ligado)
+
+O App Check agarra uma atestação do dispositivo - **Play Integrity** no Android, **App Attest** (com
+DeviceCheck por baixo) no iOS - a cada pedido ao Firestore e à Auth. Quem não a apresentar não é
+atendido, mas só **quando a fiscalização estiver ligada no console**: até lá o que existe é o token
+nas chamadas, e nada a verificá-lo.
+
+**Duas metades, porque são dois SDKs.** A atestação nativa não existe no SDK JavaScript do Firebase:
+quem a sabe produzir é o SDK nativo, e quem o expõe ao JavaScript é o
+`@react-native-firebase/app-check`. Só que esta app fala com o Firestore e a Auth pelo **SDK
+JavaScript** (ver `src/lib/firebase.ts`) - dois SDKs, com registos de apps diferentes, um não sabe
+do outro. Por isso o `src/lib/app-check.ts` faz as duas coisas:
+
+1. configura o atestador (Play Integrity / App Attest) no SDK **nativo**, no app do RNFB - é daqui
+   que sai o token de App Check;
+2. entrega esse token ao SDK **JavaScript**, no *nosso* `app`, através de um `CustomProvider` - é
+   esta metade que faz o token ser usado, porque é o SDK JavaScript que o cola a cada leitura.
+
+Faltando qualquer das metades não há erro nenhum: existe um token e ele não vai em pedido nenhum.
+(O atestador do próprio RNFB não pode ser entregue ao SDK JavaScript: o `getToken()` dele lança -
+quem responde é o módulo nativo, através do `getToken()` do RNFB.)
+
+O módulo é carregado à mão, como o `expo-observe` (ver "O EAS Observe não pode ser uma porta de
+sentido único"): numa build que não o tenha, não há atestação e todo o resto corre.
+
+**Feito:** a app iOS está registada no Firebase (`1:1008777430223:ios:8bac5797d554fd0dd0e3ba`), o
+`GoogleService-Info.plist` está no repositório (público por desenho, como o `google-services.json`),
+os dois pacotes estão instalados e o `app.json` tem os plugins - com uma **ordem que não é
+decorativa**:
+
+```json
+"plugins": [
+  "@react-native-firebase/app-check",
+  ["@react-native-firebase/app", { "ios": { "disableSPM": true } }]
+]
+```
+
+O plugin do `app` escreve `FirebaseApp.configure()` no `AppDelegate`, e o do `app-check` tem de
+registar o módulo **antes** disso - é o próprio código do plugin que o diz. Pela ordem inversa (a do
+exemplo de instalação do RNFB), o `app-check` encontra o bloco já escrito, acrescenta o seu *depois*
+-e fica com `configure()` duas vezes, a segunda depois do registo. Nesta ordem, o plugin do `app`
+reconhece o `configure()` do `app-check` e não repete nada.
+
+Do lado do iOS há ainda uma decisão de ferramentas: o RNFB resolve o Firebase por **Swift Package
+Manager**, que pede frameworks dinâmicos, enquanto o Expo 57 traz o React Native **pré-compilado**,
+que é estático. Ficou no caminho estático - `disableSPM: true` e, pelo `expo-build-properties`,
+`useFrameworks: "static"` com os dois pods do RNFB em `forceStaticLinking` - que é o que a
+documentação do RNFB indica para o núcleo pré-compilado.
+
+**O que falta, e não é código:**
+
+| passo | onde | porquê |
+|---|---|---|
+| 1. registar o atestador por plataforma no App Check | Consola Firebase > App Check > Apps | a Play Integrity só emite tokens para apps distribuídas pela Play (e o projeto tem de estar ligado à Play Console); o App Attest exige o direito de assinatura no perfil |
+| 2. iOS: ou o direito de **App Attest** (`com.apple.developer.devicecheck.appattest-environment`, em *Certificates, Identifiers & Profiles*), ou uma **chave de DeviceCheck** carregada no Firebase (como a chave de APNs) | Apple Developer + Firebase | sem uma das duas o iOS fica sem atestação: o código pede `appAttestWithDeviceCheckFallback`, e sem direito nem chave falham os dois |
+| 3. build nova, de desenvolvimento e de produção | `npx eas-cli build` | **módulo nativo novo = build nova** (a lição do EAS Observe) |
+| 4. confirmar que os pedidos chegam atestados | App Check > Firestore | antes de fechar a porta, ver quem lá entra: o painel mostra a percentagem de pedidos verificados |
+| 5. **só então** ligar a fiscalização (Firestore, Auth) | App Check > APIs | com ela ligada antes de os dois telemóveis mandarem atestação, a app fica sem ler nem escrever - e o sintoma é um `permission-denied`, igual ao de uma regra mal escrita |
+
+Três decisões que ficaram tomadas no código, para não se perderem no meio dos passos:
+
+- **Em desenvolvimento o atestador é o de depuração** (Play Integrity e App Attest não emitem tokens
+  para uma build de desenvolvimento ou um emulador). O segredo de depuração é gerado pelo próprio
+  atestador e escrito no log do dispositivo - regista-se no console em *App Check > Apps > gerir
+  tokens de depuração*. **Não vem de `EXPO_PUBLIC_*`**: essas variáveis ficam escritas dentro do
+  bundle de **todas** as builds, incluindo as de produção, e um token de depuração lá dentro é uma
+  porta aberta no App Check que se está a montar (há um teste que fixa exatamente isso).
+- **A renovação automática do token está ligada** (`isTokenAutoRefreshEnabled`), porque o primeiro
+  ecrã da app já lê o Firestore: sem token pronto, essa leitura saía sem atestação.
+- **A validade do token é assumida curta** (5 minutos). O resultado do RNFB traz o token mas não a
+  validade, e é ela que diz ao SDK JavaScript quando pedir outro: assumi-la por cima arriscava
+  servir um token já caducado (um `permission-denied` sem explicação), e assumi-la por baixo só
+  custa uma ida à cache do lado nativo, que é quem renova o token a sério.
 
 ## Confirmação de email
 
@@ -1047,6 +1122,13 @@ parte da app.
   explica uma lentidão de scroll sentida no iPhone - o que ela corrige é o Android, onde o bloqueio
   é mesmo aplicado. Uma lentidão que se sinta nos dois merece ser medida antes de mexer: a app já
   publica o `tti` por ecrã no EAS Observe (integração `'expo-router'`).
+- **`__DEV__` não se escreve a direito fora do React Native** - é uma global do Metro, e num
+  processo de Node (os testes `test:lib` e `test:data`) não existe: um `if (__DEV__)` ali é um
+  `ReferenceError` no momento em que a linha corre. Passou a haver `isDev()` em `src/lib/dev.ts`, que
+  responde a mesma pergunta onde quer que corra. O que o trouxe à superfície foi o App Check: a partir
+  do momento em que o `src/lib/firebase.ts` passou a importar o serviço de erros, o `observe.ts`
+  entrou no grafo dos testes da camada de dados - e o aviso "sem módulo nativo" rebentava
+  precisamente quando o módulo nativo não existia, que em Node é sempre.
 
 ## Contas de teste
 

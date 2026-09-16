@@ -12,7 +12,8 @@
       "bundleIdentifier": "com.diyogo.inovapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,14 +23,23 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-    "package": "com.diyogo.inovapp",
-    "googleServicesFile": "./google-services.json"
-  },
+      "package": "com.diyogo.inovapp",
+      "googleServicesFile": "./google-services.json"
+    },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "@react-native-firebase/app-check",
+      [
+        "@react-native-firebase/app",
+        {
+          "ios": {
+            "disableSPM": true
+          }
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -55,6 +65,18 @@
           "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#5B4BA8",
           "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBAppCheck"
+            ]
+          }
         }
       ]
     ],

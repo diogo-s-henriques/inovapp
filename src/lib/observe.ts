@@ -1,5 +1,7 @@
 import type * as ObserveModule from 'expo-observe';
 
+import { isDev } from '@/lib/dev';
+
 type ObserveApi = typeof ObserveModule;
 
 /**
@@ -25,7 +27,10 @@ function load(): ObserveApi | null {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- é o que permite apanhar a falha
     return require('expo-observe') as ObserveApi;
   } catch (error) {
-    if (__DEV__) {
+    // `isDev()` e não `__DEV__`: este ramo é o que corre quando o módulo **não** existe, e num
+    // processo de Node (os testes da camada de dados carregam este ficheiro) `__DEV__` não existe -
+    // o aviso rebentava antes de poder avisar seja do que fosse. Ver src/lib/dev.ts.
+    if (isDev()) {
       console.warn('[observe] sem módulo nativo nesta build: sem métricas nem erros reportados', error);
     }
     return null;

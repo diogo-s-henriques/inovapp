@@ -1,3 +1,4 @@
+import { isDev } from '@/lib/dev';
 import { observe } from '@/lib/observe';
 
 /**
@@ -33,7 +34,7 @@ import { observe } from '@/lib/observe';
 export function reportError(error: unknown, context: string): void {
   // Em desenvolvimento escreve também na consola: quem está a programar olha para o terminal, e no
   // Expo Go (onde o `expo-observe` não existe) isto é o único rasto que aparece.
-  if (__DEV__) console.warn(`[${context}]`, error);
+  if (isDev()) console.warn(`[${context}]`, error);
 
   observe?.Observe.reportError(withContext(error, context));
 }

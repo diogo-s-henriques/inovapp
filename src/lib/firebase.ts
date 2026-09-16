@@ -4,6 +4,8 @@ import type { Auth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { activateAppCheck } from '@/lib/app-check';
+
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -56,6 +58,13 @@ function createAuth(): Auth {
 }
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+/**
+ * Antes da Auth e do Firestore, e de propósito: o App Check cola um token a cada pedido, e um
+ * serviço criado primeiro podia mandar a sua primeira leitura sem ele. Numa build sem o módulo
+ * nativo isto não faz nada (ver src/lib/app-check.ts).
+ */
+activateAppCheck(app);
 
 export const auth = createAuth();
 export const db = getFirestore(app);
