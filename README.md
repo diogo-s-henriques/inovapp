@@ -672,15 +672,30 @@ que é estático. Ficou no caminho estático - `disableSPM: true` e, pelo `expo-
 `useFrameworks: "static"` com os dois pods do RNFB em `forceStaticLinking` - que é o que a
 documentação do RNFB indica para o núcleo pré-compilado.
 
+**O iOS também precisa de uma linha no `app.json`, e ficou lá:** o direito de App Attest
+(`com.apple.developer.devicecheck.appattest-environment: development`). É ele que autoriza o
+dispositivo a falar com o serviço de atestação da Apple; sem a linha, o `appAttest` falha mesmo com
+tudo o resto certo. Quem o põe no perfil de provisionamento é a build — mais uma razão para ser
+nova. **Antes da build de produção passa a `production`** (o ambiente de desenvolvimento só serve
+enquanto se desenvolve; esquecido lá dentro, o App Attest falha na app da loja).
+
+**O registo no console tentou-se pela API, e ficou a meio:** a conta de serviço consegue registar a
+atestação, mas **não consegue ativar a API do App Check** (`PERMISSION_DENIED` — ativar serviços é
+do utilizador, não do papel de Editor). É 30 segundos, e é o bloqueio atual:
+https://console.developers.google.com/apis/api/firebaseappcheck.googleapis.com/overview?project=inovapp-68021
+→ **Ativar**. Feito isso, o registo é um clique na Consola (App Check > Apps) ou repetir o pedido
+REST — os dois atestadores ficam registados com o TTL de 7 dias.
+
 **O que falta, e não é código:**
 
 | passo | onde | porquê |
 |---|---|---|
-| 1. registar o atestador por plataforma no App Check | Consola Firebase > App Check > Apps | a Play Integrity só emite tokens para apps distribuídas pela Play (e o projeto tem de estar ligado à Play Console); o App Attest exige o direito de assinatura no perfil |
-| 2. iOS: ou o direito de **App Attest** (`com.apple.developer.devicecheck.appattest-environment`, em *Certificates, Identifiers & Profiles*), ou uma **chave de DeviceCheck** carregada no Firebase (como a chave de APNs) | Apple Developer + Firebase | sem uma das duas o iOS fica sem atestação: o código pede `appAttestWithDeviceCheckFallback`, e sem direito nem chave falham os dois |
-| 3. build nova, de desenvolvimento e de produção | `npx eas-cli build` | **módulo nativo novo = build nova** (a lição do EAS Observe) |
-| 4. confirmar que os pedidos chegam atestados | App Check > Firestore | antes de fechar a porta, ver quem lá entra: o painel mostra a percentagem de pedidos verificados |
-| 5. **só então** ligar a fiscalização (Firestore, Auth) | App Check > APIs | com ela ligada antes de os dois telemóveis mandarem atestação, a app fica sem ler nem escrever - e o sintoma é um `permission-denied`, igual ao de uma regra mal escrita |
+| 1. **ativar a API do App Check** | [consola Google Cloud](https://console.developers.google.com/apis/api/firebaseappcheck.googleapis.com/overview?project=inovapp-68021) → Ativar | tentado pela API com a conta de serviço: não pode ativar serviços (só o utilizador) — **é o bloqueio atual** |
+| 2. registar o atestador por plataforma no App Check | Consola Firebase > App Check > Apps | Play Integrity (para emitir tokens, o projeto tem de estar ligado à Play Console) e App Attest |
+| 3. iOS: o direito de App Attest **já está no `app.json`** (com a build nova entra no perfil); alternativa é uma **chave de DeviceCheck** no Firebase (como a de APNs) | — | sem uma das duas o iOS fica sem atestação: o código pede `appAttestWithDeviceCheckFallback`, e sem direito nem chave falham os dois |
+| 4. build nova, de desenvolvimento e de produção | `npx eas-cli build` | **módulo nativo novo = build nova** (a lição do EAS Observe) |
+| 5. confirmar que os pedidos chegam atestados | App Check > Firestore | antes de fechar a porta, ver quem lá entra: o painel mostra a percentagem de pedidos verificados |
+| 6. **só então** ligar a fiscalização (Firestore, Auth) | App Check > APIs | com ela ligada antes de os dois telemóveis mandarem atestação, a app fica sem ler nem escrever - e o sintoma é um `permission-denied`, igual ao de uma regra mal escrita |
 
 Três decisões que ficaram tomadas no código, para não se perderem no meio dos passos:
 
