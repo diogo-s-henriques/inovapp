@@ -129,17 +129,22 @@ Os dados são guardados no Firebase (Google) e as mensagens entre duas pessoas s
 essas duas. O perfil (nome, fotografia, curso e interesses) é visível para quem tem sessão iniciada
 na app. A política de privacidade completa está em: <URL DA POLÍTICA DE PRIVACIDADE>
 
-Segurança dos dados (formulário da Play):
-
-· Informações pessoais: nome e email — gerir a conta; não partilhados.
-· Fotos: fotografia de perfil — mostrada a quem tem sessão iniciada; não partilhada com terceiros.
-· Mensagens: mensagens dentro da app — visíveis só a quem participa da conversa.
-· Atividade na app: pedidos, sessões e avaliações — a avaliação é anónima por construção.
-· Diagnóstico: erros e tempos de arranque por ecrã, sem dados pessoais (EAS Observe).
-· Eliminação de conta: disponível na app (Perfil → Definições → Apagar conta).
-
 Sem publicidade. Sem compras. Sem recolha de localização, contactos, câmara ou microfone.
 ```
+
+E o formulário **Segurança dos dados** da Play Console (não é texto da descrição: é o inquérito
+separado, e é onde as apps costumam mentir). Responde-se assim:
+
+| categoria | o que se declara |
+|---|---|
+| Informações pessoais | nome e email — **recolhidos**, para gerir a conta; não partilhados; não vendidos |
+| Fotos | fotografia de perfil — **recolhida**, para o perfil; visível a quem tem sessão iniciada |
+| Mensagens | mensagens dentro da app — **recolhidas**, visíveis só a quem participa da conversa |
+| Atividade na app | pedidos, sessões e avaliações — **recolhidos**; a avaliação é anónima por construção |
+| Diagnóstico | erros e tempos de arranque por ecrã, **sem dados pessoais** (EAS Observe) |
+| Eliminação de conta | **disponível na app**: Perfil → Definições → Apagar conta |
+| Publicidade / compras | **nenhuma** nos dois |
+| Localização, contactos, câmara, microfone | **não recolhidos nem pedidos** |
 
 ## Novidades desta versão (1.0.0)
 
