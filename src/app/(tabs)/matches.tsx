@@ -1,33 +1,62 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
 import { canLearn } from '@/constants/profile';
 import { useI18n } from '@/hooks/use-i18n';
 import { useAuthStore } from '@/auth/store';
-import { fetchExcludedCandidateIds, fetchMentorCandidates, getPassedCandidateIds, passCandidate, sendConnectionRequest } from '@/lib/matching';
-import { respondToConnectionRequest, subscribePendingConnectionRequests } from '@/lib/requests';
+import {
+  fetchExcludedCandidateIds,
+  fetchMentorCandidates,
+  getPassedCandidateIds,
+  matchesView,
+  passCandidate,
+  sendConnectionRequest,
+} from '@/lib/matching';
+import { respondToConnectionRequest, retryPendingConnectionRequests } from '@/lib/requests';
 import type { ConnectionRequest } from '@/lib/requests';
+import { useConnectionRequests } from '@/hooks/use-connection-requests';
 import { useTheme } from '@/hooks/use-theme';
 import { BlockedScreen } from '@/components/ui/BlockedScreen';
 import { Button } from '@/components/ui/Button';
 import { SuccessModal } from '@/components/ui/SuccessModal';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { CandidateCard } from '@/components/domain/CandidateCard';
 import { ConnectionRequestsSection } from '@/components/domain/ConnectionRequestsSection';
-import { MatchCard } from '@/components/domain/MatchCard';
+import { RetryNotice } from '@/components/ui/RetryNotice';
+import { ScreenHero } from '@/components/domain/ScreenHero';
 import type { MatchCandidate } from '@/types/match';
 
 /**
  * Ecrã de descoberta e de decisão. Em cima, os pedidos de conexão que chegaram (aceitar/recusar
- * acontece aqui, não nas Notificações: um pedido decide-se num sítio só); por baixo, o deck que
- * mostra um candidato de cada vez, avançando ao passar ou ao conectar. Quem só ensina não tem
- * deck — não procura mentor, são os Tutorandos que o encontram — mas vê na mesma os pedidos.
+ * acontece aqui, não nas Notificações: um pedido decide-se num sítio só); por baixo, os candidatos
+ * que ainda não são nada para nós. Quem só ensina não tem lista de candidatos — não procura mentor,
+ * são os Tutorandos que o encontram — mas vê na mesma os pedidos.
+ *
+ * A lista de candidatos é uma **lista**, e não um cartão de ecrã inteiro que se vira: era um deck
+ * com uma bandeja de botões fixa em baixo, e nenhum outro ecrã da app se parecia com aquilo. Agora
+ * é a mesma linha de cartão que os resultados da pesquisa usam, com as duas decisões dentro do
+ * cartão — de quem se está a ler. O que se perdeu (descrição e disponibilidade) vive no perfil de
+ * cada candidato, a um toque de distância.
+ *
+ * Os pedidos recusados ou aceites saem da lista sozinhos (deixam de estar pendentes), e um pedido
+ * enviado tira o candidato daqui na hora: pedir duas vezes a mesma ligação não é possível.
+ *
+ * O que o ecrã desenha vem todo de `matchesView` (ver src/lib/matching.ts), e não de uma corrente
+ * de `if` aqui dentro: foi essa corrente que deixou o ecrã preso a girar para quem só ensina (sem
+ * lista de candidatos para carregar, o estado de carregamento nunca chegava ao fim).
+ *
+ * O cabeçalho é o mesmo bloco em gradiente da Home (`ScreenHero`), mas só com o título: sem
+ * identidade e sem sino — o nome de quem já está na app não diz nada de novo aqui, e o sino já
+ * está na Home (e o número que ele mostraria obrigava a repetir, neste ecrã, as subscrições que só
+ * a Home tem).
  */
 export default function MatchesScreen() {
   const theme = useTheme();
   const i18n = useI18n();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const participationMode = useAuthStore((state) => state.profile?.participationMode);
@@ -38,19 +67,14 @@ export default function MatchesScreen() {
 
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showRequestSent, setShowRequestSent] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-  const [error, setError] = useState(false);
-  const [requests, setRequests] = useState<ConnectionRequest[]>([]);
+  const [requestedName, setRequestedName] = useState<string | null>(null);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [connectError, setConnectError] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
+  const { requests, error: requestsError } = useConnectionRequests();
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [respondError, setRespondError] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribePendingConnectionRequests(user.uid, setRequests);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
 
   useEffect(() => {
     if (!user || blocked) return;
@@ -64,7 +88,13 @@ export default function MatchesScreen() {
         const [excludeIds, passedIds] = await Promise.all([fetchExcludedCandidateIds(user.uid), getPassedCandidateIds()]);
         passedIds.forEach((id) => excludeIds.add(id));
         const results = await fetchMentorCandidates({ currentUid: user.uid, learningSubjects, excludeIds });
-        if (!cancelled) setCandidates(results);
+        if (cancelled) return;
+        setCandidates(results);
+        setLoadError(false);
+      } catch {
+        // Sem este `catch`, uma leitura que falhasse deixava a lista vazia e o ecrã a dizer "sem
+        // mais perfis por agora" — ou seja, a app a afirmar que não há ninguém quando não sabe.
+        if (!cancelled) setLoadError(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -74,28 +104,30 @@ export default function MatchesScreen() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, blocked]);
+  }, [user?.uid, blocked, reloadToken]);
 
-  const current = candidates[currentIndex];
+  // O candidato sai da lista nos dois sentidos: quem passa já não o quer ver, e quem recebeu o
+  // pedido também não (a lista já não teria o que fazer com ele, e voltaria a oferecer a mesma
+  // ligação a quem acabou de a pedir).
+  const dropCandidate = (id: string) => setCandidates((current) => current.filter((candidate) => candidate.id !== id));
 
-  const goToNext = () => setCurrentIndex((index) => index + 1);
-
-  const handlePassar = () => {
-    if (current) passCandidate(current.id);
-    goToNext();
+  const handlePass = (candidate: MatchCandidate) => {
+    passCandidate(candidate.id);
+    dropCandidate(candidate.id);
   };
 
-  const handleConectar = async () => {
-    if (!user || !current || connecting) return;
-    setConnecting(true);
-    setError(false);
+  const handleConnect = async (candidate: MatchCandidate) => {
+    if (!user || connectingId) return;
+    setConnectingId(candidate.id);
+    setConnectError(false);
     try {
-      await sendConnectionRequest(user.uid, current.id);
-      setShowRequestSent(true);
+      await sendConnectionRequest(user.uid, candidate.id);
+      dropCandidate(candidate.id);
+      setRequestedName(candidate.firstName);
     } catch {
-      setError(true);
+      setConnectError(true);
     } finally {
-      setConnecting(false);
+      setConnectingId(null);
     }
   };
 
@@ -114,110 +146,118 @@ export default function MatchesScreen() {
     }
   };
 
-  const handleCloseRequestSent = () => {
-    setShowRequestSent(false);
-    goToNext();
+  // Tentar outra vez volta a pôr o estado de carregamento (a fazer de conta que ainda não sabemos
+  // nada) e obriga o efeito a correr de novo. Não basta limpar o erro: sem o token, o efeito não
+  // volta a correr e o botão só limpava a mensagem.
+  const handleRetryLoad = () => {
+    setLoadError(false);
+    setLoading(true);
+    setReloadToken((token) => token + 1);
   };
 
-  // Sem pedidos e sem deck não há nada para mostrar além da explicação — é o caso de quem só
-  // ensina e ainda não recebeu nada.
-  const onlyBlockedMessage = blocked && requests.length === 0;
+  // O estado do ecrã, decidido num sítio só (ver `matchesView`): quem só ensina **nunca** está a
+  // carregar, mesmo que `loading` tenha ficado preso a true lá atrás.
+  const view = matchesView({ canLearn: !blocked, loading, loadError, requestCount: requests.length });
+
+  const header = (
+    <>
+      <ScreenHero style={styles.hero} topInset={insets.top} title={i18n.matches.title} />
+
+      <View style={styles.headerBody}>
+        <ConnectionRequestsSection
+          requests={requests}
+          busyId={respondingId}
+          errorMessage={respondError ? i18n.requests.respondError : null}
+          onAccept={(request) => handleRespond(request, true)}
+          onDecline={(request) => handleRespond(request, false)}
+        />
+        {connectError && (
+          <ThemedText type="small" themeColor="danger" style={styles.connectError}>
+            {i18n.matches.connectError}
+          </ThemedText>
+        )}
+      </View>
+    </>
+  );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <ThemedText type="subtitle">{i18n.matches.title}</ThemedText>
-      </View>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Uma leitura dos pedidos que falhou aparece aqui, acima de qualquer vista (e não só na
+          lista): quem só ensina sem pedidos nenhuns cai na vista de "bloqueado", e era aí que o
+          aviso ficava escondido. */}
+      {requestsError && (
+        <RetryNotice
+          message={i18n.requests.loadError}
+          onRetry={retryPendingConnectionRequests}
+          style={styles.requestsNotice}
+        />
+      )}
 
-      {onlyBlockedMessage ? (
-        <BlockedScreen title={i18n.matches.blockedTitle} description={i18n.matches.blockedDescription} />
+      {view === 'blocked' ? (
+        <BlockedScreen title={i18n.matches.blockedTitle} />
+      ) : view === 'loading' ? (
+        <View style={styles.centered}>
+          <ActivityIndicator color={theme.primary} />
+        </View>
+      ) : view === 'error' ? (
+        <View style={styles.centered}>
+          <ThemedText type="bodyBold" style={styles.centeredTitle}>
+            {i18n.matches.loadError}
+          </ThemedText>
+          <Button label={i18n.common.tryAgain} variant="primary" onPress={handleRetryLoad} />
+        </View>
       ) : (
-        <>
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}>
-            <ConnectionRequestsSection
-              requests={requests}
-              busyId={respondingId}
-              errorMessage={respondError ? i18n.requests.respondError : null}
-              onAccept={(request) => handleRespond(request, true)}
-              onDecline={(request) => handleRespond(request, false)}
-            />
-
-            {blocked ? (
-              // Quem só ensina tem pedidos para decidir mas nenhum deck por baixo: a frase
-              // explica porquê, em vez de dar a entender que a lista está incompleta.
-              <ThemedText type="body" themeColor="textMuted">
-                {i18n.matches.blockedDescription}
-              </ThemedText>
-            ) : loading ? (
-              <View style={styles.empty}>
-                <ActivityIndicator color={theme.primary} />
-              </View>
-            ) : current ? (
-              <MatchCard
-                firstName={current.firstName}
-                roleLabel={current.role}
-                course={current.course}
-                year={current.year}
-                subjects={current.subjects}
-                availability={current.availability}
-                description={current.description}
-                image={current.image}
-                onPressProfile={() => router.push({ pathname: '/profile/[id]', params: { id: current.id } })}
-              />
-            ) : (
-              <View style={styles.empty}>
-                <ThemedText type="bodyBold" style={styles.emptyTitle}>
+        <FlatList
+          data={blocked ? [] : candidates}
+          keyExtractor={(candidate) => candidate.id}
+          // A cor por trás da lista é a do topo do gradiente: é esta superfície que aparece na
+          // faixa que se vê ao puxar a lista para baixo (e a lista, clara, cobre o resto).
+          style={[styles.scroll, { backgroundColor: theme.heroTop }]}
+          contentContainerStyle={[styles.list, { backgroundColor: theme.background }]}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={header}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ListEmptyComponent={
+            // Quem só ensina tem pedidos para decidir mas nenhuma lista de candidatos, e o que
+            // está por cima (a secção dos pedidos) já é o conteúdo do ecrã: não se explica a
+            // ausência da lista, porque não falta nada.
+            view === 'requests' ? null : (
+              <View style={styles.emptyBox}>
+                <ThemedText type="bodyBold" style={styles.centeredTitle}>
                   {i18n.matches.emptyTitle}
                 </ThemedText>
-                <ThemedText themeColor="textMuted" style={styles.emptyDescription}>
+                <ThemedText themeColor="textMuted" style={styles.centeredTitle}>
                   {i18n.matches.emptyDescription}
                 </ThemedText>
               </View>
-            )}
-          </ScrollView>
-
-          {current && (
-            <View style={styles.actionBar}>
-              {error && (
-                <ThemedText type="small" themeColor="danger" style={styles.errorText}>
-                  {i18n.matches.connectError}
-                </ThemedText>
-              )}
-              {/* Branco com contorno: é a bandeja que dá fundo ao botão "Passar" (o único que
-                  não tem cor própria), por isso não pode diluir-se no fundo azulado do ecrã. */}
-              <View style={[styles.tray, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <Button
-                  label={i18n.matches.pass}
-                  icon="close"
-                  variant="ghost"
-                  onPress={handlePassar}
-                  disabled={connecting}
-                  style={styles.passarButton}
-                />
-                <Button
-                  label={i18n.matches.connect}
-                  icon="heart"
-                  variant="primary"
-                  onPress={handleConectar}
-                  disabled={connecting}
-                  style={styles.conectarButton}
-                />
-              </View>
-            </View>
+            )
+          }
+          renderItem={({ item }) => (
+            <CandidateCard
+              firstName={item.firstName}
+              lastName={item.lastName}
+              course={item.course}
+              year={item.year}
+              subjects={item.subjects}
+              image={item.image}
+              passLabel={i18n.matches.pass}
+              connectLabel={i18n.matches.connect}
+              busy={connectingId === item.id}
+              onPass={() => handlePass(item)}
+              onConnect={() => handleConnect(item)}
+              onPressProfile={() => router.push({ pathname: '/profile/[id]', params: { id: item.id } })}
+            />
           )}
-        </>
+        />
       )}
 
       <SuccessModal
-        visible={showRequestSent}
-        onRequestClose={handleCloseRequestSent}
+        visible={requestedName !== null}
+        onRequestClose={() => setRequestedName(null)}
         title={i18n.matches.requestSentTitle}
-        description={i18n.matches.requestSentDescription(current?.firstName)}
+        description={i18n.matches.requestSentDescription(requestedName ?? undefined)}
         buttonLabel={i18n.common.continue}
-        onContinue={handleCloseRequestSent}
+        onContinue={() => setRequestedName(null)}
       />
     </SafeAreaView>
   );
@@ -227,57 +267,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: Spacing.five,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.two,
-  },
   scroll: {
     flex: 1,
   },
-  scrollContent: {
-    gap: Spacing.four,
+  // O bloco é de fora a fora: o conteúdo tem 24 px de margem, e o gradiente tem de os desfazer
+  // para chegar às bordas.
+  hero: {
+    marginHorizontal: -Spacing.five,
+  },
+  // O que vem depois do bloco (os pedidos por decidir) — o topo é 0 porque quem chega ao limite do
+  // ecrã é o bloco, não a lista.
+  headerBody: {
+    paddingTop: Spacing.five,
+  },
+  // O aviso de leitura falhada vive fora das vistas (ver o ecrã): a margem é dele, e não da lista,
+  // porque em duas das vistas não há lista nenhuma por baixo.
+  requestsNotice: {
     paddingHorizontal: Spacing.five,
-    paddingBottom: Spacing.three,
+    paddingTop: Spacing.two,
   },
-  actionBar: {
+  list: {
+    flexGrow: 1,
     paddingHorizontal: Spacing.five,
-    paddingBottom: 110,
+    paddingTop: 0,
+    paddingBottom: 120,
   },
-  errorText: {
-    textAlign: 'center',
-    marginBottom: Spacing.two,
+  separator: {
+    height: Spacing.two,
   },
-  tray: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    borderRadius: Spacing.six,
-    borderWidth: 1,
-    overflow: 'hidden',
+  connectError: {
+    marginTop: Spacing.three,
   },
-  passarButton: {
+  centered: {
     flex: 1,
-    borderTopRightRadius: 0,
-    borderBottomRightRadius: 0,
-  },
-  conectarButton: {
-    flex: 1,
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0,
-  },
-  // Já não é um estado de ecrã inteiro (pode haver pedidos por cima), por isso centra-se com
-  // espaço próprio em vez de `flex: 1`.
-  empty: {
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.three,
+    paddingHorizontal: Spacing.five,
+    paddingBottom: 120,
+  },
+  centeredTitle: {
+    textAlign: 'center',
+  },
+  // Sem resultados: centrado e com espaço próprio, como nos estados vazios da pesquisa e do chat.
+  emptyBox: {
+    alignItems: 'center',
     gap: Spacing.one,
     paddingVertical: Spacing.six,
     paddingHorizontal: Spacing.six,
-  },
-  emptyTitle: {
-    textAlign: 'center',
-  },
-  emptyDescription: {
-    textAlign: 'center',
   },
 });

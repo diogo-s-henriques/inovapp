@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -49,7 +49,7 @@ export function SearchBar({
           accessibilityLabel={i18n.search.filtersButton}
           accessibilityRole="button"
           style={[styles.filterButton, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <Ionicons name="options-outline" size={18} color={theme.textPrimary} />
+          <Ionicons name="options-outline" size={IconSize.ui} color={theme.textPrimary} />
           {activeFilterCount > 0 && (
             <View style={[styles.badge, { backgroundColor: theme.primary }]}>
               <ThemedText type="small" style={styles.badgeText} themeColor="onPrimary">

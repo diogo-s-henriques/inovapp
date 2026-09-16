@@ -24,6 +24,23 @@ export interface ProfilePicCardProps extends ViewProps {
   image?: string;
   size?: ProfilePicCardSize | number;
   fontSize?: number;
+  /**
+   * Raio dos cantos, em pixels. Por omissão é metade do lado — um círculo.
+   *
+   * Um valor menor dá um quadrado de cantos arredondados, que é o que o cabeçalho da Home usa:
+   * "quadrado" aqui não quer dizer arestas vivas, quer dizer que a forma deixa de ser redonda.
+   */
+  radius?: number;
+  /**
+   * Contorno da fotografia, em pixels. Sem valor, não há contorno (é o caso das fotografias
+   * pequenas das listas: a 32 px um aro ocupa mais do que a cara que emoldura).
+   */
+  borderWidth?: number;
+  /**
+   * Cor do contorno. Sem valor explícito, usa o preto quase transparente da paleta
+   * (`theme.photoBorder`) — o mesmo em qualquer fundo.
+   */
+  borderColor?: string;
   backgroundColor?: string;
   textColor?: string;
 }
@@ -35,6 +52,9 @@ export function ProfilePicCard({
   image,
   size = 'md',
   fontSize,
+  radius,
+  borderWidth,
+  borderColor,
   backgroundColor,
   textColor,
   style,
@@ -56,8 +76,12 @@ export function ProfilePicCard({
         {
           width: dimension,
           height: dimension,
-          borderRadius: dimension / 2,
+          borderRadius: radius ?? dimension / 2,
           backgroundColor: backgroundColor ?? theme.primarySoft,
+          // O contorno é desenhado **dentro** da caixa (o React Native não tem `box-sizing`), por
+          // isso a fotografia continua a medir exatamente `size` — o que a borda come é a imagem.
+          borderWidth: borderWidth ?? 0,
+          borderColor: borderColor ?? theme.photoBorder,
         },
         style,
       ]}

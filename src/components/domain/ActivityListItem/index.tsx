@@ -2,11 +2,34 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps } from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Spacing, type ColorToken } from '@/constants/theme';
+import { IconSize, Spacing, type ColorToken } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import type { ActivityKind } from '@/types/activity';
 import { ThemedText } from '@/components/ui/ThemedText';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
+/**
+ * Ícone e cor de cada tipo de entrada do histórico.
+ *
+ * Vive aqui, junto da linha que os desenha, porque a lista é a mesma em dois ecrãs (Notificações e,
+ * em resumo, a Home) e um ícone diferente para o mesmo acontecimento era uma inconsistência à
+ * espera de acontecer.
+ *
+ * Verde nas duas entradas que **aconteceram** (uma conexão ou uma sessão aceites) e ameixa nas duas
+ * que apenas **se aproximam** (a sessão de amanhã, o material recebido): o verde é um estado — o
+ * visto continua a dizer "correu bem" mesmo a preto — e o acento é a cor de tudo o que é neutro na
+ * app. Foi por isso que o material deixou o cinzento: era a única caixa das quatro sem nada a dizer.
+ */
+export const ACTIVITY_ITEM_ICON: Record<
+  ActivityKind,
+  { icon: IoniconsName; color: ColorToken; background: ColorToken }
+> = {
+  'connection-accepted': { icon: 'checkmark-circle-outline', color: 'textPrimary', background: 'successSoft' },
+  'session-accepted': { icon: 'checkmark-circle-outline', color: 'textPrimary', background: 'successSoft' },
+  'session-tomorrow': { icon: 'calendar-outline', color: 'primary', background: 'primarySoft' },
+  'material-received': { icon: 'document-text-outline', color: 'primary', background: 'primarySoft' },
+};
 
 export interface ActivityListItemProps extends ViewProps {
   icon: IoniconsName;
@@ -33,7 +56,7 @@ export function ActivityListItem({
   return (
     <View style={[styles.row, { backgroundColor: theme.surface, borderColor: theme.border }, style]} {...rest}>
       <View style={[styles.iconCircle, { backgroundColor: theme[iconBackground] }]}>
-        <Ionicons name={icon} size={18} color={theme[iconColor]} />
+        <Ionicons name={icon} size={IconSize.ui} color={theme[iconColor]} />
       </View>
 
       <View style={styles.content}>

@@ -20,7 +20,13 @@ import { collection, doc, getDoc, getDocs, query, terminate, where } from 'fireb
 import { signIn, signUp } from '@/auth/actions';
 import { pt } from '@/i18n/pt';
 import { blockUser, fetchBlockedUids, hasBlocked, unblockUser } from '@/lib/blocking';
-import { conversationExists, markConversationRead, sendMessage } from '@/lib/chat';
+import {
+  conversationExists,
+  markConversationRead,
+  sendMessage,
+  subscribeToConversations,
+  type ConversationsState,
+} from '@/lib/chat';
 import { auth, db } from '@/lib/firebase';
 import {
   connectionRequestId,
@@ -29,6 +35,7 @@ import {
   fetchConnectedTutees,
   fetchExcludedCandidateIds,
   fetchMentorCandidates,
+  hasConnections,
   matchId,
   sendConnectionRequest,
 } from '@/lib/matching';
@@ -37,7 +44,9 @@ import { getRememberedEmail } from '@/lib/remembered-email';
 import {
   respondToConnectionRequest,
   subscribePendingConnectionRequests,
-  type ConnectionRequest,
+  subscribeToAcceptedConnectionRequests,
+  type ConnectionRequestsState,
+  type ConnectionResponse,
 } from '@/lib/requests';
 import { completeSession, respondToSessionRequest, sendSessionRequest, subscribeToSessions } from '@/lib/sessions';
 import type { AgendaSession, SessionRequest } from '@/types/session';
@@ -205,16 +214,19 @@ describe('pedido de conexão', () => {
     await sendConnectionRequest(cenario.ana, cenario.bruno);
 
     await entrarComo(CONTAS.alunoQueEnsina);
-    const pedidos = await esperarPor<ConnectionRequest[]>(
+    // A subscrição devolve o estado (a lista **e** se a leitura falhou), e não só a lista: o erro
+    // era um canal que não existia, e uma leitura negada ficava igual a "não há pedidos".
+    const pedidos = await esperarPor<ConnectionRequestsState>(
       (emitir) => subscribePendingConnectionRequests(cenario.bruno, emitir),
-      (lista) => lista.length === 1,
+      (estado) => estado.requests.length === 1,
       'o pedido de conexão a chegar ao mentor',
     );
 
-    assert.equal(pedidos[0].fromUid, cenario.ana);
-    assert.equal(pedidos[0].candidate.firstName, 'Ana');
+    assert.equal(pedidos.error, false);
+    assert.equal(pedidos.requests[0].fromUid, cenario.ana);
+    assert.equal(pedidos.requests[0].candidate.firstName, 'Ana');
     // Ana só aprende, por isso o papel que lhe cabe é o de tutoranda.
-    assert.equal(pedidos[0].candidate.role, pt.roles.tutee);
+    assert.equal(pedidos.requests[0].candidate.role, pt.roles.tutee);
   });
 
   it('aceitar cria a conversa e marca o pedido como aceite', async () => {
@@ -246,6 +258,56 @@ describe('pedido de conexão', () => {
     assert.equal(tutorandos[0].firstName, 'Ana');
   });
 
+  it('quem enviou vê a resposta do outro lado, sem reler nada', async () => {
+    await ligar(cenario.ana, cenario.bruno);
+
+    // A subscrição abre como a Ana — quem **pede**. Era o lado que não tinha subscrição nenhuma:
+    // a app só ouvia o que chega (`to == eu`), e a resposta a um pedido só aparecia quando algum
+    // ecrã voltasse a ler.
+    await entrarComo(CONTAS.aluna);
+    const respostas = await esperarPor<ConnectionResponse[]>(
+      (emitir) => subscribeToAcceptedConnectionRequests(cenario.ana, emitir),
+      (lista) => lista.length === 1,
+      'a resposta ao pedido que a Ana enviou',
+    );
+
+    assert.equal(respostas[0].candidate.firstName, 'Bruno');
+    assert.equal(respostas[0].id, connectionRequestId(cenario.ana, cenario.bruno));
+    // `respondedAt` é um serverTimestamp: se a consulta devolvesse o documento antes de o campo
+    // existir, a linha do histórico sairia com uma data inválida.
+    assert.ok(Number.isFinite(respostas[0].respondedAt.getTime()));
+  });
+
+  it('quem aceitou não recebe a resposta do pedido nos aceites', async () => {
+    // O contrato é o mesmo do histórico "Recentes": a resposta é para quem pediu. Quem aceitou já
+    // sabe o que fez.
+    await ligar(cenario.ana, cenario.bruno);
+
+    const doBruno = await esperarPor<ConnectionResponse[]>(
+      (emitir) => subscribeToAcceptedConnectionRequests(cenario.bruno, emitir),
+      () => true,
+      'o primeiro estado da subscrição do Bruno',
+    );
+
+    assert.deepEqual(doBruno, []);
+  });
+
+  it('uma leitura negada vira estado de erro, e não uma lista vazia', async () => {
+    await entrarComo(CONTAS.aluna);
+
+    // A consulta filtra por `to == uid`, e a regra de leitura só deixa ver os pedidos de que se é
+    // parte: pedir os pedidos do **Bruno** com a sessão da Ana é uma leitura que as regras negam.
+    // Era esta a falha que passava por "ecrã sem dados" — o canal do erro não existia.
+    const estado = await esperarPor<ConnectionRequestsState>(
+      (emitir) => subscribePendingConnectionRequests(cenario.bruno, emitir),
+      (proximo) => proximo.error,
+      'a leitura negada a virar estado de erro',
+    );
+
+    assert.deepEqual(estado.requests, []);
+    assert.equal(estado.error, true);
+  });
+
   it('um pedido ainda pendente não põe ninguém na lista de tutorandos', async () => {
     await entrarComo(CONTAS.aluna);
     await sendConnectionRequest(cenario.ana, cenario.bruno);
@@ -262,6 +324,37 @@ describe('pedido de conexão', () => {
     await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, false);
 
     assert.deepEqual(await fetchConnectedTutees(cenario.bruno), []);
+  });
+
+  it('"tenho ligações?" só é verdade depois de o pedido ser aceite, nos dois sentidos', async () => {
+    // É esta a pergunta que a Home faz para decidir se mostra o guia de primeiros passos (ver
+    // hasConnections). Antes lia as duas listas completas para a responder.
+    await entrarComo(CONTAS.aluna);
+    await sendConnectionRequest(cenario.ana, cenario.bruno);
+    assert.equal(await hasConnections(cenario.ana), false, 'um pedido pendente ainda não é ligação');
+
+    await entrarComo(CONTAS.alunoQueEnsina);
+    await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, true);
+
+    // Os dois lados: o Tutorando tem a ligação como "from" e o Mentor como "to".
+    assert.equal(await hasConnections(cenario.bruno), true);
+
+    await entrarComo(CONTAS.aluna);
+    assert.equal(await hasConnections(cenario.ana), true);
+  });
+
+  it('uma ligação bloqueada deixa de contar como ligação', async () => {
+    await ligar(cenario.ana, cenario.bruno);
+
+    await entrarComo(CONTAS.aluna);
+    await blockUser(cenario.ana, cenario.bruno);
+
+    assert.equal(await hasConnections(cenario.ana), false);
+
+    // O sentido contrário também: quem foi bloqueado não pode continuar a ver o guia de quem tem
+    // ligações por causa de uma ligação que já não é uma.
+    await entrarComo(CONTAS.alunoQueEnsina);
+    assert.equal(await hasConnections(cenario.bruno), false);
   });
 
   it('quem bloqueia e quem foi bloqueado deixam de se encontrar na descoberta', async () => {
@@ -420,6 +513,89 @@ describe('mensagens', () => {
       () => sendMessage(conversaId, cenario.bruno, cenario.ana, 'A passar-me pelo Bruno'),
       semPermissao,
     );
+  });
+});
+
+describe('lista de conversas ao vivo', () => {
+  let conversaId: string;
+
+  beforeEach(async () => {
+    await ligar(cenario.ana, cenario.bruno);
+    conversaId = matchId(cenario.ana, cenario.bruno);
+  });
+
+  it('chega resolvida com o perfil do outro, a última mensagem e o aviso de por ler', async () => {
+    await entrarComo(CONTAS.aluna);
+    await sendMessage(conversaId, cenario.ana, cenario.bruno, 'Olá, podes ajudar-me?');
+
+    // A subscrição abre como o Bruno, o destinatário: o nome que ele tem de ver é o da Ana (o
+    // "outro" participante), e não o dele próprio.
+    await entrarComo(CONTAS.alunoQueEnsina);
+    const estado = await esperarPor<ConversationsState>(
+      (emitir) => subscribeToConversations(cenario.bruno, emitir),
+      (atual) => atual.conversations.length === 1,
+      'a conversa a chegar à lista do Bruno',
+    );
+
+    assert.equal(estado.error, false);
+    assert.equal(estado.conversations[0].id, conversaId);
+    assert.equal(estado.conversations[0].firstName, 'Ana');
+    assert.equal(estado.conversations[0].lastMessage, 'Olá, podes ajudar-me?');
+    assert.equal(estado.conversations[0].unread, true);
+  });
+
+  it('quem entra depois recebe logo o que já se sabia', async () => {
+    await entrarComo(CONTAS.alunoQueEnsina);
+
+    // A primeira "janela" — a barra de baixo, que está montada em toda a app — fica aberta.
+    let daBarra: ConversationsState = { conversations: [], error: false };
+    const fecharBarra = subscribeToConversations(cenario.bruno, (estado) => {
+      daBarra = estado;
+    });
+
+    try {
+      const doChat = await esperarPor<ConversationsState>(
+        (emitir) => subscribeToConversations(cenario.bruno, emitir),
+        (atual) => atual.conversations.length === 1,
+        'o Chat a receber a lista que a barra de baixo já tinha',
+      );
+
+      // A conversa chegou à segunda janela sem uma segunda leitura ao Firestore: é a mesma
+      // subscrição a servir as duas.
+      assert.equal(doChat.conversations[0].id, conversaId);
+      assert.equal(daBarra.conversations[0].id, conversaId);
+    } finally {
+      fecharBarra();
+    }
+  });
+
+  it('um bloqueio tira a conversa da lista que já estava aberta', async () => {
+    await entrarComo(CONTAS.alunoQueEnsina);
+
+    const fecharPrimeira = subscribeToConversations(cenario.bruno, () => {});
+
+    try {
+      await esperarPor<ConversationsState>(
+        (emitir) => subscribeToConversations(cenario.bruno, emitir),
+        (atual) => atual.conversations.length === 1,
+        'a conversa a chegar à lista',
+      );
+
+      // Bloqueado quer dizer "inacessível para os dois": a lista tem de se corrigir sozinha, sem
+      // o ecrã ser reaberto.
+      await blockUser(cenario.bruno, cenario.ana);
+
+      const depois = await esperarPor<ConversationsState>(
+        (emitir) => subscribeToConversations(cenario.bruno, emitir),
+        (atual) => atual.conversations.length === 0,
+        'a conversa a sair da lista depois do bloqueio',
+      );
+
+      assert.deepEqual(depois.conversations, []);
+      assert.equal(depois.error, false);
+    } finally {
+      fecharPrimeira();
+    }
   });
 });
 

@@ -39,7 +39,12 @@ export interface RequestCardProps extends ViewProps {
 
 /** Cartão usado tanto para pedidos de conexão/sessão no ecrã de notificações como para o pedido
  * de sessão dentro do próprio chat (ver ChatSessionRequestCard) — nesse caso, só quem pode
- * responder vê os botões; quem pediu vê o estado (status). */
+ * responder vê os botões; quem pediu vê o estado (status).
+ *
+ * É um cartão **branco** como todos os outros, e não um tom com cor: era o único cartão com cor da
+ * e no ecrã das notificações (que é feito sobretudo destes) dava a impressão de que aquele ecrã
+ * tinha um fundo diferente dos restantes. Quem marca o pedido como "algo a decidir" é a pastilha
+ * de estado e o botão de aceitar, e não o fundo do cartão. */
 export function RequestCard({
   firstName,
   lastName,
@@ -63,7 +68,7 @@ export function RequestCard({
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.primarySoft, borderColor: theme.borderAccent }, style]} {...rest}>
+    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }, style]} {...rest}>
       <View style={styles.headerRow}>
         <ProfilePicCard firstName={firstName} lastName={lastName} image={image} size="md" />
         <View style={styles.headerInfo}>
@@ -95,8 +100,24 @@ export function RequestCard({
         </Pill>
       ) : (
         <View style={styles.actionsRow}>
-          <Button label={i18n.requestCard.decline} variant="secondary" onPress={onDecline} disabled={busy} style={styles.action} />
-          <Button label={i18n.requestCard.accept} variant="primary" onPress={onAccept} disabled={busy} style={styles.action} />
+          {/* As duas decisões são simétricas e levam o tom neutro: recusar é contorno e aceitar é
+              cheio, mas nenhuma das duas é "a ação da app" — o acento é para o que a app promove. */}
+          <Button
+            label={i18n.requestCard.decline}
+            variant="secondary"
+            tone="neutral"
+            onPress={onDecline}
+            disabled={busy}
+            style={styles.action}
+          />
+          <Button
+            label={i18n.requestCard.accept}
+            variant="primary"
+            tone="neutral"
+            onPress={onAccept}
+            disabled={busy}
+            style={styles.action}
+          />
         </View>
       )}
     </View>

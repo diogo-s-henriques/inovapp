@@ -58,7 +58,14 @@ export function useAuthSync(): void {
         return;
       }
 
-      setUser({ uid: firebaseUser.uid, email: firebaseUser.email });
+      setUser({
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        // O `reload()` que confirma o email escreve **neste mesmo objeto**, por isso voltar a
+        // subscrever não é preciso para isto ficar atual — basta voltar a lê-lo (ver
+        // `refreshEmailVerified` em src/auth/actions.ts).
+        emailVerified: firebaseUser.emailVerified,
+      });
 
       // A expiração da sessão depende de lastLoginAt/rememberSession, que vivem no documento
       // privado da conta (ver src/auth/actions.ts e firestore.rules).
@@ -85,6 +92,7 @@ export function useAuthSync(): void {
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
+          emailVerified: firebaseUser.emailVerified,
           fullName: data?.fullName,
           photoUri: data?.photoUri,
           role: data?.role,

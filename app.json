@@ -8,7 +8,11 @@
     "scheme": "inovapp",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.diyogo.inovapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,8 +21,10 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
-    },
+      "predictiveBackGestureEnabled": false,
+    "package": "com.diyogo.inovapp",
+    "googleServicesFile": "./google-services.json"
+  },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
@@ -38,14 +44,30 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Permite que a INOVAPP aceda às tuas fotos para definires a foto de perfil."
+          "photosPermission": "Permite que a INOVAPP aceda às tuas fotos para definires a foto de perfil.",
+          "microphonePermission": false
         }
       ],
-      "expo-image"
+      "expo-image",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#5B4BA8",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "87af4292-b5e9-46a1-9b81-a9d56118d0a7"
+      }
+    },
+    "owner": "diyogo"
   }
 }

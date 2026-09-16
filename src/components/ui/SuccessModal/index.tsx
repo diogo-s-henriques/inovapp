@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Modal, Pressable, StyleSheet, View, type ModalProps } from 'react-native';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { IconSize, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/ui/ThemedText';
 
@@ -21,7 +21,7 @@ export function SuccessModal({ visible, onRequestClose, title, description, butt
       <View style={styles.backdrop}>
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
           <View style={[styles.iconCircle, { backgroundColor: theme.successSoft }]}>
-            <Ionicons name="checkmark" size={28} color={theme.success} />
+            <Ionicons name="checkmark-outline" size={IconSize.state} color={theme.textPrimary} />
           </View>
 
           <ThemedText type="subtitle" style={styles.title}>

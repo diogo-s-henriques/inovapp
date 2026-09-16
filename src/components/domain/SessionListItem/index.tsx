@@ -19,13 +19,18 @@ export interface SessionListItemProps extends ViewProps {
   sessionRole: SessionRole; // papel do utilizador nesta sessão (ver src/types/session.ts)
   status: SessionStatus;
   completing?: boolean;
-  onPressJoin?: () => void;
   onPressComplete?: () => void;
 }
 
-// Linha de sessão na agenda (src/app/sessions.tsx); o papel muda consoante quem vê o ecrã.
-// O botão de ação também muda: só quem é Mentor/Tutor consegue terminar a sessão; depois de
-// terminada, ninguém volta a ver "Entrar", só o estado.
+/**
+ * Linha de sessão na agenda (src/app/sessions.tsx); o papel muda consoante quem vê o ecrã.
+ *
+ * A única ação é **Terminar**, e só de quem é Mentor/Tutor nessa sessão. Houve aqui um botão
+ * "Entrar" que abria um aviso a prometer algo que a app não fazia. A app **não** faz chamadas: a
+ * modalidade "Online" continua a existir (é como as pessoas combinam encontrar-se) e o sítio onde
+ * isso se combina é o chat, que é onde a conversa já está. Depois de terminada, a linha passa a
+ * mostrar o estado e mais nada.
+ */
 export function SessionListItem({
   time,
   firstName,
@@ -36,7 +41,6 @@ export function SessionListItem({
   sessionRole,
   status,
   completing,
-  onPressJoin,
   onPressComplete,
   style,
   ...rest
@@ -80,7 +84,7 @@ export function SessionListItem({
           disabled={completing}
           accessibilityRole="button"
           accessibilityLabel={i18n.sessions.complete}
-          style={[styles.joinButton, { backgroundColor: theme.textPrimary, opacity: completing ? 0.6 : 1 }]}>
+          style={[styles.actionButton, { backgroundColor: theme.textPrimary, opacity: completing ? 0.6 : 1 }]}>
           {completing ? (
             <ActivityIndicator size="small" color={theme.onPrimary} />
           ) : (
@@ -89,17 +93,7 @@ export function SessionListItem({
             </ThemedText>
           )}
         </Pressable>
-      ) : (
-        <Pressable
-          onPress={onPressJoin}
-          accessibilityRole="button"
-          accessibilityLabel={i18n.sessions.join}
-          style={[styles.joinButton, { backgroundColor: theme.primary }]}>
-          <ThemedText type="smallBold" themeColor="onPrimary">
-            {i18n.sessions.join}
-          </ThemedText>
-        </Pressable>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -124,7 +118,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.half,
     alignSelf: 'flex-start',
   },
-  joinButton: {
+  actionButton: {
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.six,

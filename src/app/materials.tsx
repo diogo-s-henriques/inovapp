@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
@@ -16,6 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { ChipGroup } from '@/components/ui/ChipGroup';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { MaterialListItem } from '@/components/domain/MaterialListItem';
+import { StackHeader } from '@/components/domain/StackHeader';
 import type { SharedMaterial } from '@/types/material';
 
 type FilterOption = 'all' | 'sent' | 'received';
@@ -72,14 +72,7 @@ export default function MaterialsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => goBack(router)} accessibilityRole="button" accessibilityLabel={i18n.materials.back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={theme.textPrimary} />
-        </Pressable>
-        <ThemedText type="title" style={styles.headerTitle}>
-          {i18n.materials.title}
-        </ThemedText>
-      </View>
+      <StackHeader title={i18n.materials.title} backLabel={i18n.materials.back} onBack={() => goBack(router)} />
 
       <View style={styles.filterRow}>
         <ChipGroup
@@ -113,17 +106,6 @@ export default function MaterialsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.two,
-  },
-  headerTitle: {
     flex: 1,
   },
   filterRow: {

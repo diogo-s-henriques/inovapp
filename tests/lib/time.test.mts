@@ -12,7 +12,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { dateLocaleTag, formatTimeAgo, toDateKey } from '@/lib/time';
+import { dateLocaleTag, formatTimeAgo, fromDateKey, isDateKey, toDateKey, toSessionKey } from '@/lib/time';
 
 const SEGUNDO = 1_000;
 const MINUTO = 60 * SEGUNDO;
@@ -106,5 +106,71 @@ describe('toDateKey', () => {
   it('atravessa corretamente a mudança de ano e de mês', () => {
     assert.equal(toDateKey(new Date(2026, 11, 31, 23, 59)), '2026-12-31');
     assert.equal(toDateKey(new Date(2027, 0, 1, 0, 0)), '2027-01-01');
+  });
+});
+
+describe('fromDateKey', () => {
+  it('é o inverso de toDateKey', () => {
+    assert.equal(toDateKey(fromDateKey('2026-10-05')), '2026-10-05');
+    assert.equal(fromDateKey('2026-10-05').getDate(), 5);
+  });
+
+  it('constrói a data local, à meia-noite', () => {
+    const data = fromDateKey('2026-10-05');
+
+    assert.equal(data.getFullYear(), 2026);
+    assert.equal(data.getMonth(), 9);
+    assert.equal(data.getHours(), 0);
+  });
+});
+
+describe('isDateKey', () => {
+  it('aceita uma chave de data a sério', () => {
+    assert.ok(isDateKey('2026-10-05'));
+    // 2026 não é bissexto e fevereiro tem 28 dias.
+    assert.ok(isDateKey('2026-02-28'));
+  });
+
+  it('recusa o que não tem a forma certa', () => {
+    assert.ok(!isDateKey('amanhã'));
+    assert.ok(!isDateKey('2026-10-5'));
+    assert.ok(!isDateKey('05-10-2026'));
+    assert.ok(!isDateKey('2026-10-05T09:00'));
+    assert.ok(!isDateKey(''));
+    assert.ok(!isDateKey(undefined));
+    assert.ok(!isDateKey(null));
+  });
+
+  it('recusa um dia que não existe no calendário', () => {
+    // Tem a forma certa e não existe: sem esta parte, o mês de um calendário era construído a
+    // partir de uma data que o `Date` empurra para o dia 3 de março sem avisar ninguém.
+    assert.ok(!isDateKey('2026-02-31'));
+    assert.ok(!isDateKey('2026-13-01'));
+    assert.ok(!isDateKey('2026-00-10'));
+    assert.ok(!isDateKey('2026-04-31'));
+  });
+});
+
+describe('toSessionKey', () => {
+  it('junta o dia e a hora com um `T`, com zeros à esquerda', () => {
+    // É o formato com que as sessões guardam `date` e `time` no Firestore; a hora vem de
+    // `toTimeString()`, cujo início é sempre 'HH:mm' com dois dígitos.
+    assert.equal(toSessionKey(new Date(2026, 8, 5, 9, 5)), '2026-09-05T09:05');
+    assert.equal(toSessionKey(new Date(2026, 8, 14, 0, 0)), '2026-09-14T00:00');
+  });
+
+  it('compara-se como cronologicamente', () => {
+    const manha = toSessionKey(new Date(2026, 8, 14, 9, 30));
+    const tarde = toSessionKey(new Date(2026, 8, 14, 18, 0));
+    const meiaHoraDepois = toSessionKey(new Date(2026, 8, 14, 18, 30));
+    const amanha = toSessionKey(new Date(2026, 8, 15, 0, 0));
+
+    assert.ok(manha < tarde);
+    assert.ok(tarde < meiaHoraDepois);
+    assert.ok(meiaHoraDepois < amanha);
+  });
+
+  it('atravessa corretamente a mudança de dia', () => {
+    assert.ok(toSessionKey(new Date(2026, 8, 14, 23, 59)) < toSessionKey(new Date(2026, 8, 15, 0, 1)));
   });
 });

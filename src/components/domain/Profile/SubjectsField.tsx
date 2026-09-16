@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
 import { SUBJECT_OPTIONS } from '@/constants/profile';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
@@ -48,9 +48,9 @@ export function SubjectsField({ selected, onChange, hint, showCount, variant = '
             onPress={() => sheetRef.current?.present()}
             accessibilityRole="button"
             accessibilityLabel={i18n.profileFields.addSubject}
-            style={[styles.addButton, { borderColor: theme.primary }]}>
-            <Ionicons name="add" size={16} color={theme.primary} />
-            <ThemedText type="smallBold" themeColor="primary">
+            style={[styles.addButton, { borderColor: theme.border }]}>
+            <Ionicons name="add-outline" size={IconSize.ui} color={theme.textPrimary} />
+            <ThemedText type="smallBold" themeColor="textPrimary">
               {i18n.profileFields.add}
             </ThemedText>
           </Pressable>

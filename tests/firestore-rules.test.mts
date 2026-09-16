@@ -25,6 +25,7 @@ import {
   deleteField,
   doc,
   getDoc,
+  serverTimestamp,
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
@@ -62,10 +63,28 @@ beforeEach(async () => {
   await testEnv.clearFirestore();
 });
 
-/** Firestore de um utilizador com sessão iniciada, com o email no token (é dele que as regras
- * derivam o papel). */
+/**
+ * Firestore de um utilizador com sessão iniciada, com o email no token (é dele que as regras
+ * derivam o papel) e o email **já confirmado** — que é o estado normal de quem usa a app.
+ *
+ * O `email_verified` é o que a regra `isVerified()` lê (ver "email por confirmar" mais abaixo):
+ * sem ele no token, quase tudo o que os testes deste ficheiro exercitam seria recusado, e a
+ * suite deixava de estar a testar o que diz testar.
+ */
 function dbAs(user: { uid: string; email: string }) {
-  return testEnv.authenticatedContext(user.uid, { email: user.email }).firestore();
+  return dbWith(user, true);
+}
+
+/**
+ * O mesmo, mas com o email **por confirmar**: alguém que se registou e ainda não abriu o link
+ * (ou que se registou com o email de outra pessoa).
+ */
+function dbAsUnverified(user: { uid: string; email: string }) {
+  return dbWith(user, false);
+}
+
+function dbWith(user: { uid: string; email: string }, emailVerified: boolean) {
+  return testEnv.authenticatedContext(user.uid, { email: user.email, email_verified: emailVerified }).firestore();
 }
 
 function dbAnonimo() {
@@ -117,6 +136,96 @@ function sessionData(sessionRequestId: string) {
     status: 'scheduled',
   };
 }
+
+/**
+ * A política transversal da confirmação do email. Está aqui, e não dentro do bloco de uma coleção,
+ * porque não é uma regra de nenhuma coleção: é sobre o **token**.
+ *
+ * O que se fixa: quem não confirmou o email não lê nem escreve nada — com duas exceções contadas
+ * (o seu próprio documento e o `userAccounts` da entrada), que existem para a app conseguir
+ * arrancar e mostrar o ecrã que explica o que falta. E a exceção do `create` em `users` está
+ * fechada à forma exata que o registo escreve: é esta restrição que impede o caso que a
+ * confirmação existe para travar — registar-se com o email de outra pessoa e escrever logo um
+ * perfil completo em nome dela.
+ */
+describe('email por confirmar — o que um token sem `email_verified` pode e não pode', () => {
+  it('NÃO lê o perfil de outra pessoa', async () => {
+    await seed(`users/${PROFESSOR.uid}`, { role: 'professor', profileCompleted: true });
+    await assertFails(getDoc(doc(dbAsUnverified(ALUNO), 'users', PROFESSOR.uid)));
+  });
+
+  it('NÃO cria um pedido de conexão', async () => {
+    await assertFails(
+      setDoc(doc(dbAsUnverified(ALUNO), 'connectionRequests', CONNECTION_ID), {
+        from: ALUNO.uid,
+        to: PROFESSOR.uid,
+        status: 'pending',
+      }),
+    );
+  });
+
+  it('NÃO lê a conversa em que participa nem escreve nela', async () => {
+    await seed(`conversations/${CONVERSATION_ID}`, { participants: [ALUNO.uid, PROFESSOR.uid].sort() });
+    const db = dbAsUnverified(ALUNO);
+
+    await assertFails(getDoc(doc(db, 'conversations', CONVERSATION_ID)));
+    await assertFails(
+      addDoc(collection(db, 'conversations', CONVERSATION_ID, 'messages'), {
+        text: 'Olá',
+        senderId: ALUNO.uid,
+        createdAt: 1,
+      }),
+    );
+  });
+
+  it('NÃO edita o próprio perfil', async () => {
+    // Por confirmar, o perfil fica como o registo o deixou — vazio. Sem isto, quem se registasse
+    // com o email de outra pessoa escrevia o nome dela aqui assim que quisesse.
+    await seed(`users/${ALUNO.uid}`, { role: 'student', profileCompleted: false });
+    await assertFails(
+      updateDoc(doc(dbAsUnverified(ALUNO), 'users', ALUNO.uid), {
+        fullName: 'Nome de Outra Pessoa',
+        profileCompleted: true,
+      }),
+    );
+  });
+
+  it('NÃO cria um perfil completo em nome de outra pessoa', async () => {
+    await assertFails(
+      setDoc(doc(dbAsUnverified(ALUNO), 'users', ALUNO.uid), {
+        role: 'student',
+        profileCompleted: true,
+        fullName: 'Nome de Outra Pessoa',
+      }),
+    );
+  });
+
+  it('pode criar o seu perfil tal como o registo o escreve', async () => {
+    await assertSucceeds(
+      setDoc(doc(dbAsUnverified(ALUNO), 'users', ALUNO.uid), {
+        role: 'student',
+        profileCompleted: false,
+        createdAt: serverTimestamp(),
+      }),
+    );
+  });
+
+  it('pode ler o seu próprio perfil — é o que faz a app parar no ecrã da confirmação', async () => {
+    await seed(`users/${ALUNO.uid}`, { role: 'student', profileCompleted: false });
+    await assertSucceeds(getDoc(doc(dbAsUnverified(ALUNO), 'users', ALUNO.uid)));
+  });
+
+  it('pode entrar: escreve a última entrada em userAccounts', async () => {
+    await assertSucceeds(
+      setDoc(doc(dbAsUnverified(ALUNO), 'userAccounts', ALUNO.uid), {
+        email: ALUNO.email,
+        role: 'student',
+        lastLoginAt: serverTimestamp(),
+        rememberSession: false,
+      }),
+    );
+  });
+});
 
 describe('users — o perfil é público dentro da comunidade, mas não se forja o papel', () => {
   it('o aluno cria o próprio perfil como student', async () => {
@@ -216,6 +325,74 @@ describe('users — o perfil é público dentro da comunidade, mas não se forja
   });
 });
 
+describe('users/devices — o token dos avisos é privado (não vive no perfil)', () => {
+  const DEVICE = 'dispositivo1';
+
+  const registration = (uid: string) => ({
+    userId: uid,
+    token: 'ExponentPushToken[abc]',
+    platform: 'android',
+    updatedAt: 1,
+  });
+
+  it('o próprio regista o seu dispositivo', async () => {
+    await assertSucceeds(
+      setDoc(doc(dbAs(ALUNO), 'users', ALUNO.uid, 'devices', DEVICE), registration(ALUNO.uid)),
+    );
+  });
+
+  it('o próprio lê e apaga o registo do seu dispositivo', async () => {
+    await seed(`users/${ALUNO.uid}/devices/${DEVICE}`, registration(ALUNO.uid));
+    const db = dbAs(ALUNO);
+
+    await assertSucceeds(getDoc(doc(db, 'users', ALUNO.uid, 'devices', DEVICE)));
+    await assertSucceeds(deleteDoc(doc(db, 'users', ALUNO.uid, 'devices', DEVICE)));
+  });
+
+  it('NENHUM outro utilizador autenticado lê o registo alheio', async () => {
+    // É a razão de ser deste sítio: com o token de outra pessoa qualquer conta podia mandar-lhe
+    // avisos em nome da app. Se isto passar a ser legível (por exemplo, movendo o token para
+    // `users/{uid}`, que é público), a app fica com um canal de spam aberto.
+    await seed(`users/${ALUNO.uid}/devices/${DEVICE}`, registration(ALUNO.uid));
+    await assertFails(getDoc(doc(dbAs(PROFESSOR), 'users', ALUNO.uid, 'devices', DEVICE)));
+  });
+
+  it('ninguém escreve no registo de outra pessoa', async () => {
+    await assertFails(
+      setDoc(doc(dbAs(PROFESSOR), 'users', ALUNO.uid, 'devices', DEVICE), registration(ALUNO.uid)),
+    );
+  });
+
+  it('NÃO se lê sem sessão iniciada', async () => {
+    await seed(`users/${ALUNO.uid}/devices/${DEVICE}`, registration(ALUNO.uid));
+    await assertFails(getDoc(doc(dbAnonimo(), 'users', ALUNO.uid, 'devices', DEVICE)));
+  });
+
+  it('NÃO se regista um dispositivo com o uid de outra pessoa', async () => {
+    await assertFails(
+      setDoc(doc(dbAs(ALUNO), 'users', ALUNO.uid, 'devices', DEVICE), registration(PROFESSOR.uid)),
+    );
+  });
+
+  it('NÃO se regista uma plataforma que não existe', async () => {
+    await assertFails(
+      setDoc(doc(dbAs(ALUNO), 'users', ALUNO.uid, 'devices', DEVICE), {
+        ...registration(ALUNO.uid),
+        platform: 'windows',
+      }),
+    );
+  });
+
+  it('NÃO se regista um token vazio', async () => {
+    await assertFails(
+      setDoc(doc(dbAs(ALUNO), 'users', ALUNO.uid, 'devices', DEVICE), {
+        ...registration(ALUNO.uid),
+        token: '',
+      }),
+    );
+  });
+});
+
 describe('userAccounts — os dados privados da conta são só do próprio', () => {
   it('o próprio lê os seus dados de conta', async () => {
     await seed(`userAccounts/${ALUNO.uid}`, { email: ALUNO.email, role: 'student' });
@@ -272,9 +449,11 @@ describe('userAccounts — os dados privados da conta são só do próprio', () 
     );
   });
 
-  it('NINGUÉM apaga os dados de conta', async () => {
-    await seed(`userAccounts/${ALUNO.uid}`, { email: ALUNO.email, role: 'student' });
-    await assertFails(deleteDoc(doc(dbAs(ALUNO), 'userAccounts', ALUNO.uid)));
+  // O dono pode apagá-los (é o primeiro passo de apagar a conta — ver "apagar a própria conta"
+  // mais abaixo). O que continua fechado é apagá-los a outra pessoa.
+  it('NÃO se apagam os dados de conta de outra pessoa', async () => {
+    await seed(`userAccounts/${PROFESSOR.uid}`, { email: PROFESSOR.email, role: 'professor' });
+    await assertFails(deleteDoc(doc(dbAs(ALUNO), 'userAccounts', PROFESSOR.uid)));
   });
 });
 
@@ -368,9 +547,11 @@ describe('connectionRequests — só o tutorando inicia, só o destinatário res
     await assertSucceeds(getDoc(doc(dbAs(PROFESSOR), 'connectionRequests', CONNECTION_ID)));
   });
 
-  it('ninguém apaga pedidos de conexão', async () => {
+  // Os dois envolvidos levam o pedido quando apagam a conta (ver "apagar a própria conta" mais
+  // abaixo); quem não é um deles não lhe toca.
+  it('um terceiro não apaga o pedido de conexão', async () => {
     await seed(`connectionRequests/${CONNECTION_ID}`, requestData(ALUNO.uid, PROFESSOR.uid));
-    await assertFails(deleteDoc(doc(dbAs(ALUNO), 'connectionRequests', CONNECTION_ID)));
+    await assertFails(deleteDoc(doc(dbAs(ALUNO_B), 'connectionRequests', CONNECTION_ID)));
   });
 });
 
@@ -820,5 +1001,167 @@ describe('ratings — anónimas, uma por sessão, só pelo tutorando', () => {
     const db = dbAs(ALUNO);
     await assertFails(updateDoc(doc(db, 'ratings', 'sessao1'), { rating: 1 }));
     await assertFails(deleteDoc(doc(db, 'ratings', 'sessao1')));
+  });
+});
+
+/**
+ * Apagar a própria conta (ver src/lib/account.ts).
+ *
+ * O `delete` era a operação mais fechada do ficheiro — só existia nos bloqueios, e só para o autor —
+ * e é agora a que faz um caminho a mais. O que aqui se fixa é o desenho dessa abertura, que é
+ * estreito de propósito:
+ *
+ * 1. **O que é só do próprio** (o perfil, os dados privados da conta, os registos dos avisos) sai
+ *    com quem o tem, e não precisa de email confirmado — quem não consegue confirmar o email tem de
+ *    conseguir remover a conta que criou.
+ * 2. **O que é de dois** (pedidos, sessões, conversas) segue o mesmo critério de sempre
+ *    (`isVerified()`), e só o leva quem é uma das duas partes.
+ * 3. **O que é de outra pessoa não se toca**: nem o perfil de outro, nem as mensagens que o outro
+ *    escreveu, nem as avaliações (que ficam inalcançáveis em vez de apagadas — uma regra que
+ *    deixasse apagá-las dava a um mentor a forma de deitar fora as notas más).
+ */
+describe('apagar a própria conta — o que sai com ela e o que fica', () => {
+  it('o dono apaga o próprio perfil e os dados privados da conta', async () => {
+    await seed(`users/${ALUNO.uid}`, { role: 'student', profileCompleted: true });
+    await seed(`userAccounts/${ALUNO.uid}`, { email: ALUNO.email, role: 'student' });
+
+    const db = dbAs(ALUNO);
+    await assertSucceeds(deleteDoc(doc(db, 'users', ALUNO.uid)));
+    await assertSucceeds(deleteDoc(doc(db, 'userAccounts', ALUNO.uid)));
+  });
+
+  it('o dono apaga os registos de avisos deste telemóvel', async () => {
+    await seed(`users/${ALUNO.uid}/devices/telemovel1`, {
+      userId: ALUNO.uid,
+      token: 'ExponentPushToken[abc]',
+      platform: 'ios',
+    });
+
+    await assertSucceeds(
+      deleteDoc(doc(dbAs(ALUNO), 'users', ALUNO.uid, 'devices', 'telemovel1')),
+    );
+  });
+
+  it('NÃO se apaga o perfil de outra pessoa', async () => {
+    await seed(`users/${PROFESSOR.uid}`, { role: 'professor', profileCompleted: true });
+    await assertFails(deleteDoc(doc(dbAs(ALUNO), 'users', PROFESSOR.uid)));
+  });
+
+  it('NÃO se apagam os dados privados de outra conta', async () => {
+    await seed(`userAccounts/${PROFESSOR.uid}`, { email: PROFESSOR.email, role: 'professor' });
+    await assertFails(deleteDoc(doc(dbAs(ALUNO), 'userAccounts', PROFESSOR.uid)));
+  });
+
+  it('NÃO se apaga o registo de avisos de outro telemóvel', async () => {
+    await seed(`users/${PROFESSOR.uid}/devices/telemovel1`, {
+      userId: PROFESSOR.uid,
+      token: 'ExponentPushToken[abc]',
+      platform: 'ios',
+    });
+
+    await assertFails(deleteDoc(doc(dbAs(ALUNO), 'users', PROFESSOR.uid, 'devices', 'telemovel1')));
+  });
+
+  it('sem o email confirmado, ainda se apaga o próprio perfil', async () => {
+    // A exceção é deliberada: quem se registou com um email institucional que não consegue
+    // confirmar (perdeu o acesso à caixa, por exemplo) tem de poder remover a conta que criou —
+    // senão fica com uma conta que não usa e não consegue apagar.
+    await seed(`users/${ALUNO.uid}`, { role: 'student', profileCompleted: false });
+    await seed(`userAccounts/${ALUNO.uid}`, { email: ALUNO.email, role: 'student' });
+
+    const db = dbAsUnverified(ALUNO);
+    await assertSucceeds(deleteDoc(doc(db, 'users', ALUNO.uid)));
+    await assertSucceeds(deleteDoc(doc(db, 'userAccounts', ALUNO.uid)));
+  });
+
+  it('sem o email confirmado, NÃO se apaga o que é de dois', async () => {
+    await seed(`connectionRequests/${CONNECTION_ID}`, {
+      from: ALUNO.uid,
+      to: PROFESSOR.uid,
+      status: 'accepted',
+    });
+
+    await assertFails(deleteDoc(doc(dbAsUnverified(ALUNO), 'connectionRequests', CONNECTION_ID)));
+  });
+
+  /** O pedido, montado outra vez: apagado o documento, um segundo delete já não tem onde ler quem
+   * está envolvido (o `resource` fica nulo) e a regra recusa-o — o que faria parecer que falha.
+   * Cada caso volta a semear o seu cenário, em vez de encadear deletes sobre o mesmo documento. */
+  function seedConnectionRequest() {
+    return seed(`connectionRequests/${CONNECTION_ID}`, {
+      from: ALUNO.uid,
+      to: PROFESSOR.uid,
+      status: 'accepted',
+    });
+  }
+
+  it('os dois lados levam o pedido de conexão; um terceiro não', async () => {
+    await seedConnectionRequest();
+    await assertSucceeds(deleteDoc(doc(dbAs(ALUNO), 'connectionRequests', CONNECTION_ID)));
+
+    await seedConnectionRequest();
+    await assertSucceeds(deleteDoc(doc(dbAs(PROFESSOR), 'connectionRequests', CONNECTION_ID)));
+
+    await seedConnectionRequest();
+    await assertFails(deleteDoc(doc(dbAs(ALUNO_B), 'connectionRequests', CONNECTION_ID)));
+  });
+
+  it('os dois lados levam o pedido de sessão; um terceiro não', async () => {
+    const id = await seedPendingSessionRequest();
+    await assertSucceeds(deleteDoc(doc(dbAs(ALUNO), 'sessionRequests', id)));
+
+    await seedPendingSessionRequest(id);
+    await assertSucceeds(deleteDoc(doc(dbAs(PROFESSOR), 'sessionRequests', id)));
+
+    await seedPendingSessionRequest(id);
+    await assertFails(deleteDoc(doc(dbAs(ALUNO_B), 'sessionRequests', id)));
+  });
+
+  it('os participantes levam a sessão e a conversa; um terceiro não', async () => {
+    await seed('sessions/sessao1', sessionData('pedidoSessao1'));
+    await assertSucceeds(deleteDoc(doc(dbAs(ALUNO), 'sessions', 'sessao1')));
+
+    await seed('sessions/sessao1', sessionData('pedidoSessao1'));
+    await assertFails(deleteDoc(doc(dbAs(ALUNO_B), 'sessions', 'sessao1')));
+
+    await seed(`conversations/${CONVERSATION_ID}`, {
+      participants: [ALUNO.uid, PROFESSOR.uid].sort(),
+    });
+    await assertSucceeds(deleteDoc(doc(dbAs(PROFESSOR), 'conversations', CONVERSATION_ID)));
+
+    await seed(`conversations/${CONVERSATION_ID}`, {
+      participants: [ALUNO.uid, PROFESSOR.uid].sort(),
+    });
+    await assertFails(deleteDoc(doc(dbAs(ALUNO_B), 'conversations', CONVERSATION_ID)));
+  });
+
+  it('cada um apaga as mensagens que escreveu, e só essas', async () => {
+    await seed(`conversations/${CONVERSATION_ID}`, {
+      participants: [ALUNO.uid, PROFESSOR.uid].sort(),
+    });
+    await seed(`conversations/${CONVERSATION_ID}/messages/minha`, { senderId: ALUNO.uid, text: 'Olá' });
+    await seed(`conversations/${CONVERSATION_ID}/messages/outra`, {
+      senderId: PROFESSOR.uid,
+      text: 'Boa',
+    });
+
+    const db = dbAs(ALUNO);
+    await assertSucceeds(deleteDoc(doc(db, 'conversations', CONVERSATION_ID, 'messages', 'minha')));
+    // A do outro não: participar numa conversa não dá o direito de apagar o que o outro escreveu.
+    await assertFails(deleteDoc(doc(db, 'conversations', CONVERSATION_ID, 'messages', 'outra')));
+  });
+
+  it('a avaliação não se apaga, nem quando a conta vai atrás dela', async () => {
+    await seed('sessions/sessao1', { ...sessionData('pedidoSessao1'), status: 'completed' });
+    await seed('ratings/sessao1', { mentorUid: PROFESSOR.uid, rating: 2 });
+
+    // Nem o mentor avaliado (que é quem tem interesse em apagar uma nota má), nem o tutorando que
+    // a escreveu — é o anonimato que a mantém de pé.
+    await assertFails(deleteDoc(doc(dbAs(PROFESSOR), 'ratings', 'sessao1')));
+    await assertFails(deleteDoc(doc(dbAs(ALUNO), 'ratings', 'sessao1')));
+
+    // E a sessão pode ir: sem ela, a avaliação fica sem por onde ser lida (é o que a torna
+    // inofensiva para quem apaga a conta, e é por isso que não precisa de ser apagada).
+    await assertSucceeds(deleteDoc(doc(dbAs(ALUNO), 'sessions', 'sessao1')));
   });
 });

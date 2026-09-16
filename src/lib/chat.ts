@@ -19,6 +19,7 @@ import {
 import { getLocale, getTranslations } from '@/i18n/store';
 import { db } from '@/lib/firebase';
 import { subscribeToBlockedPairs } from '@/lib/blocking';
+import { createLiveQuery } from '@/lib/live-query';
 import { createProfileResolver, matchId } from '@/lib/matching';
 import { dateLocaleTag } from '@/lib/time';
 import type { ChatAttachment, ChatMessage, ChatSessionRequestInfo, Conversation } from '@/types/chat';
@@ -57,75 +58,113 @@ function formatTimeLabel(date?: Date): string {
   return date.toLocaleDateString(localeTag, { day: '2-digit', month: '2-digit' });
 }
 
+export interface ConversationsState {
+  conversations: Conversation[];
+  /** true quando a última leitura falhou (regras negadas, rede em baixo). */
+  error: boolean;
+}
+
 /**
- * Ouve as conversas do utilizador em tempo real, já resolvidas com o perfil do outro participante.
+ * As conversas do utilizador, já resolvidas com o perfil do outro participante, **ao vivo e
+ * partilhadas por todos os ecrãs**.
  *
  * Conversas com quem tem um bloqueio connosco não entram: bloqueado quer dizer "inacessível para
  * os dois", e a mensagem mais recente de uma conversa cortada não deve continuar a aparecer no
  * topo da lista. Isto é filtro de cliente — a regra de `messages` é que impede mesmo ler ou
  * escrever, mas as regras não conseguem filtrar uma query ("rules are not filters"), por isso a
  * lista tem de ser escondida aqui.
+ *
+ * A subscrição é **uma só** (ver src/lib/live-query.ts). Esta pergunta era feita em paralelo pela
+ * barra de baixo (a bolinha das mensagens por ler), pela Home (a contagem), pelo Chat (a lista) e
+ * pelas Notificações — quatro subscrições abertas ao mesmo tempo com a mesma resposta, e cada
+ * mensagem nova contada (e paga) quatro vezes. Quem chega depois recebe o que já se sabe.
+ *
+ * O terceiro argumento do `onSnapshot` — o canal do erro — também não existia: uma leitura negada
+ * deixava a lista como estava, indistinguível de "não tens conversas". Agora é um campo do estado,
+ * e quem mostra a lista tem de o dizer (ver `RetryNotice`).
  */
-export function subscribeToConversations(uid: string, onChange: (conversations: Conversation[]) => void) {
-  const conversationsQuery = query(collection(db, 'conversations'), where('participants', 'array-contains', uid));
-  const resolveOtherProfile = createProfileResolver();
-  const i18n = getTranslations();
-  let latestRequestId = 0;
-  let blockedUids = new Set<string>();
-  // O `otherUid` fica guardado ao lado da conversa (em vez de ser deduzido do ID depois) para o
-  // filtro não depender do formato do ID da conversa.
-  let latestEntries: { conversation: Conversation; otherUid?: string }[] = [];
+const conversationsLive = createLiveQuery<Conversation[]>({
+  initial: [],
+  open: (uid, onValue, onError) => {
+    const conversationsQuery = query(collection(db, 'conversations'), where('participants', 'array-contains', uid));
+    const resolveOtherProfile = createProfileResolver();
+    const i18n = getTranslations();
+    let latestRequestId = 0;
+    let blockedUids = new Set<string>();
+    // O `otherUid` fica guardado ao lado da conversa (em vez de ser deduzido do ID depois) para o
+    // filtro não depender do formato do ID da conversa.
+    let latestEntries: { conversation: Conversation; otherUid?: string }[] = [];
 
-  const emit = () => {
-    onChange(
-      latestEntries
-        .filter((entry) => !entry.otherUid || !blockedUids.has(entry.otherUid))
-        .map((entry) => entry.conversation),
+    const emit = () => {
+      onValue(
+        latestEntries
+          .filter((entry) => !entry.otherUid || !blockedUids.has(entry.otherUid))
+          .map((entry) => entry.conversation),
+      );
+    };
+
+    const unsubscribeBlocks = subscribeToBlockedPairs(uid, (uids) => {
+      blockedUids = uids;
+      emit();
+    });
+
+    const unsubscribeConversations = onSnapshot(
+      conversationsQuery,
+      async (snapshot) => {
+        const requestId = ++latestRequestId;
+        const resolved = await Promise.all(
+          snapshot.docs.map(async (docSnap) => {
+            const data = docSnap.data() as ConversationDoc;
+            const otherUid = data.participants.find((id) => id !== uid);
+            const profile = otherUid ? await resolveOtherProfile(otherUid) : null;
+            const orderTimestamp = data.lastMessageAt ?? data.createdAt;
+
+            const conversation: Conversation = {
+              id: docSnap.id,
+              firstName: profile?.firstName ?? i18n.common.user,
+              lastName: profile?.lastName ?? '',
+              role: profile?.role ?? '',
+              subject: profile?.subjects[0] ?? '',
+              image: profile?.image,
+              lastMessage: data.lastMessage ?? i18n.chat.defaultLastMessage,
+              timeLabel: formatTimeLabel(orderTimestamp?.toDate()),
+              unread: data.unreadFor?.includes(uid) ?? false,
+            };
+            return { conversation, otherUid, sortMillis: orderTimestamp?.toMillis() ?? 0 };
+          }),
+        );
+
+        // Uma subscrição async pode resolver fora de ordem (ex.: cache miss vs. cache hit); só a
+        // resolução mais recente deve atualizar o estado, para não sobrepor dados frescos com antigos.
+        if (requestId !== latestRequestId) return;
+        latestEntries = resolved
+          .sort((a, b) => b.sortMillis - a.sortMillis)
+          .map(({ conversation, otherUid }) => ({ conversation, otherUid }));
+        emit();
+      },
+      () => onError(),
     );
-  };
 
-  const unsubscribeBlocks = subscribeToBlockedPairs(uid, (uids) => {
-    blockedUids = uids;
-    emit();
-  });
+    return () => {
+      unsubscribeBlocks();
+      unsubscribeConversations();
+    };
+  },
+});
 
-  const unsubscribeConversations = onSnapshot(conversationsQuery, async (snapshot) => {
-    const requestId = ++latestRequestId;
-    const resolved = await Promise.all(
-      snapshot.docs.map(async (docSnap) => {
-        const data = docSnap.data() as ConversationDoc;
-        const otherUid = data.participants.find((id) => id !== uid);
-        const profile = otherUid ? await resolveOtherProfile(otherUid) : null;
-        const orderTimestamp = data.lastMessageAt ?? data.createdAt;
+/** Junta um ecrã à leitura das conversas. Ver `useConversations`, que é o que os ecrãs usam. */
+export function subscribeToConversations(
+  uid: string,
+  onChange: (state: ConversationsState) => void,
+): () => void {
+  // O nome do campo muda (`value` na leitura viva, `conversations` aqui): quem chama lê o que a
+  // lista é, e não o que a peça partilhada lhe chama.
+  return conversationsLive.subscribe(uid, ({ value, error }) => onChange({ conversations: value, error }));
+}
 
-        const conversation: Conversation = {
-          id: docSnap.id,
-          firstName: profile?.firstName ?? i18n.common.user,
-          lastName: profile?.lastName ?? '',
-          role: profile?.role ?? '',
-          subject: profile?.subjects[0] ?? '',
-          image: profile?.image,
-          lastMessage: data.lastMessage ?? i18n.chat.defaultLastMessage,
-          timeLabel: formatTimeLabel(orderTimestamp?.toDate()),
-          unread: data.unreadFor?.includes(uid) ?? false,
-        };
-        return { conversation, otherUid, sortMillis: orderTimestamp?.toMillis() ?? 0 };
-      }),
-    );
-
-    // Uma subscrição async pode resolver fora de ordem (ex.: cache miss vs. cache hit); só a
-    // resolução mais recente deve atualizar o estado, para não sobrepor dados frescos com antigos.
-    if (requestId !== latestRequestId) return;
-    latestEntries = resolved
-      .sort((a, b) => b.sortMillis - a.sortMillis)
-      .map(({ conversation, otherUid }) => ({ conversation, otherUid }));
-    emit();
-  });
-
-  return () => {
-    unsubscribeBlocks();
-    unsubscribeConversations();
-  };
+/** Segunda tentativa depois de uma leitura falhada (fecha a subscrição e abre outra). */
+export function retryConversations(): void {
+  conversationsLive.retry();
 }
 
 /** Quantas mensagens se leem de uma vez ao abrir uma conversa (ver src/app/chat/[id].tsx). */

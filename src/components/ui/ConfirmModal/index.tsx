@@ -1,15 +1,22 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Modal, Pressable, StyleSheet, View, type ModalProps } from 'react-native';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { IconSize, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/ui/ThemedText';
+
+/**
+ * O peso da decisão que o modal está a pedir: `danger` pinta o ícone e o botão de confirmar a
+ * vermelho, para o que não se desfaz (apagar a conta) não parecer a mesma coisa que terminar sessão.
+ */
+export type ConfirmModalTone = 'default' | 'danger';
 
 export interface ConfirmModalProps extends Pick<ModalProps, 'visible' | 'onRequestClose'> {
   title: string;
   description: string;
   confirmLabel: string;
   cancelLabel: string;
+  tone?: ConfirmModalTone;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -22,17 +29,23 @@ export function ConfirmModal({
   description,
   confirmLabel,
   cancelLabel,
+  tone = 'default',
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
   const theme = useTheme();
+  const danger = tone === 'danger';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onRequestClose}>
       <View style={styles.backdrop}>
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
-          <View style={[styles.iconCircle, { backgroundColor: theme.primarySoft }]}>
-            <Ionicons name="help-outline" size={28} color={theme.primary} />
+          <View style={[styles.iconCircle, { backgroundColor: danger ? theme.dangerSoft : theme.primarySoft }]}>
+            <Ionicons
+              name={danger ? 'warning-outline' : 'help-outline'}
+              size={IconSize.state}
+              color={danger ? theme.danger : theme.textPrimary}
+            />
           </View>
 
           <ThemedText type="subtitle" style={styles.title}>
@@ -63,7 +76,7 @@ export function ConfirmModal({
               onPress={onConfirm}
               style={({ pressed }) => [
                 styles.button,
-                { backgroundColor: theme.primaryDark },
+                { backgroundColor: danger ? theme.danger : theme.primaryDark },
                 pressed && styles.buttonPressed,
               ]}>
               <ThemedText type="smallBold" themeColor="onPrimary" style={styles.buttonLabel}>

@@ -118,19 +118,23 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  // A margem lateral saiu daqui para o cabeçalho e o formulário: a faixa dos parceiros é filha
+  // deste ecrã e tem de ir de ponta a ponta — com o `padding` no contentor, ficava com uma moldura
+  // da cor do fundo dos dois lados.
   container: {
     flex: 1,
-    paddingHorizontal: Spacing.five,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: Spacing.five,
     paddingTop: Spacing.three,
   },
   content: {
     flex: 1,
     justifyContent: 'center',
+    paddingHorizontal: Spacing.five,
   },
   title: {
     textTransform: 'none',

@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -19,8 +19,11 @@ export function MaterialListItem({ title, subtitle, onPressOpen, style, ...rest 
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }, style]} {...rest}>
-      <View style={[styles.iconCircle, { backgroundColor: theme.surfaceAlt }]}>
-        <Ionicons name="document-attach-outline" size={20} color={theme.primary} />
+      {/* A caixa do ícone leva o acento da app (`primarySoft`/`primary`): é a mesma família das
+          caixas dos atalhos e das linhas "Novidades", e um documento é a informação que esta lista
+          dá — não é um estado nem um aviso. */}
+      <View style={[styles.iconCircle, { backgroundColor: theme.primarySoft }]}>
+        <Ionicons name="document-attach-outline" size={IconSize.ui} color={theme.primary} />
       </View>
 
       <View style={styles.info}>
@@ -33,7 +36,7 @@ export function MaterialListItem({ title, subtitle, onPressOpen, style, ...rest 
       </View>
 
       <Pressable onPress={onPressOpen} accessibilityRole="button" accessibilityLabel={i18n.materials.open(title)} hitSlop={8}>
-        <Ionicons name="download-outline" size={20} color={theme.primary} />
+        <Ionicons name="download-outline" size={IconSize.ui} color={theme.textPrimary} />
       </Pressable>
     </View>
   );

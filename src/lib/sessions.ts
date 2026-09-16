@@ -1,7 +1,9 @@
 import { addDoc, collection, doc, onSnapshot, query, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
 
 import { db } from '@/lib/firebase';
+import { createLiveQuery } from '@/lib/live-query';
 import { createProfileResolver } from '@/lib/matching';
+import { toSessionKey } from '@/lib/time';
 import type { AgendaSession, SessionModality, SessionRequest, SessionStatus } from '@/types/session';
 
 interface SessionRequestDoc {
@@ -37,6 +39,25 @@ export interface NewSessionRequestData {
   message: string;
 }
 
+/** O que é preciso saber de uma sessão para a contar (ver `summarizeSessions`). */
+export interface CountableSession {
+  studentUid: string;
+  mentorUid: string;
+  status?: SessionStatus;
+  date: string;
+  time: string;
+}
+
+/** Os três números que o perfil mostra. */
+export interface SessionStats {
+  /** Concluídas em que ensinei. */
+  given: number;
+  /** Concluídas em que aprendi. */
+  received: number;
+  /** Marcadas e ainda por acontecer. */
+  upcoming: number;
+}
+
 /** Pedido de sessão: ao contrário do pedido de conexão, qualquer um dos dois lados de uma
  * ligação já aceite pode pedir (perfil do mentor ou "Marcar sessão" no chat). Quem pede fica
  * "Tutorando" nessa sessão específica; quem recebe fica "Mentor". */
@@ -63,46 +84,76 @@ export function subscribeToSessionRequestStatus(
   });
 }
 
-/** Ouve, em tempo real, os pedidos de sessão pendentes recebidos por este utilizador. */
-export function subscribePendingSessionRequests(toUid: string, onChange: (requests: SessionRequest[]) => void) {
-  const requestsQuery = query(
-    collection(db, 'sessionRequests'),
-    where('to', '==', toUid),
-    where('status', '==', 'pending'),
-  );
-  const resolveProfile = createProfileResolver();
-  let latestRequestId = 0;
+export interface SessionRequestsState {
+  requests: SessionRequest[];
+  /** true quando a última leitura falhou (regras negadas, rede em baixo). */
+  error: boolean;
+}
 
-  return onSnapshot(requestsQuery, async (snapshot) => {
-    const requestId = ++latestRequestId;
-    const resolved = await Promise.all(
-      snapshot.docs.map(async (docSnap): Promise<SessionRequest | null> => {
-        const data = docSnap.data() as SessionRequestDoc;
-        const candidate = await resolveProfile(data.from);
-        if (!candidate) return null;
-        return {
-          id: docSnap.id,
-          fromUid: data.from,
-          firstName: candidate.firstName,
-          lastName: candidate.lastName,
-          image: candidate.image,
-          subject: data.subject,
-          date: data.date,
-          time: data.time,
-          modality: data.modality,
-          message: data.message,
-          createdAt: data.createdAt?.toDate(),
-        };
-      }),
+/**
+ * Os pedidos de sessão pendentes, ao vivo e partilhados — ver `createLiveQuery` para a razão de ser
+ * (a Home conta-os e as Notificações mostram-nos: era a mesma pergunta feita duas vezes) e para o
+ * que o estado de erro resolve.
+ */
+const pendingSessionRequests = createLiveQuery<SessionRequest[]>({
+  initial: [],
+  open: (toUid, onValue, onError) => {
+    const requestsQuery = query(
+      collection(db, 'sessionRequests'),
+      where('to', '==', toUid),
+      where('status', '==', 'pending'),
     );
+    const resolveProfile = createProfileResolver();
+    let latestRequestId = 0;
 
-    if (requestId !== latestRequestId) return;
-    onChange(
-      resolved
-        .filter((request): request is SessionRequest => request !== null)
-        .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)),
+    return onSnapshot(
+      requestsQuery,
+      async (snapshot) => {
+        const requestId = ++latestRequestId;
+        const resolved = await Promise.all(
+          snapshot.docs.map(async (docSnap): Promise<SessionRequest | null> => {
+            const data = docSnap.data() as SessionRequestDoc;
+            const candidate = await resolveProfile(data.from);
+            if (!candidate) return null;
+            return {
+              id: docSnap.id,
+              fromUid: data.from,
+              firstName: candidate.firstName,
+              lastName: candidate.lastName,
+              image: candidate.image,
+              subject: data.subject,
+              date: data.date,
+              time: data.time,
+              modality: data.modality,
+              message: data.message,
+              createdAt: data.createdAt?.toDate(),
+            };
+          }),
+        );
+
+        if (requestId !== latestRequestId) return;
+        onValue(
+          resolved
+            .filter((request): request is SessionRequest => request !== null)
+            .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)),
+        );
+      },
+      () => onError(),
     );
-  });
+  },
+});
+
+/** Junta um ecrã à leitura dos pedidos de sessão pendentes (ver `useSessionRequests`). */
+export function subscribePendingSessionRequests(
+  toUid: string,
+  onChange: (state: SessionRequestsState) => void,
+): () => void {
+  return pendingSessionRequests.subscribe(toUid, ({ value, error }) => onChange({ requests: value, error }));
+}
+
+/** Segunda tentativa depois de uma leitura falhada (fecha a subscrição e abre outra). */
+export function retryPendingSessionRequests(): void {
+  pendingSessionRequests.retry();
 }
 
 /** Aceita ou recusa um pedido de sessão. Ao aceitar, cria a sessão confirmada que alimenta a
@@ -181,5 +232,49 @@ export function subscribeToSessions(uid: string, onChange: (sessions: AgendaSess
         .filter((session): session is AgendaSession => session !== null)
         .sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`)),
     );
+  });
+}
+
+/**
+ * Conta as sessões de um utilizador a partir dos documentos crus.
+ *
+ * O que vale a pena fixar aqui: "dada" é uma sessão **concluída** em que eu era o mentor. Uma
+ * sessão marcada e ainda por acontecer não é uma sessão dada — é uma sessão por vir, e tem o seu
+ * próprio número. Sem esta distinção, o número de cima mentiria sempre que alguém marcasse uma
+ * aula. Sessões antigas, sem o campo `status`, contam como marcadas, tal como em
+ * `subscribeToSessions`.
+ *
+ * É pura de propósito: sem React e sem base de dados, é a única parte desta contagem que se pode
+ * provar a sério (ver tests/lib/sessions.test.mts).
+ */
+export function summarizeSessions(sessions: CountableSession[], uid: string, nowKey: string): SessionStats {
+  const stats: SessionStats = { given: 0, received: 0, upcoming: 0 };
+
+  for (const session of sessions) {
+    if ((session.status ?? 'scheduled') === 'completed') {
+      if (session.mentorUid === uid) stats.given += 1;
+      else if (session.studentUid === uid) stats.received += 1;
+    } else if (`${session.date}T${session.time}` >= nowKey) {
+      stats.upcoming += 1;
+    }
+  }
+
+  return stats;
+}
+
+/**
+ * Ouve as sessões **só para as contar**.
+ *
+ * Ao contrário de `subscribeToSessions`, não resolve o perfil de ninguém: no perfil mostram-se
+ * três números, e ir buscar o nome do outro participante por cada sessão seria uma leitura de
+ * perfil por sessão para deitar fora.
+ */
+export function subscribeToSessionStats(uid: string, onChange: (stats: SessionStats) => void) {
+  const sessionsQuery = query(collection(db, 'sessions'), where('participants', 'array-contains', uid));
+
+  return onSnapshot(sessionsQuery, (snapshot) => {
+    // O "agora" é lido a cada evento, e não uma vez no momento da subscrição, para o número de
+    // sessões por vir continuar certo numa app que fica aberta de um dia para o outro.
+    onChange(summarizeSessions(snapshot.docs.map((docSnap) => docSnap.data() as SessionDoc), uid, toSessionKey()));
   });
 }

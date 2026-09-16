@@ -1,0 +1,73 @@
+# Verificação automática: tudo o que se corre à mão antes de um commit, a correr sozinho.
+#
+# São quatro suites (ver os scripts em package.json) e duas delas precisam do emulador do
+# Firestore, que é um processo Java — daí o `setup-java`. As outras duas (lógica e componentes)
+# são Node puro. Primeiro o que é rápido e não depende de rede (lint, tipos), para o erro
+# aparecer depressa; só depois as suites.
+name: Testes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Um push novo para o mesmo ramo cancela a corrida anterior — não vale a pena pagar duas vezes
+# pela mesma pergunta.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # A mesma versão em que o projeto é desenvolvido (ver README).
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # O emulador do Firestore é um jar que o firebase-tools descarrega na primeira utilização.
+      # Sem esta cache, cada corrida voltava a pagar o download.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('firebase.json') }}
+          restore-keys: firebase-emulators-${{ runner.os }}-
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Não precisa de rede nem de emulador: só conta caracteres em STORE.md. Existe porque os
+      # limites das lojas são invisíveis a olho (31 caracteres num subtítulo de 30 não se vêm) e a
+      # loja recusa o texto todo por causa de um deles.
+      - name: Limites da ficha das lojas
+        run: npm run store:check
+
+      - name: Tipos da app
+        run: npx tsc --noEmit
+
+      - name: Tipos dos testes
+        run: npm run typecheck:tests
+
+      - name: Testes da lógica pura
+        run: npm run test:lib
+
+      - name: Testes dos componentes
+        run: npm run test:components
+
+      - name: Testes da camada de dados (emulador)
+        run: npm run test:data
+
+      - name: Testes das regras de segurança (emulador)
+        run: npm run test:rules

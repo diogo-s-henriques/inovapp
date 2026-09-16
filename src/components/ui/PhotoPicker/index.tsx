@@ -57,7 +57,7 @@ export function PhotoPicker({
             {initials}
           </Text>
         ) : (
-          <Ionicons name="person-outline" size={Math.round(size * 0.42)} color={theme.primary} />
+          <Ionicons name="person-outline" size={Math.round(size * 0.42)} color={theme.textPrimary} />
         )}
         <View
           style={[
@@ -70,7 +70,7 @@ export function PhotoPicker({
               borderColor: theme.surface,
             },
           ]}>
-          <Ionicons name="camera" size={Math.round(badgeSize * 0.55)} color={theme.onPrimary} />
+          <Ionicons name="camera-outline" size={Math.round(badgeSize * 0.55)} color={theme.onPrimary} />
         </View>
       </View>
       <ThemedText type="smallBold" themeColor="primary">

@@ -2,17 +2,24 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/ui/ThemedText';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
-/** Estado genérico de "funcionalidade bloqueada": ícone em círculo, título, descrição. Reutilizável em qualquer ecrã que precise de negar acesso com uma explicação. */
+/**
+ * Estado genérico de "funcionalidade bloqueada": ícone em círculo, título e, quando houver algo a
+ * explicar, uma descrição. Reutilizável em qualquer ecrã que precise de negar acesso.
+ *
+ * A descrição é opcional desde que o Match deixou de explicar porque não tem nada para mostrar:
+ * quem só ensina tem os pedidos por decidir no topo do ecrã, e um parágrafo a justificar a
+ * ausência de uma lista que ninguém pediu era texto a mais.
+ */
 export interface BlockedScreenProps {
   icon?: IoniconsName;
   title: string;
-  description: string;
+  description?: string;
 }
 
 export function BlockedScreen({ icon = 'lock-closed-outline', title, description }: BlockedScreenProps) {
@@ -20,16 +27,18 @@ export function BlockedScreen({ icon = 'lock-closed-outline', title, description
 
   return (
     <View style={styles.container}>
-      <View style={[styles.iconCircle, { backgroundColor: theme.primarySoft }]}>
-        <Ionicons name={icon} size={28} color={theme.textMuted} />
+      <View style={[styles.iconCircle, { backgroundColor: theme.surfaceAlt }]}>
+        <Ionicons name={icon} size={IconSize.state} color={theme.textPrimary} />
       </View>
 
       <ThemedText type="bodyBold" style={styles.title}>
         {title}
       </ThemedText>
-      <ThemedText type="small" themeColor="textMuted" style={styles.description}>
-        {description}
-      </ThemedText>
+      {description && (
+        <ThemedText type="small" themeColor="textMuted" style={styles.description}>
+          {description}
+        </ThemedText>
+      )}
     </View>
   );
 }

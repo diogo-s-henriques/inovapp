@@ -13,13 +13,30 @@ import { Spacing } from '@/constants/theme';
 
 // A faixa original tem 1093x131 px. A altura manda: a largura sai das proporções, e é essa largura
 // que define o passo do ciclo (uma faixa por volta).
-const STRIP_HEIGHT = 42;
+const STRIP_HEIGHT = 56;
 const STRIP_ASPECT_RATIO = 1093 / 131;
 const STRIP_WIDTH = STRIP_HEIGHT * STRIP_ASPECT_RATIO;
-/** Uma volta completa (uma largura de faixa) em 10 s — cerca de 35 px por segundo. */
-const LOOP_DURATION_MS = 10_000;
 
-const stripImage = require('../../../../assets/Parceiros/prr-foter-ies-765733f5 (1).webp');
+/**
+ * A velocidade da faixa, em pontos por segundo.
+ *
+ * É a velocidade que se escolhe, e não a **duração** da volta — que é o que aqui estava antes. Uma
+ * duração é o tempo que a faixa leva a andar *uma largura*, e a largura depende da altura: aumentar
+ * a faixa deixava-a maior **e** mais rápida sem ninguém ter pedido, o que fazia de qualquer ajuste
+ * ao tamanho um ajuste escondido à velocidade. Com a velocidade como valor de entrada, cada uma
+ * mexe só no que é dela.
+ *
+ * Aos 50 pt/s a volta completa dá-se em ~9,3 s (na altura de 56) — entre os ~35 pt/s da primeira
+ * versão e os 72 pt/s que duraram uma volta.
+ */
+const STRIP_SPEED_PER_SECOND = 50;
+const LOOP_DURATION_MS = Math.round((STRIP_WIDTH / STRIP_SPEED_PER_SECOND) * 1000);
+
+// O PNG (e não o WebP que aqui esteve) tem o fundo **transparente**: o ficheiro anterior era um
+// VP8 sem canal alfa, por isso trazia uma tarja branca colada que se via sobre o cinzento do ecrã.
+// O fundo foi tirado com `scripts/png-transparent-background.js` (ver o README), não à mão: a
+// mesma passagem serve para os próximos logótipos que cheguem com fundo branco.
+const stripImage = require('../../../../assets/Parceiros/parceiros.png');
 
 /**
  * Quantas cópias da faixa são precisas para a janela nunca mostrar um vazio.

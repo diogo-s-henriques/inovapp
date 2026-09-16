@@ -73,12 +73,48 @@ export async function limparEmulador(): Promise<void> {
   }
 }
 
+/**
+ * Confirma o email da conta **no emulador**, pelo endpoint de administração dele (é o que o
+ * `Authorization: Bearer owner` significa ali).
+ *
+ * Os testes de dados criam contas pelo caminho da app e a seguir usam-nas como se fossem pessoas
+ * a sério — e uma pessoa a sério, na app, tem o email confirmado (ver a regra `isVerified()` em
+ * firestore.rules). Sem este passo, tudo o que estes testes exercitam seria recusado pelas regras,
+ * e a suite estaria a falhar por uma razão que não é a que diz testar.
+ *
+ * O que **não** se faz aqui é confirmar no caminho da app (abrir o link): isso é o que o ecrã da
+ * confirmação faz e o que os testes de componente fixam. Aqui interessa o estado, não o percurso.
+ */
+async function confirmarEmailNoEmulador(uid: string): Promise<void> {
+  const resposta = await fetch(
+    `http://${AUTH_HOST}/identitytoolkit.googleapis.com/v1/accounts:update?key=fake-api-key`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+      body: JSON.stringify({ localId: uid, emailVerified: true }),
+    },
+  );
+
+  if (!resposta.ok) {
+    throw new Error(`Não consegui confirmar o email no emulador (HTTP ${resposta.status}).`);
+  }
+}
+
 /** Cria a conta pelo caminho da app (signUp) e devolve o UID. Fica com essa conta com sessão. */
 export async function criarConta(email: string): Promise<string> {
   await signOut(auth).catch(() => undefined);
   await signUp(email, SENHA_DE_TESTE, false);
-  if (!auth.currentUser) throw new Error('O signUp não deixou nenhum utilizador com sessão.');
-  return auth.currentUser.uid;
+
+  const user = auth.currentUser;
+  if (!user) throw new Error('O signUp não deixou nenhum utilizador com sessão.');
+
+  await confirmarEmailNoEmulador(user.uid);
+  // O token que está em uso foi emitido **antes** desta confirmação: sem o renovar, o pedido
+  // seguinte levava `email_verified: false` e as regras recusavam-no — um erro que apareceria
+  // longe daqui, no teste que estivesse a correr a seguir.
+  await user.getIdToken(true);
+
+  return user.uid;
 }
 
 /** Entra com uma conta já criada. */

@@ -6,6 +6,8 @@
  * o que partia assim que a interface fosse traduzida — hoje é o campo `role` tipado
  * (ver src/types/session.ts) e o botão é escolhido a partir dele.
  *
+ * A app não faz chamadas: a linha de sessão só tem a ação de terminar (e só para o mentor).
+ *
  * Nota sobre a API: a partir do `@testing-library/react-native` v14, `render`, `fireEvent` e
  * `unmount` são assíncronos (o React 19 deixou de suportar o `react-test-renderer`, que era
  * síncrono). Daí o `await` em cada um.
@@ -75,62 +77,40 @@ describe('papel do utilizador na sessão', () => {
 describe('quem pode terminar a sessão', () => {
   it('o mentor vê "Terminar" e o botão avisa o ecrã', async () => {
     const onPressComplete = jest.fn();
-    const { getByLabelText, queryByLabelText } = await render(
+    const { getByLabelText } = await render(
       <SessionListItem {...BASE} sessionRole="mentor" onPressComplete={onPressComplete} />,
     );
 
     await fireEvent.press(getByLabelText(pt.sessions.complete));
 
     expect(onPressComplete).toHaveBeenCalledTimes(1);
-    // Quem termina não vê "Entrar": a ação é uma só.
-    expect(queryByLabelText(pt.sessions.join)).toBeNull();
   });
 
-  it('o tutorando vê "Entrar" mesmo que lhe passem um handler de terminar', async () => {
+  it('o tutorando não vê "Terminar" mesmo que lhe passem um handler', async () => {
     // É esta a salvaguarda: o papel manda, não a existência do callback. Sem isto, bastava um
     // ecrã passar `onPressComplete` a toda a gente para o tutorando poder fechar a sessão.
     const onPressComplete = jest.fn();
-    const onPressJoin = jest.fn();
-    const { getByLabelText, queryByLabelText } = await render(
-      <SessionListItem
-        {...BASE}
-        sessionRole="student"
-        onPressComplete={onPressComplete}
-        onPressJoin={onPressJoin}
-      />,
+    const { queryByLabelText } = await render(
+      <SessionListItem {...BASE} sessionRole="student" onPressComplete={onPressComplete} />,
     );
 
     expect(queryByLabelText(pt.sessions.complete)).toBeNull();
-
-    await fireEvent.press(getByLabelText(pt.sessions.join));
-
-    expect(onPressJoin).toHaveBeenCalledTimes(1);
     expect(onPressComplete).not.toHaveBeenCalled();
   });
 
-  it('o mentor sem handler de terminar vê "Entrar"', async () => {
-    const { getByLabelText, queryByLabelText } = await render(
-      <SessionListItem {...BASE} sessionRole="mentor" />,
-    );
+  it('o mentor sem handler de terminar não mostra ação nenhuma', async () => {
+    const { queryByLabelText } = await render(<SessionListItem {...BASE} sessionRole="mentor" />);
 
     expect(queryByLabelText(pt.sessions.complete)).toBeNull();
-    expect(getByLabelText(pt.sessions.join)).toBeTruthy();
   });
 
   it('uma sessão concluída não mostra nenhum botão', async () => {
     const { getByText, queryByLabelText } = await render(
-      <SessionListItem
-        {...BASE}
-        status="completed"
-        sessionRole="mentor"
-        onPressJoin={jest.fn()}
-        onPressComplete={jest.fn()}
-      />,
+      <SessionListItem {...BASE} status="completed" sessionRole="mentor" onPressComplete={jest.fn()} />,
     );
 
     expect(getByText(pt.sessions.completed)).toBeTruthy();
     expect(queryByLabelText(pt.sessions.complete)).toBeNull();
-    expect(queryByLabelText(pt.sessions.join)).toBeNull();
   });
 
   it('enquanto termina, o botão deixa de mostrar o texto', async () => {

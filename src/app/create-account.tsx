@@ -7,7 +7,6 @@ import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { SuccessModal } from '@/components/ui/SuccessModal';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { Logo } from '@/components/ui/Logo';
@@ -23,7 +22,6 @@ export default function CreateAccountScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [remember, setRemember] = useState(false);
-  const [accountCreated, setAccountCreated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,8 +41,10 @@ export default function CreateAccountScreen() {
 
     setSubmitting(true);
     try {
+      // Não há nada para mostrar a seguir: com a conta criada, o `authStage` do layout da raiz
+      // troca este ecrã pelo da confirmação do email (ver src/lib/auth-gate.ts). Chegou a haver
+      // aqui um modal de "conta criada" que, por isso mesmo, nunca chegava a ser visto.
       await signUp(email, password, remember);
-      setAccountCreated(true);
     } catch (err) {
       setError(getAuthErrorMessage(err));
     } finally {
@@ -121,14 +121,6 @@ export default function CreateAccountScreen() {
           </Link>
         </View>
       </View>
-
-      <SuccessModal
-        visible={accountCreated}
-        title={i18n.accountCreated.title}
-        description={i18n.accountCreated.description}
-        buttonLabel={i18n.accountCreated.continueButton}
-        onContinue={() => setAccountCreated(false)}
-      />
     </SafeAreaView>
   );
 }

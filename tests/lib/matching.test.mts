@@ -10,6 +10,10 @@
  * 2. A cache de perfis, cujo tempo de vida é o de UMA subscrição (ver o comentário no código).
  * 3. A tradução dos campos: foi um bug corrigido, o de os rótulos ("Mentor", "Utilizador") estarem
  *    escritos em português dentro da camada de dados e ficarem em português no modo inglês.
+ * 4. `matchesView`, a decisão de qual vista o ecrã dos Matches mostra. O primeiro caso aqui em
+ *    baixo é um ecrã que ficou preso a girar: quem só ensina não carrega lista nenhuma, o efeito
+ *    saía sem terminar o carregamento, e os pedidos de conexão que a pessoa tinha por decidir
+ *    ficavam escondidos atrás do indicador.
  *
  * Não há rede nem base de dados: `tests/doubles/firebase-firestore.mjs` responde às leituras e
  * `tests/doubles/async-storage.mjs` guarda os candidatos passados em memória.
@@ -25,6 +29,7 @@ import {
   createProfileResolver,
   getPassedCandidateIds,
   matchId,
+  matchesView,
   passCandidate,
 } from '@/lib/matching';
 import type { MatchCandidate } from '@/types/match';
@@ -324,5 +329,42 @@ describe('candidatos passados — guardados só no dispositivo', () => {
     const chaves = AsyncStorage.__entries().map(([chave]) => chave);
     assert.deepEqual(chaves, ['inovapp:passedCandidates']);
     assert.deepEqual(firestoreCalls.getDoc, []);
+  });
+});
+
+describe('matchesView — o que o ecrã dos Matches mostra', () => {
+  /** Quem só ensina (não pode aprender): sem lista de candidatos para ler. */
+  const SO_ENSINA = { canLearn: false };
+  const APRENDE = { canLearn: true };
+
+  it('quem só ensina e tem pedidos vê os pedidos, mesmo com o carregamento por terminar', () => {
+    // O caso que falhou: `loading` ficava a true para sempre (o efeito não corre para quem não
+    // tem lista), e o ecrã mostrava um indicador a girar em vez dos pedidos por decidir.
+    assert.equal(
+      matchesView({ ...SO_ENSINA, loading: true, loadError: false, requestCount: 2 }),
+      'requests',
+    );
+  });
+
+  it('quem só ensina e não tem pedidos vê a explicação, não a lista vazia', () => {
+    assert.equal(matchesView({ ...SO_ENSINA, loading: true, loadError: false, requestCount: 0 }), 'blocked');
+  });
+
+  it('a ler, mostra o carregamento', () => {
+    assert.equal(matchesView({ ...APRENDE, loading: true, loadError: false, requestCount: 0 }), 'loading');
+  });
+
+  it('uma leitura que falhou mostra o erro, e não uma lista vazia', () => {
+    assert.equal(matchesView({ ...APRENDE, loading: false, loadError: true, requestCount: 0 }), 'error');
+  });
+
+  it('lida, mostra a lista', () => {
+    assert.equal(matchesView({ ...APRENDE, loading: false, loadError: false, requestCount: 3 }), 'list');
+  });
+
+  it('enquanto lê, o erro de uma tentativa anterior não ganha', () => {
+    // O "Tentar outra vez" põe os dois a true ao mesmo tempo: o que se está a ver é a leitura em
+    // curso, e não o erro que já foi despachado.
+    assert.equal(matchesView({ ...APRENDE, loading: true, loadError: true, requestCount: 0 }), 'loading');
   });
 });

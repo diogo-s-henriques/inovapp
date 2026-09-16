@@ -13,7 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
+import { BackButton } from '@/components/ui/BackButton';
 import { useAuthStore } from '@/auth/store';
 import { CHAT_MESSAGE_PAGE_SIZE, markConversationRead, sendMessage, subscribeToMessages } from '@/lib/chat';
 import { goBack } from '@/lib/navigation';
@@ -121,9 +122,7 @@ export default function ConversationScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <Pressable onPress={() => goBack(router, '/chat')} accessibilityRole="button" accessibilityLabel={i18n.chat.back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={theme.textPrimary} />
-        </Pressable>
+        <BackButton label={i18n.chat.back} onPress={() => goBack(router, '/chat')} />
 
         <ProfilePicCard firstName={firstName} lastName={lastName} image={image || undefined} size="sm" />
 
@@ -205,7 +204,7 @@ export default function ConversationScreen() {
               style={[styles.actionPill, { borderColor: theme.primary }]}
               accessibilityRole="button"
               accessibilityLabel={i18n.chat.scheduleSession}>
-              <Ionicons name="calendar-outline" size={16} color={theme.primary} />
+              <Ionicons name="calendar-outline" size={IconSize.ui} color={theme.primary} />
               <ThemedText type="smallBold" style={{ color: theme.primary }}>
                 {i18n.chat.scheduleSession}
               </ThemedText>
@@ -215,7 +214,7 @@ export default function ConversationScreen() {
               style={[styles.actionPill, { borderColor: theme.border }]}
               accessibilityRole="button"
               accessibilityLabel={i18n.chat.material}>
-              <Ionicons name="document-outline" size={16} color={theme.textPrimary} />
+              <Ionicons name="document-outline" size={IconSize.ui} color={theme.textPrimary} />
               <ThemedText type="smallBold" style={{ color: theme.textPrimary }}>
                 {i18n.chat.material}
               </ThemedText>
@@ -238,7 +237,7 @@ export default function ConversationScreen() {
                 style={[styles.sendButton, { backgroundColor: theme.primary, opacity: draft.trim() ? 1 : 0.5 }]}
                 accessibilityRole="button"
                 accessibilityLabel={i18n.chat.sendMessage}>
-                <Ionicons name="send" size={16} color={theme.onPrimary} />
+                <Ionicons name="send-outline" size={IconSize.ui} color={theme.onPrimary} />
               </Pressable>
             </View>
           </View>

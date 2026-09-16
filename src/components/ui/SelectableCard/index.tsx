@@ -43,6 +43,8 @@ export function SelectableCard({ icon, title, subtitle, selected, onPress, ...re
               backgroundColor: selected ? theme.primary : 'transparent',
             },
           ]}>
+          {/* 14 e não `IconSize.ui` (22): é o sinal do rádio de 22 px, e o tamanho vem do
+              controlo que o contém (ver Checkbox, com o mesmo raciocínio). */}
           {selected && <Ionicons name="checkmark" size={14} color={theme.onPrimary} />}
         </View>
       }

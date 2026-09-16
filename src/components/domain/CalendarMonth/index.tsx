@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
 import { toDateKey } from '@/lib/time';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
@@ -64,10 +64,10 @@ export function CalendarMonth({
         </ThemedText>
         <View style={styles.nav}>
           <Pressable onPress={goToPreviousMonth} accessibilityRole="button" accessibilityLabel={i18n.calendar.previousMonth} hitSlop={8}>
-            <Ionicons name="chevron-back" size={18} color={theme.textPrimary} />
+            <Ionicons name="chevron-back" size={IconSize.ui} color={theme.textPrimary} />
           </Pressable>
           <Pressable onPress={goToNextMonth} accessibilityRole="button" accessibilityLabel={i18n.calendar.nextMonth} hitSlop={8}>
-            <Ionicons name="chevron-forward" size={18} color={theme.textPrimary} />
+            <Ionicons name="chevron-forward" size={IconSize.ui} color={theme.textPrimary} />
           </Pressable>
         </View>
       </View>
@@ -99,6 +99,11 @@ export function CalendarMonth({
                 disabled={isDisabled}
                 accessibilityRole="button"
                 accessibilityLabel={dateKey}
+                // O círculo do dia tem 28 px de altura e o alvo do toque é medido a partir dele: com
+                // 4 px de folga em cima e em baixo, o alvo fica com 36 — abaixo dos 44 pt que a
+                // Apple recomenda e acima do mínimo utilizável. Foi o que se ganhou ao compactar a
+                // grelha sem tornar os dias difíceis de acertar.
+                hitSlop={{ top: 4, bottom: 4 }}
                 style={styles.cell}>
                 <View style={[styles.dayCircle, isSelected && { backgroundColor: theme.primaryDark }]}>
                   <ThemedText type="body" themeColor={isSelected ? 'onPrimary' : isDisabled ? 'textMuted' : 'textPrimary'}>
@@ -120,7 +125,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.two,
+    marginBottom: Spacing.one,
   },
   nav: {
     flexDirection: 'row',
@@ -133,17 +138,20 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
+  // 28 e não 32: a grelha do mês é a peça mais alta de uma Home que tem de caber num ecrã sem
+  // rolar (ver a entrada do ecrã inicial no README), e são 6 linhas × 4 px que saem daqui. O
+  // alvo do toque não encolhe com ela — quem o garante é o `hitSlop` da célula.
   dayCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 2,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    marginTop: 1,
   },
 });

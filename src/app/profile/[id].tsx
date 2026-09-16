@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -11,6 +11,7 @@ import { conversationExists } from '@/lib/chat';
 import { blockUser, hasBlocked, unblockUser } from '@/lib/blocking';
 import { fetchCandidateById } from '@/lib/matching';
 import { goBack } from '@/lib/navigation';
+import { BackButton } from '@/components/ui/BackButton';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { AvailabilityChips } from '@/components/domain/Profile/AvailabilityChips';
@@ -150,14 +151,13 @@ export default function OtherUserProfileScreen() {
           )}
 
           <View style={[styles.topRow, { top: insets.top + Spacing.two }]}>
-            <Pressable
+            {/* Sobre a fotografia, o botão leva fundo próprio — é o que o `variant="surface"`
+                significa (fora daqui, nos ecrãs empilhados, é o `StackHeader` que o põe). */}
+            <BackButton
+              label={i18n.otherProfile.back}
               onPress={() => goBack(router)}
-              accessibilityRole="button"
-              accessibilityLabel={i18n.otherProfile.back}
-              hitSlop={8}
-              style={[styles.backButton, { backgroundColor: theme.surface }]}>
-              <Ionicons name="chevron-back" size={22} color={theme.textPrimary} />
-            </Pressable>
+              variant="surface"
+            />
           </View>
 
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} locations={[0, 0.85]} style={styles.gradient}>

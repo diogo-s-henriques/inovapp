@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
 import { useAuthStore } from '@/auth/store';
 import { goBack } from '@/lib/navigation';
 import { completeSession, subscribeToSessions } from '@/lib/sessions';
-import { dateLocaleTag, toDateKey } from '@/lib/time';
+import { dateLocaleTag, fromDateKey, isDateKey, toDateKey } from '@/lib/time';
 import { useLocaleStore } from '@/i18n/store';
 import type { Translations } from '@/i18n/translations';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { CalendarMonth } from '@/components/domain/CalendarMonth';
+import { StackHeader } from '@/components/domain/StackHeader';
 import { SessionListItem } from '@/components/domain/SessionListItem';
 import { ThemedText } from '@/components/ui/ThemedText';
 import type { AgendaSession } from '@/types/session';
@@ -33,10 +33,16 @@ export default function SessionsScreen() {
   const locale = useLocaleStore((state) => state.locale);
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  // O dia pode vir de quem empilha este ecrã (o calendário do ecrã inicial leva o dia tocado neste
+  // parâmetro). É texto livre até aqui — `/sessions?date=amanhã` é uma coisa que se pode escrever
+  // à mão —, por isso um valor inválido é tratado como "não veio nada": abre-se no mês de hoje, e
+  // não num mês que não existe.
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  const initialDate = isDateKey(dateParam) ? dateParam : undefined;
 
   const [sessions, setSessions] = useState<AgendaSession[]>([]);
-  const [month, setMonth] = useState(() => new Date());
-  const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
+  const [month, setMonth] = useState(() => (initialDate ? fromDateKey(initialDate) : new Date()));
+  const [selectedDate, setSelectedDate] = useState(() => initialDate ?? toDateKey(new Date()));
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [completeError, setCompleteError] = useState(false);
 
@@ -66,12 +72,7 @@ export default function SessionsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => goBack(router)} accessibilityRole="button" accessibilityLabel={i18n.sessions.back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={theme.textPrimary} />
-        </Pressable>
-        <ThemedText type="title">{i18n.sessions.title}</ThemedText>
-      </View>
+      <StackHeader title={i18n.sessions.title} backLabel={i18n.sessions.back} onBack={() => goBack(router)} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <CalendarMonth
@@ -110,8 +111,6 @@ export default function SessionsScreen() {
                 status={session.status}
                 completing={completingId === session.id}
                 onPressComplete={() => handleComplete(session.id)}
-                // A videochamada não existe nesta versão — ver o mesmo aviso no ecrã inicial.
-                onPressJoin={() => Alert.alert(i18n.common.callUnavailableTitle, i18n.common.callUnavailableBody)}
               />
             ))}
           </View>
@@ -128,14 +127,6 @@ export default function SessionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.two,
   },
   content: {
     paddingHorizontal: Spacing.five,

@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { ChatAttachment } from '@/types/chat';
 
@@ -32,7 +32,7 @@ export function ChatBubble({ text, fromMe, attachment }: ChatBubbleProps) {
             accessibilityRole="link"
             accessibilityLabel={`Abrir anexo ${attachment.fileName}`}
             style={[styles.attachment, { borderColor: fromMe ? theme.onPrimary : theme.border }]}>
-            <Ionicons name="document-attach-outline" size={18} color={textColor} />
+            <Ionicons name="document-attach-outline" size={IconSize.ui} color={textColor} />
             <Text style={{ color: textColor, fontSize: 14, fontWeight: '600', flex: 1 }} numberOfLines={1}>
               {attachment.fileName}
             </Text>

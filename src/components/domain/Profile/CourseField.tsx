@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { TagProfile } from '@/components/ui/TagProfile';
@@ -38,9 +38,9 @@ export function CourseField({ label, selected, onChange, style }: CourseFieldPro
           onPress={() => sheetRef.current?.present()}
           accessibilityRole="button"
           accessibilityLabel={selected ? i18n.profileFields.changeCourse : i18n.profileFields.chooseCourse}
-          style={[styles.addButton, { borderColor: theme.primary }]}>
-          <Ionicons name={selected ? 'sync-outline' : 'add'} size={16} color={theme.primary} />
-          <ThemedText type="smallBold" themeColor="primary">
+          style={[styles.addButton, { borderColor: theme.border }]}>
+          <Ionicons name={selected ? 'sync-outline' : 'add-outline'} size={IconSize.ui} color={theme.textPrimary} />
+          <ThemedText type="smallBold" themeColor="textPrimary">
             {selected ? i18n.profileFields.change : i18n.profileFields.choose}
           </ThemedText>
         </Pressable>

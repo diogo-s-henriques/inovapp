@@ -14,19 +14,32 @@ export interface ConnectionRequestsSectionProps extends ViewProps {
   busyId?: string | null;
   /** Mensagem mostrada quando responder falhou (ver src/lib/requests.ts). */
   errorMessage?: string | null;
+  /**
+   * Esconde a etiqueta própria (e o número) quando o ecrã que a usa já tem um título que diz o
+   * mesmo — é o caso de `connection-requests`, onde a lista **é** o ecrã.
+   */
+  showHeader?: boolean;
   onAccept: (request: ConnectionRequest) => void;
   onDecline: (request: ConnectionRequest) => void;
 }
 
 /**
- * Pedidos de conexão pendentes, com Aceitar/Recusar. Vive nos Matches porque é lá que a decisão
- * acontece: as Notificações só avisam que chegou um pedido (o mesmo pedido não se responde em dois
- * sítios diferentes). Não renderiza nada quando não há pedidos.
+ * Pedidos de conexão pendentes, com Aceitar/Recusar. Não renderiza nada quando não há pedidos.
+ *
+ * Tem dois anfitriões, e é uma decisão consciente: a aba dos Matches (onde a decisão sempre
+ * viveu) e o ecrã `connection-requests`, que existe porque a linha "N pedidos de conexão" da Home
+ * e o aviso das Notificações levavam a um **separador** — e mudar de separador não empilha ecrã
+ * nenhum, por isso não havia como voltar atrás com o gesto de deslizar do iOS. O ecrã novo é um
+ * ecrã a sério, empilhado, e volta-se dele como de qualquer outro.
+ *
+ * A alternativa era tirar a decisão dos Matches, e não foi tomada: a lista dos Matches é onde a
+ * pessoa a espera encontrar, e isso foi pedido antes deste ecrã existir.
  */
 export function ConnectionRequestsSection({
   requests,
   busyId,
   errorMessage,
+  showHeader = true,
   onAccept,
   onDecline,
   style,
@@ -39,16 +52,18 @@ export function ConnectionRequestsSection({
 
   return (
     <View style={[styles.section, style]} {...rest}>
-      <View style={styles.header}>
-        <ThemedText type="smallBold" themeColor="textMuted" style={styles.label}>
-          {i18n.requests.connectionLabel}
-        </ThemedText>
-        <View style={[styles.badge, { backgroundColor: theme.primary }]}>
-          <ThemedText type="small" themeColor="onPrimary">
-            {requests.length}
+      {showHeader ? (
+        <View style={styles.header}>
+          <ThemedText type="smallBold" themeColor="textMuted" style={styles.label}>
+            {i18n.requests.connectionLabel}
           </ThemedText>
+          <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+            <ThemedText type="small" themeColor="onPrimary">
+              {requests.length}
+            </ThemedText>
+          </View>
         </View>
-      </View>
+      ) : null}
 
       {errorMessage ? (
         <ThemedText type="small" themeColor="danger">

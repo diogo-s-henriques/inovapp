@@ -1,37 +1,45 @@
-import { useEffect, useState, type ComponentProps } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Spacing, type ColorToken } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { canLearn } from '@/constants/profile';
 import { useAuthStore } from '@/auth/store';
 import { fetchRecentActivity } from '@/lib/activity';
-import { subscribeToConversations } from '@/lib/chat';
+import { retryConversations } from '@/lib/chat';
+import { fetchExcludedCandidateIds, fetchMentorCandidates } from '@/lib/matching';
 import { subscribeToSharedMaterials } from '@/lib/materials';
 import { goBack } from '@/lib/navigation';
 import { dateLocaleTag, formatTimeAgo } from '@/lib/time';
-import { subscribePendingConnectionRequests } from '@/lib/requests';
-import type { ConnectionRequest } from '@/lib/requests';
-import { respondToSessionRequest, subscribePendingSessionRequests } from '@/lib/sessions';
+import { retryPendingConnectionRequests, subscribeToAcceptedConnectionRequests } from '@/lib/requests';
+import type { ConnectionResponse } from '@/lib/requests';
+import { respondToSessionRequest, retryPendingSessionRequests } from '@/lib/sessions';
+import { useConnectionRequests } from '@/hooks/use-connection-requests';
+import { useConversations } from '@/hooks/use-conversations';
+import { useSessionRequests } from '@/hooks/use-session-requests';
 import type { SessionRequest } from '@/types/session';
 import type { Conversation } from '@/types/chat';
-import type { ActivityItem, ActivityKind } from '@/types/activity';
+import type { ActivityItem } from '@/types/activity';
 import type { SharedMaterial } from '@/types/material';
 import { useLocaleStore } from '@/i18n/store';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
-import { ActivityListItem } from '@/components/domain/ActivityListItem';
+import { ACTIVITY_ITEM_ICON, ActivityListItem } from '@/components/domain/ActivityListItem';
 import { ConversationItem } from '@/components/domain/ConversationItem';
 import { RequestCard } from '@/components/domain/RequestCard';
+import { TutorCard } from '@/components/domain/TutorCard';
+import { StackHeader } from '@/components/domain/StackHeader';
+import { RetryNotice } from '@/components/ui/RetryNotice';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
+import type { MatchCandidate } from '@/types/match';
 
-const ACTIVITY_ICON: Record<ActivityKind, { icon: ComponentProps<typeof Ionicons>['name']; color: ColorToken; background: ColorToken }> = {
-  'connection-accepted': { icon: 'checkmark-circle', color: 'success', background: 'successSoft' },
-  'session-accepted': { icon: 'checkmark-circle', color: 'success', background: 'successSoft' },
-  'session-tomorrow': { icon: 'calendar-outline', color: 'primary', background: 'primarySoft' },
-  'material-received': { icon: 'document-text-outline', color: 'textMuted', background: 'surfaceAlt' },
-};
+/** Sugestões mostradas no fim da lista — um resumo, não um deck: ver todos é nos Matches. */
+const SUGGESTIONS_LIMIT = 3;
+
+/** Entradas no histórico "Recentes", no máximo (as três fontes juntas). */
+const RECENT_LIMIT = 8;
 
 function formatDateShort(dateKey: string, locale: 'pt' | 'en'): string {
   const date = new Date(`${dateKey}T00:00:00`);
@@ -45,32 +53,24 @@ export default function NotificationsScreen() {
   const locale = useLocaleStore((state) => state.locale);
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
-  const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const participationMode = useAuthStore((state) => state.profile?.participationMode);
+  const learningSubjects = useAuthStore((state) => state.profile?.learningSubjects ?? []);
+  const [suggestions, setSuggestions] = useState<MatchCandidate[]>([]);
+  const { requests: connectionRequests, error: connectionRequestsError } = useConnectionRequests();
+  const { requests: sessionRequests, error: sessionRequestsError } = useSessionRequests();
+  // A mesma leitura partilhada que a barra de baixo, a Home e o Chat usam (ver useConversations).
+  const { conversations, error: conversationsError } = useConversations();
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  // As respostas aos pedidos que **eu** enviei, ao vivo (ver `subscribeToAcceptedConnectionRequests`):
+  // o histórico é uma leitura pontual, e quem pede só sabia da resposta ao voltar a este ecrã.
+  const [responses, setResponses] = useState<ConnectionResponse[]>([]);
   const [sharedMaterials, setSharedMaterials] = useState<SharedMaterial[]>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = subscribePendingConnectionRequests(user.uid, setConnectionRequests);
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
-
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribePendingSessionRequests(user.uid, setSessionRequests);
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
-
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribeToConversations(user.uid, setConversations);
-    return unsubscribe;
+    return subscribeToAcceptedConnectionRequests(user.uid, setResponses);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
@@ -86,27 +86,68 @@ export default function NotificationsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
+  // A descoberta vive nos Matches e na pesquisa; isto é a mesma lista, em resumo, para quem abre
+  // este ecrã sem lá passar. Mesmo filtro de exclusões (quem já tem um pedido connosco ou um
+  // bloqueio não aparece), e uma falha aqui não pode estragar o resto: este ecrã é feito de avisos
+  // e um aviso a menos é melhor do que um ecrã de erro.
+  useEffect(() => {
+    if (!user || !canLearn(participationMode)) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const excludeIds = await fetchExcludedCandidateIds(user.uid);
+        if (cancelled) return;
+        const candidates = await fetchMentorCandidates({ currentUid: user.uid, learningSubjects, excludeIds });
+        if (!cancelled) setSuggestions(candidates.slice(0, SUGGESTIONS_LIMIT));
+      } catch {
+        if (!cancelled) setSuggestions([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, participationMode]);
+
   const unreadConversations = conversations.filter((conversation) => conversation.unread);
 
-  // Junta os "Pedido aceite"/"Sessão amanhã" (fetch único) com os materiais recebidos (já vêm
-  // ao vivo de subscribeToSharedMaterials, reaproveitado da secção de Materiais).
-  const recentItems: ActivityItem[] = [
-    ...activity,
-    ...sharedMaterials
-      .filter((material) => !material.fromMe)
-      .slice(0, 5)
-      .map(
-        (material): ActivityItem => ({
-          id: `material-${material.id}`,
-          kind: 'material-received',
-          title: i18n.notifications.newMaterialTitle,
-          description: i18n.notifications.materialReceived(`${material.otherFirstName} ${material.otherLastName}`, material.fileName),
-          timestamp: material.createdAt ?? new Date(0),
-        }),
-      ),
-  ]
+  // O histórico "Recentes" junta três fontes: o que **já aconteceu** (uma leitura pontual, que
+  // traz os pedidos de sessão aceites e as sessões de amanhã), o que **acabou de acontecer do outro
+  // lado** (as respostas aos pedidos que eu enviei, ao vivo) e os materiais recebidos (também ao
+  // vivo, reaproveitados da secção de Materiais).
+  //
+  // As respostas aparecem duas vezes — uma da leitura pontual, outra da subscrição — e é de
+  // propósito: a primeira traz o histórico antigo e a segunda o instante. O que as junta é o **id**,
+  // `connection-{id}` nos dois lados, por isso o mapa fica com uma só entrada: a última a entrar, que
+  // é a ao vivo.
+  const responseItems: ActivityItem[] = responses.map((response) => ({
+    id: `connection-${response.id}`,
+    kind: 'connection-accepted',
+    title: i18n.notifications.requestAcceptedTitle,
+    description: i18n.notifications.connectionAccepted(response.candidate.firstName),
+    timestamp: response.respondedAt,
+  }));
+
+  const materialItems: ActivityItem[] = sharedMaterials
+    .filter((material) => !material.fromMe)
+    .slice(0, 5)
+    .map(
+      (material): ActivityItem => ({
+        id: `material-${material.id}`,
+        kind: 'material-received',
+        title: i18n.notifications.newMaterialTitle,
+        description: i18n.notifications.materialReceived(`${material.otherFirstName} ${material.otherLastName}`, material.fileName),
+        timestamp: material.createdAt ?? new Date(0),
+      }),
+    );
+
+  const recentById = new Map<string, ActivityItem>();
+  for (const item of [...activity, ...responseItems, ...materialItems]) recentById.set(item.id, item);
+  const recentItems = [...recentById.values()]
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    .slice(0, 8);
+    .slice(0, RECENT_LIMIT);
 
   const handleOpenConversation = (conversation: Conversation) => {
     router.push({
@@ -136,22 +177,53 @@ export default function NotificationsScreen() {
   };
 
   const hasAny =
-    connectionRequests.length > 0 || sessionRequests.length > 0 || unreadConversations.length > 0 || recentItems.length > 0;
+    connectionRequestsError ||
+    sessionRequestsError ||
+    conversationsError ||
+    connectionRequests.length > 0 ||
+    sessionRequests.length > 0 ||
+    unreadConversations.length > 0 ||
+    recentItems.length > 0 ||
+    suggestions.length > 0;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => goBack(router)} accessibilityRole="button" accessibilityLabel={i18n.notifications.back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={theme.textPrimary} />
-        </Pressable>
-        <ThemedText type="title">{i18n.notifications.title}</ThemedText>
-      </View>
+      <StackHeader
+        title={i18n.notifications.title}
+        backLabel={i18n.notifications.back}
+        onBack={() => goBack(router)}
+      />
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {error && (
           <ThemedText type="small" themeColor="danger" style={styles.errorText}>
             {error}
           </ThemedText>
+        )}
+
+        {/* As duas leituras vivas que este ecrã mostra. Sem estes avisos, "não tens pedidos" e
+            "não consegui ver os teus pedidos" davam o mesmo ecrã — e é este ecrã que decide
+            aceitar/recusar. */}
+        {sessionRequestsError && (
+          <RetryNotice
+            message={i18n.sessions.loadError}
+            onRetry={retryPendingSessionRequests}
+            style={styles.errorText}
+          />
+        )}
+        {connectionRequestsError && (
+          <RetryNotice
+            message={i18n.requests.loadError}
+            onRetry={retryPendingConnectionRequests}
+            style={styles.errorText}
+          />
+        )}
+        {conversationsError && (
+          <RetryNotice
+            message={i18n.chatList.loadError}
+            onRetry={retryConversations}
+            style={styles.errorText}
+          />
         )}
 
         {sessionRequests.length > 0 && (
@@ -199,18 +271,19 @@ export default function NotificationsScreen() {
             <ThemedText type="small" themeColor="textMuted" style={styles.sectionHint}>
               {i18n.notifications.connectionRequestHint}
             </ThemedText>
-            {/* Só o aviso: aceitar/recusar é nos Matches, para não haver duas listas a decidir
-                o mesmo pedido (e para a decisão viver onde está o resto dos matchs). */}
+            {/* O aviso abre o ecrã dos pedidos, e não a aba dos Matches: um separador não se
+                empilha, e quem entra por aqui tem de poder voltar com o gesto do iOS. A decisão
+                (aceitar/recusar) é a mesma lista nos dois sítios — é o mesmo componente. */}
             <View style={styles.recentList}>
               {connectionRequests.map((request) => (
                 <Pressable
                   key={request.id}
-                  onPress={() => router.push('/matches')}
+                  onPress={() => router.push('/connection-requests')}
                   accessibilityRole="button"
                   accessibilityLabel={i18n.notifications.connectionRequestTitle}>
                   <ActivityListItem
-                    icon="person-add"
-                    iconColor="primary"
+                    icon="person-add-outline"
+                    iconColor="textPrimary"
                     iconBackground="primarySoft"
                     title={i18n.notifications.connectionRequestTitle}
                     description={i18n.notifications.connectionRequestAnnouncement(
@@ -260,7 +333,7 @@ export default function NotificationsScreen() {
             </ThemedText>
             <View style={styles.recentList}>
               {recentItems.map((item) => {
-                const iconInfo = ACTIVITY_ICON[item.kind];
+                const iconInfo = ACTIVITY_ITEM_ICON[item.kind];
                 return (
                   <ActivityListItem
                     key={item.id}
@@ -273,6 +346,32 @@ export default function NotificationsScreen() {
                   />
                 );
               })}
+            </View>
+          </View>
+        )}
+
+        {suggestions.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeader
+              title={i18n.notifications.suggestionsLabel}
+              actionLabel={i18n.common.seeAll}
+              onPressAction={() => router.push('/matches')}
+            />
+            <ThemedText type="small" themeColor="textMuted" style={styles.sectionHint}>
+              {i18n.notifications.suggestionsHint}
+            </ThemedText>
+            <View style={styles.recentList}>
+              {suggestions.map((candidate) => (
+                <TutorCard
+                  key={candidate.id}
+                  firstName={candidate.firstName}
+                  lastName={candidate.lastName}
+                  course={candidate.course}
+                  year={candidate.year}
+                  image={candidate.image}
+                  onPress={() => router.push({ pathname: '/profile/[id]', params: { id: candidate.id } })}
+                />
+              ))}
             </View>
           </View>
         )}
@@ -290,14 +389,6 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.two,
   },
   list: {
     paddingHorizontal: Spacing.five,

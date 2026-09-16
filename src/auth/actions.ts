@@ -1,5 +1,9 @@
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
@@ -8,6 +12,8 @@ import {
 import { deleteField, doc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 import { auth, db } from '@/lib/firebase';
+import { deleteAccountData } from '@/lib/account';
+import { useAuthStore } from '@/auth/store';
 import { setRememberedEmail } from '@/lib/remembered-email';
 import { getAccountRole } from '@/constants/auth';
 import { getTranslations } from '@/i18n/store';
@@ -76,6 +82,16 @@ export async function signUp(email: string, password: string, remember: boolean)
     rememberSession: remember,
   });
   await batch.commit();
+
+  // O link de confirmação, logo a seguir à conta existir. Falhar aqui **não pode** deitar abaixo o
+  // registo: a conta e o par de documentos já estão criados, e o ecrã da confirmação tem um botão
+  // para voltar a pedir o email. O que não pode acontecer é a pessoa ficar à espera de um email
+  // que ninguém pediu.
+  try {
+    await sendEmailVerification(credential.user);
+  } catch {
+    // ignorado de propósito — ver acima
+  }
 }
 
 export async function signIn(email: string, password: string, remember: boolean): Promise<void> {
@@ -123,6 +139,82 @@ export async function signIn(email: string, password: string, remember: boolean)
 
 export async function signOutUser(): Promise<void> {
   await signOut(auth);
+}
+
+/**
+ * Apaga a conta — a do Auth e tudo o que é dela no Firestore. É definitivo e não há caminho de
+ * volta; quem chama tem de ter avisado antes (ver src/app/settings.tsx).
+ *
+ * **A palavra-passe é pedida sempre, e verificada antes de se apagar seja o que for.** O Firebase só
+ * se queixa de uma entrada antiga (`auth/requires-recent-login`) no momento em que a conta é
+ * apagada — ou seja, depois de os dados já terem ido. Reautenticar primeiro tem duas vantagens: uma
+ * palavra-passe errada não deixa nada a meio, e a pergunta que a pessoa vê é sempre a mesma em vez
+ * de aparecer só de vez em quando.
+ *
+ * **A ordem: dados, depois conta.** A conta apagada tira o token, e sem token o cliente já não pode
+ * apagar nada — o que sobrasse no Firestore ficava órfão (o raciocínio todo está em
+ * src/lib/account.ts).
+ */
+export async function deleteAccount(password: string): Promise<void> {
+  const current = auth.currentUser;
+  const email = current?.email;
+
+  if (!current || !email) {
+    throw new Error(getTranslations().settings.deleteAccountFailed);
+  }
+
+  await reauthenticateWithCredential(current, EmailAuthProvider.credential(email, password));
+
+  await deleteAccountData(current.uid);
+
+  // O email lembrado no dispositivo era o desta conta: quem se registar outra vez com o mesmo
+  // endereço não deve encontrar o campo preenchido com a conta antiga.
+  await setRememberedEmail(null);
+
+  // A conta em último. A partir daqui o token deixa de valer, o `onAuthStateChanged` dispara com
+  // `null` e a app volta ao ecrã de entrada sozinha (ver src/app/_layout.tsx) — não é preciso
+  // navegar para lado nenhum a partir daqui.
+  await deleteUser(current);
+}
+
+/**
+ * Manda (ou volta a mandar) o email de confirmação.
+ *
+ * O Firebase limita os envios seguidos para a mesma caixa: quem carregar duas vezes seguidas no
+ * botão leva um `auth/too-many-requests`, e é o ecrã que o traduz.
+ */
+export async function sendVerificationEmail(): Promise<void> {
+  const current = auth.currentUser;
+  if (!current) return;
+
+  await sendEmailVerification(current);
+}
+
+/**
+ * Pergunta ao Firebase se o email já foi confirmado, e força um **token novo**.
+ *
+ * O `reload()` não basta, e é esta a parte que engana: o link abre no browser e a app não é
+ * avisada; mesmo depois de o Firebase saber que o email está confirmado, o token que já está no
+ * dispositivo continua a dizer `email_verified: false` durante até uma hora — e são as regras do
+ * Firestore que leem o token, não o objeto local. Sem o `getIdToken(true)`, a app deixava entrar e
+ * o servidor recusava as escritas com um erro que não diz nada sobre o que falta.
+ *
+ * Devolve o estado para quem chamou poder dizer "ainda não" sem ter de o ir buscar outra vez.
+ */
+export async function refreshEmailVerified(): Promise<boolean> {
+  const current = auth.currentUser;
+  if (!current) return false;
+
+  await current.reload();
+  if (current.emailVerified) await current.getIdToken(true);
+
+  // O utilizador que o listener guardou é **o mesmo objeto** que este, e o `reload()` escreveu lá
+  // dentro: os dois já veem `true`. O que falta é avisar quem está a olhar para ele — sem isto, a
+  // app ficava no ecrã da confirmação até algo voltar a mexer no estado.
+  const { user, setUser } = useAuthStore.getState();
+  if (user) setUser({ ...user, emailVerified: current.emailVerified });
+
+  return current.emailVerified;
 }
 
 /**

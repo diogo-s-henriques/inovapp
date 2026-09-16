@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { IconSize, MaxContentWidth, Spacing } from '@/constants/theme';
 import { RATING_LABELS, RATING_TAGS } from '@/constants/rating';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
@@ -64,7 +64,7 @@ export function EvaluationModal({
             accessibilityLabel={i18n.evaluation.close}
             style={styles.close}
             hitSlop={8}>
-            <Ionicons name="close" size={22} color={theme.textMuted} />
+            <Ionicons name="close-outline" size={IconSize.ui} color={theme.textPrimary} />
           </Pressable>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>

@@ -4,8 +4,9 @@ import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc
 import { getTranslations } from '@/i18n/store';
 import { db } from '@/lib/firebase';
 import { fetchBlockedPairs, fetchBlockedUids } from '@/lib/blocking';
+import { roleLabel } from '@/lib/roles';
 import type { AccountRole } from '@/constants/auth';
-import { canLearn, canTeach } from '@/constants/profile';
+import { canTeach } from '@/constants/profile';
 import type { CourseSelection, ParticipationMode } from '@/types/profile';
 import type { MatchCandidate } from '@/types/match';
 
@@ -34,17 +35,6 @@ interface MentorProfileDoc {
   availabilityModality?: string[];
 }
 
-// "Mentor" é sempre um aluno (@alunos...) a ensinar outro aluno; um professor (@iseclisboa.pt,
-// role determinado pelo domínio do email — ver src/constants/auth.ts) nunca é "Mentor", é
-// "Tutor". Um tutorando a contactar outro aluno é sempre para esse aluno ser mentor dele.
-function roleLabelFor(mode: ParticipationMode | undefined, accountRole: AccountRole | undefined): string {
-  const { roles } = getTranslations();
-  const teachLabel = accountRole === 'professor' ? roles.tutor : roles.mentor;
-  if (canTeach(mode) && canLearn(mode)) return roles.withTutee(teachLabel);
-  if (canTeach(mode)) return teachLabel;
-  return roles.tutee;
-}
-
 function toCandidate(uid: string, data: MentorProfileDoc): MatchCandidate {
   const i18n = getTranslations();
   const [firstName, ...rest] = (data.fullName ?? '').trim().split(' ');
@@ -52,7 +42,9 @@ function toCandidate(uid: string, data: MentorProfileDoc): MatchCandidate {
     id: uid,
     firstName: firstName || i18n.common.user,
     lastName: rest.join(' '),
-    role: roleLabelFor(data.participationMode, data.role),
+    // O rótulo vem de `roleLabel` (src/lib/roles.ts), que é também o que a Home usa por baixo do
+    // nome: um sítio só a decidir como se chama o papel de cada um.
+    role: roleLabel(data.participationMode, data.role, i18n),
     course: data.course?.name ?? '',
     year: data.year ?? '',
     subjects: data.teachingSubjects ?? [],
@@ -128,6 +120,55 @@ export async function fetchConnectedTutees(uid: string): Promise<MatchCandidate[
   ]);
   const candidates = await Promise.all(snapshot.docs.map((docSnap) => fetchCandidateById(docSnap.data().from as string)));
   return candidates.filter((candidate): candidate is MatchCandidate => candidate !== null && !bloqueados.has(candidate.id));
+}
+
+/**
+ * Se o utilizador tem **alguma** ligação aceite, em qualquer dos sentidos.
+ *
+ * A Home só precisa desta resposta booleana (é ela que decide se mostra o guia de primeiros
+ * passos) e, para a ter, lia as duas listas completas: duas consultas, um perfil por linha e os
+ * dois pares de bloqueios. Aqui a pergunta é feita com `limit(1)` de cada lado — dois documentos em
+ * vez de duas listas.
+ *
+ * `limit(1)` e não `count()`: uma ligação bloqueada deixa de ser ligação, e o `count()` conta-a.
+ * Quando o único candidato que apareceu tem um bloqueio connosco não se pode responder "não tens
+ * ligações" (pode haver outra atrás dele) — nesse caso raro recua-se para a leitura completa, que
+ * é a resposta certa. No caso comum (sem bloqueios) nunca se chega lá.
+ */
+export async function hasConnections(uid: string): Promise<boolean> {
+  const [comoAluno, comoMentor, bloqueados] = await Promise.all([
+    getDocs(
+      query(
+        collection(db, 'connectionRequests'),
+        where('from', '==', uid),
+        where('status', '==', 'accepted'),
+        limit(1),
+      ),
+    ),
+    getDocs(
+      query(
+        collection(db, 'connectionRequests'),
+        where('to', '==', uid),
+        where('status', '==', 'accepted'),
+        limit(1),
+      ),
+    ),
+    fetchBlockedPairs(uid),
+  ]);
+
+  const candidatos = [...comoAluno.docs, ...comoMentor.docs];
+  const desbloqueadas = candidatos.filter((docSnap) => {
+    const data = docSnap.data();
+    const outro = data.from === uid ? data.to : data.from;
+    return !bloqueados.has(outro as string);
+  });
+
+  if (desbloqueadas.length > 0) return true;
+  if (candidatos.length === 0) return false;
+
+  // Todos os que apareceram estão bloqueados: só uma leitura completa sabe se há mais.
+  const [mentores, tutorandos] = await Promise.all([fetchConnectedMentors(uid), fetchConnectedTutees(uid)]);
+  return mentores.length + tutorandos.length > 0;
 }
 
 /**
@@ -212,6 +253,32 @@ export async function getPassedCandidateIds(): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+export type MatchesView = 'blocked' | 'requests' | 'loading' | 'error' | 'list';
+
+/**
+ * Que vista o ecrã dos Matches deve mostrar.
+ *
+ * É uma função (e não uma corrente de `if` dentro do JSX) por causa de um caso que já falhou: o
+ * carregamento (`loading`) só faz sentido para quem **tem** lista de candidatos. O efeito que lê a
+ * lista sai mais cedo para quem só ensina — não há nada para ler — e por isso nunca chegava a pôr
+ * `loading` a falso. Com um ecrã que perguntava "ainda estou a carregar?", isso era um indicador a
+ * girar para sempre, com os pedidos de conexão que a pessoa tem por decidir escondidos atrás dele.
+ *
+ * Aqui a regra é explícita: quem não pode aprender **nunca** está a carregar. Se tem pedidos,
+ * mostra-os; se não tem, mostra a explicação de porque não há lista.
+ */
+export function matchesView(params: {
+  canLearn: boolean;
+  loading: boolean;
+  loadError: boolean;
+  requestCount: number;
+}): MatchesView {
+  if (!params.canLearn) return params.requestCount > 0 ? 'requests' : 'blocked';
+  if (params.loading) return 'loading';
+  if (params.loadError) return 'error';
+  return 'list';
 }
 
 export async function passCandidate(candidateId: string): Promise<void> {

@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 /** Campo de texto de pesquisa com ícone de lupa incorporado. */
@@ -14,9 +14,9 @@ export function SearchInput({ containerStyle, ...props }: SearchInputProps) {
 
   return (
     // Branco com contorno, e não só um preenchimento claro: este campo vive em cima do fundo
-    // azulado dos ecrãs, onde um fundo do mesmo tom desaparecia.
+    // cinzento dos ecrãs, onde um fundo do mesmo tom desaparecia.
     <View style={[styles.wrapper, { backgroundColor: theme.surface, borderColor: theme.border }, containerStyle]}>
-      <Ionicons name="search-outline" size={18} color={theme.textMuted} />
+      <Ionicons name="search-outline" size={IconSize.ui} color={theme.textPrimary} />
       <TextInput placeholderTextColor={theme.textMuted} style={[styles.input, { color: theme.textPrimary }]} {...props} />
     </View>
   );

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1008777430223",
+    "project_id": "inovapp-68021",
+    "storage_bucket": "inovapp-68021.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1008777430223:android:768f0303e1e656f7d0e3ba",
+        "android_client_info": {
+          "package_name": "com.diyogo.inovapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8mk5L3LUcnrAofgh2x6pLhPvbYlypkXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

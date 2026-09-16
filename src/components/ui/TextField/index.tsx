@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { IconSize, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/ui/ThemedText';
 
@@ -74,7 +74,7 @@ export function TextField({
             accessibilityRole="button"
             accessibilityLabel={hidden ? 'Mostrar palavra-passe' : 'Esconder palavra-passe'}
             hitSlop={8}>
-            <Ionicons name={hidden ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.textMuted} />
+            <Ionicons name={hidden ? 'eye-off-outline' : 'eye-outline'} size={IconSize.ui} color={theme.textPrimary} />
           </Pressable>
         )}
       </View>

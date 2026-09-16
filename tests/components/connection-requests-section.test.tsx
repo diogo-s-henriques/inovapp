@@ -1,10 +1,12 @@
 /**
  * Testes de `ConnectionRequestsSection` — a lista onde os pedidos de conexão se aceitam/recusam.
  *
- * Ela vive nos Matches de propósito: nas Notificações há só o aviso de que chegou um pedido, para
- * a mesma decisão não existir em dois sítios. O que aqui se fixa é a ligação entre cada botão e a
- * decisão que ele representa — trocar os dois (aceitar a recusar) seria um erro silencioso e caro,
- * porque fecha pedidos que a pessoa queria aceitar e abre conversas que ninguém pediu.
+ * A lista tem dois anfitriões: a aba dos Matches e o ecrã `connection-requests` (que existe para a
+ * linha da Home e o aviso das Notificações deixarem de dar para uma aba, onde não há gesto de
+ * voltar). O que aqui se fixa é a ligação entre cada botão e a decisão que ele representa — trocar
+ * os dois (aceitar a recusar) seria um erro silencioso e caro, porque fecha pedidos que a pessoa
+ * queria aceitar e abre conversas que ninguém pediu — e que o anfitrião pode calar a etiqueta da
+ * secção quando o próprio ecrã já tem título (`showHeader`), sem perder os cartões.
  */
 import { fireEvent, render } from '@testing-library/react-native';
 
@@ -61,6 +63,16 @@ describe('lista de pedidos de conexão', () => {
     expect(getByText('1')).toBeTruthy();
     expect(getByText('Ana Aluna')).toBeTruthy();
     expect(getByText(`${pt.roles.tutee} · Licenciatura em Engenharia`)).toBeTruthy();
+  });
+
+  it('com showHeader=false cala a etiqueta, mas não os pedidos', async () => {
+    const { queryByText, getByText, getByLabelText } = await render(
+      <ConnectionRequestsSection requests={[ANA]} showHeader={false} onAccept={jest.fn()} onDecline={jest.fn()} />,
+    );
+
+    expect(queryByText(pt.requests.connectionLabel)).toBeNull();
+    expect(getByText('Ana Aluna')).toBeTruthy();
+    expect(getByLabelText(pt.requestCard.accept)).toBeTruthy();
   });
 });
 

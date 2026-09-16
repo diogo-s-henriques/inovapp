@@ -1,13 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs, TabList, TabTrigger, TabSlot, type TabTriggerSlotProps } from 'expo-router/ui';
-import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useAuthStore } from '@/auth/store';
-import { subscribeToConversations } from '@/lib/chat';
-import { subscribePendingConnectionRequests } from '@/lib/requests';
+import { IconSize, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useConnectionRequests } from '@/hooks/use-connection-requests';
+import { useConversations } from '@/hooks/use-conversations';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import type { Translations } from '@/i18n/translations';
@@ -15,41 +13,36 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { TAB_ICONS, type TabIconName } from './icons';
 
 const TABS = [
-  { name: 'home', href: '/', labelKey: 'home', icon: TAB_ICONS.home },
-  { name: 'pesquisar', href: '/pesquisar', labelKey: 'search', icon: TAB_ICONS.search },
-  { name: 'matches', href: '/matches', labelKey: 'matches', icon: TAB_ICONS.matches },
-  { name: 'chat', href: '/chat', labelKey: 'chat', icon: TAB_ICONS.chat },
-  { name: 'perfil', href: '/perfil', labelKey: 'profile', icon: TAB_ICONS.profile },
-] as const satisfies readonly { name: string; href: string; labelKey: keyof Translations['navTabs']; icon: TabIconName }[];
+  { name: 'home', href: '/', labelKey: 'home', icon: 'home' },
+  { name: 'pesquisar', href: '/pesquisar', labelKey: 'search', icon: 'search' },
+  { name: 'matches', href: '/matches', labelKey: 'matches', icon: 'matches' },
+  { name: 'chat', href: '/chat', labelKey: 'chat', icon: 'chat' },
+  { name: 'perfil', href: '/perfil', labelKey: 'profile', icon: 'profile' },
+] as const satisfies readonly {
+  name: string;
+  href: string;
+  labelKey: keyof Translations['navTabs'];
+  // O nome do separador (a rota) e o nome do ícone não são sempre o mesmo: o separador chama-se
+  // `pesquisar` e `perfil` e os ícones chamam-se `search` e `profile`.
+  icon: TabIconName;
+}[];
 
 /** Barra de navegação principal em forma de pílula flutuante, com os separadores de topo da app. */
 export default function AppTabs() {
   const theme = useTheme();
   const i18n = useI18n();
-  const user = useAuthStore((state) => state.user);
-  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-  const [hasPendingRequests, setHasPendingRequests] = useState(false);
-
-  // Bolinha vermelha nos separadores que têm algo à espera: "Chat" enquanto houver pelo menos
-  // uma conversa por ler e "Matches" enquanto houver pedidos de conexão por decidir (é lá que se
+  // As duas bolinhas leem as mesmas leituras partilhadas que os ecrãs que mostram as listas (ver
+  // `useConnectionRequests` e `useConversations`): uma só subscrição para a app toda. Aqui só
+  // interessa se há algo, e uma leitura falhada deixa a bolinha como está — quem avisa do erro são
+  // os ecrãs que mostram a lista.
+  //
+  // Bolinha vermelha nos separadores que têm algo à espera: "Chat" enquanto houver pelo menos uma
+  // conversa por ler e "Matches" enquanto houver pedidos de conexão por decidir (é lá que se
   // aceitam ou recusam). Vive fora dos ecrãs em si, por isso cada separador trata do seu aviso.
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribeToConversations(user.uid, (conversations) =>
-      setHasUnreadMessages(conversations.some((conversation) => conversation.unread)),
-    );
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
-
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribePendingConnectionRequests(user.uid, (requests) =>
-      setHasPendingRequests(requests.length > 0),
-    );
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
+  const { requests: pendingRequests } = useConnectionRequests();
+  const { conversations } = useConversations();
+  const hasPendingRequests = pendingRequests.length > 0;
+  const hasUnreadMessages = conversations.some((conversation) => conversation.unread);
 
   return (
     <Tabs>
@@ -73,18 +66,21 @@ export default function AppTabs() {
 
 interface TabButtonProps extends TabTriggerSlotProps {
   label: string;
+  /** Chave do ícone do separador (ver TAB_ICONS). */
   icon: TabIconName;
   badge?: boolean;
 }
 
 export function TabButton({ label, icon, badge, isFocused, onPressIn, onPressOut, ...props }: TabButtonProps) {
   const theme = useTheme();
-  const [pressed, setPressed] = useState(false);
+  // O toque não muda o ícone (era o que fazia o par contorno/preenchido): a resposta ao toque é o
+  // encolher do ícone, que se vê e não troca nada de sítio.
   const scale = useSharedValue(1);
 
-  const color = theme[isFocused ? 'primary' : 'textNav'];
-  // Ícone preenchido tanto quando o separador está ativo como durante o próprio toque.
-  const filled = isFocused || pressed;
+  // O ativo fica **ameixa** e o inativo cinzento: os ícones são todos de contorno, por isso a cor é
+  // tudo o que distingue um do outro. O acento vive aqui porque este é o único sítio do ecrã que
+  // diz onde estás — e era o único sítio da barra de baixo sem cor nenhuma.
+  const color = theme[isFocused ? 'primaryDark' : 'textMuted'];
 
   const animatedIconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -96,13 +92,11 @@ export function TabButton({ label, icon, badge, isFocused, onPressIn, onPressOut
       onPressIn={(event) => {
         // eslint-disable-next-line react-hooks/immutability -- Reanimated shared values are intentionally mutable
         scale.value = withSpring(0.82, { damping: 14, stiffness: 320 });
-        setPressed(true);
         onPressIn?.(event);
       }}
       onPressOut={(event) => {
         // eslint-disable-next-line react-hooks/immutability -- Reanimated shared values are intentionally mutable
         scale.value = withSpring(1, { damping: 14, stiffness: 320 });
-        setPressed(false);
         onPressOut?.(event);
       }}
       style={({ pressed: isPressed }) => [styles.tabButton, isPressed && styles.pressed]}
@@ -110,12 +104,12 @@ export function TabButton({ label, icon, badge, isFocused, onPressIn, onPressOut
       <Animated.View style={animatedIconStyle}>
         <View style={[styles.iconChip, isFocused && { backgroundColor: theme.primarySoft }]}>
           <View style={styles.iconWrap}>
-            <Ionicons name={filled ? icon.filled : icon.outline} size={22} color={color} />
+            <Ionicons name={TAB_ICONS[icon]} size={IconSize.ui} color={color} />
             {badge && <View style={[styles.badgeDot, { backgroundColor: theme.danger, borderColor: theme.surface }]} />}
           </View>
         </View>
       </Animated.View>
-      <ThemedText type="small" themeColor={isFocused ? 'primary' : 'textNav'}>
+      <ThemedText type="small" themeColor={isFocused ? 'primaryDark' : 'textMuted'}>
         {label}
       </ThemedText>
     </Pressable>

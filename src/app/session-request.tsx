@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
@@ -15,6 +14,7 @@ import { toDateKey } from '@/lib/time';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { CalendarMonth } from '@/components/domain/CalendarMonth';
+import { StackHeader } from '@/components/domain/StackHeader';
 import { ChipGroup } from '@/components/ui/ChipGroup';
 import { Button } from '@/components/ui/Button';
 import { SuccessModal } from '@/components/ui/SuccessModal';
@@ -167,12 +167,11 @@ export default function SessionRequestScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => goBack(router)} accessibilityRole="button" accessibilityLabel={i18n.sessions.back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={theme.textPrimary} />
-        </Pressable>
-        <ThemedText type="title">{i18n.sessionRequest.title}</ThemedText>
-      </View>
+      <StackHeader
+        title={i18n.sessionRequest.title}
+        backLabel={i18n.sessions.back}
+        onBack={() => goBack(router)}
+      />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <ThemedText type="body" themeColor="textMuted">
@@ -265,14 +264,6 @@ export default function SessionRequestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.two,
   },
   content: {
     paddingHorizontal: Spacing.five,
