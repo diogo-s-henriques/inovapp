@@ -21,6 +21,10 @@ export interface Translations {
     new: string;
     user: string;
     addPhoto: string;
+    /** Abrir a fotografia de perfil em grande (o toque no avatar, quem já tem uma). */
+    viewPhoto: string;
+    /** Trocar a fotografia, a partir da vista de perto. */
+    change: string;
     starRating: (count: number) => string;
   };
   roles: {

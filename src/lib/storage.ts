@@ -4,10 +4,20 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 const MAX_DIMENSION = 400;
 const JPEG_QUALITY = 0.6;
 
+/**
+ * Abre a galeria e devolve o `file://` da fotografia escolhida.
+ *
+ * **Não se pede permissão nenhuma, e é de propósito.** A app escolhe sempre pelo seletor do
+ * sistema, e esse não dá acesso à galeria: devolve uma cópia do ficheiro que a pessoa escolheu, que
+ * é a única coisa que a app chega a ver. Pedir a permissão antes custava duas coisas - uma ida ao
+ * sistema com diálogo antes de a galeria abrir, que era o atraso que se sentia no toque, e o
+ * silêncio quando alguém a tinha recusado antes: o seletor nunca chegava a abrir e nada dizia
+ * porquê, nem havia caminho para as definições do telemóvel a partir daqui. A biblioteca é
+ * explícita nisto (expo-image-picker, SDK 57: "No permissions request is necessary for launching
+ * the image library"); só para vídeos sem edição é que o iOS exige a permissão, e aqui são sempre
+ * imagens.
+ */
 export async function pickProfilePhoto(): Promise<string | undefined> {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) return undefined;
-
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsEditing: true,

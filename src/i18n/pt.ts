@@ -20,6 +20,8 @@ export const pt: Translations = {
     new: 'Novo',
     user: 'Utilizador',
     addPhoto: 'Adicionar fotografia',
+    viewPhoto: 'Ver fotografia',
+    change: 'Alterar',
     starRating: (count) => `${count} estrela${count === 1 ? '' : 's'}`,
   },
   roles: {
