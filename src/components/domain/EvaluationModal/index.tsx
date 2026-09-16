@@ -67,7 +67,10 @@ export function EvaluationModal({
             <Ionicons name="close-outline" size={IconSize.ui} color={theme.textPrimary} />
           </Pressable>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled">
             <ProfilePicCard
               firstName={mentorFirstName}
               lastName={mentorLastName}

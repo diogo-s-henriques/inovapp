@@ -160,10 +160,20 @@ eas build --profile preview --platform android       # para partilhar, sem loja
 ```
 
 **A app deixou de correr no Expo Go.** O `expo-observe` (erros em produção, ver abaixo) e o
-`expo-dev-client` são módulos nativos: no Expo Go o primeiro rebenta ao ser importado. O caminho a
-partir de agora é instalar a **development build** uma vez e, depois, `npx expo start` liga-se-lhe
-em vez de ao Expo Go (o QR que aparece é o dela). Comandos que continuam a funcionar no Expo Go:
-não há - para testar no telemóvel é preciso a build.
+`expo-dev-client` são módulos nativos que o Expo Go não traz: o primeiro rebentava ao ser importado,
+**antes de haver ecrã** - a app abria e fechava-se logo a seguir, sem nada a dizer porquê (o
+"Cannot find native module 'ExpoAppMetrics'"). Desde então o `expo-observe` é carregado de forma
+tolerante (`src/lib/observe.ts`), por isso esse fecho já não acontece; o caminho continua a ser a
+**development build**: instalada uma vez, `npx expo start` liga-se-lhe em vez de ao Expo Go (o QR
+que aparece é o dela). Comandos que continuam a funcionar no Expo Go: não há - para testar no
+telemóvel é preciso a build.
+
+**Uma dependência nativa nova obriga a uma build nova.** Foi assim que o `expo-observe` entrou (o
+`expo-app-metrics` vem com ele, como dependência transitiva): o JavaScript pode ser o mais recente
+de todos, servido pelo Metro ou por um push, mas quem tem de estar **dentro do binário** é o módulo
+nativo. Um development client de ontem a servir o código de hoje importa um módulo que não tem - e o
+sintoma é a app a fechar ao abrir. Depois de mexer em módulos nativos, uma build nova **antes** de
+testar: `npx eas-cli build --profile development --platform ios`.
 
 - **Android**: nada de contas. A `development` sai como APK (distribuição interna), com a keystore
   gerada e guardada pelo EAS; instala-se pelo QR/link que a build devolve.
@@ -283,6 +293,13 @@ ou pela linha de comandos (`npx eas-cli observe:versions`, `observe:errors`…).
 **Nada de dados pessoais no que é reportado** - o que entra num erro sai do dispositivo e fica
 visível nesse painel. Um nome de utilizador ou um email no texto de um erro é uma fuga: o contexto
 (`[chat]`) é o sítio, e o id não é preciso.
+
+**O serviço é opcional, e a app não depende dele.** `src/lib/observe.ts` carrega o módulo à mão, com
+a falha apanhada: sem ele `observe` é `null`, não há métricas nem erros reportados, e a app corre
+como sempre (o `reportError` passa a escrever só no terminal, em desenvolvimento). A alternativa -
+um `import` no topo do ficheiro - custava a app inteira: a falha acontece quando o ficheiro é
+avaliado, e nessa altura ainda não há ecrã para a mostrar. `tests/components/observe-fallback.test.tsx`
+fixa-o, com uma fábrica que lança exatamente o erro do módulo nativo em falta.
 
 ### Avisos no telemóvel (push)
 
@@ -959,6 +976,14 @@ parte da app.
   do Expo Push diretamente - é o caminho que não exige plano pago, com a consequência de a
   credencial viver no cliente; a alternativa (uma função de servidor, ou um serviço de orquestração
   como o Knock) resolve isso e traz uma conta e um preço a mais para gerir.
+- **A galeria não pede permissão nenhuma** - quem escolhe é o seletor do sistema, que devolve uma
+  cópia do ficheiro escolhido e não dá acesso à biblioteca, por isso não há nada para pedir. O
+  pedido que ali estava custava duas coisas: um diálogo do sistema antes de a galeria abrir (o
+  atraso que se sentia no toque) e, a quem já o tivesse recusado, um toque que não fazia nada - o
+  seletor nunca abria e não havia mensagem nem caminho para as definições do telemóvel.
+- **A fotografia de perfil abre em grande** - o toque no avatar mostra-a do tamanho do cartão, com o
+  botão "Alterar" por baixo, e é de lá que se vai ao seletor. A 96 px não se via nada, e o ícone de
+  máquina fotográfica que estava dentro do avatar apontava para um botão que não existia.
 - **O microfone não é pedido** - o plugin do `expo-image-picker` liga
   `android.permission.RECORD_AUDIO` por omissão (o seletor de imagens também sabe captar vídeo),
   e a app só escolhe uma fotografia da galeria. Ficou `microphonePermission: false` no `app.json`,
@@ -973,9 +998,26 @@ parte da app.
   modalidade "Online" é só como a sessão é combinada, e o chat é onde se combina); disciplinas,
   modalidades e períodos de disponibilidade são guardados no Firestore como texto em português,
   por isso não acompanham a mudança de idioma.
-- **A disponibilidade saiu do perfil próprio** - continua a ser recolhida e continua a aparecer ao
-  escolher a hora de uma sessão e no perfil de outra pessoa; saiu do ecrã do perfil para ele caber
-  sem deslizar.
+- **O EAS Observe não pode ser uma porta de sentido único** - o `expo-observe` é um módulo nativo,
+  e um `import` no topo do ficheiro faz a app **fechar-se no arranque** quando a build não o tem
+  (Expo Go, ou um binário anterior ao pacote entrar no projeto). Aconteceu, e o sintoma - a app abre
+  e fecha logo a seguir, sem ecrã nenhum - é dos piores para diagnosticar. O serviço de diagnóstico
+  passou a ser carregado em `src/lib/observe.ts` com a falha apanhada: sem módulo, não há métricas
+  nem erros reportados e todo o resto funciona (ver **Erros em produção**).
+- **Tocar fora de um campo fecha o teclado, mas não com um `Touchable` à volta da app** - esteve
+  assim, à volta de tudo, e foi retirado. Um `Touchable` não se limita a ouvir o toque: fica com ele
+  (a `Pressability` reivindica todos os que lhe chegam) e, ao recebê-los, pede ao sistema para
+  bloquear os gestos nativos do que está por dentro (`blockNativeResponder`; no Android é um
+  `requestDisallowInterceptTouchEvent`, que é exatamente o que impede um `ScrollView` de apanhar o
+  arrastar). Passou para onde faz falta: os ecrãs **sem lista** - entrar, criar conta, esqueceu-se da
+  palavra-passe - levam `keyboardDismissProps` (`components/ui/KeyboardDismiss`), que reivindica o
+  toque mas não pede bloqueio nenhum, e os que rolam levam `keyboardShouldPersistTaps="handled"`,
+  que é o comportamento nativo (um toque que um botão não trata fecha o teclado; um arrastar
+  continua a ser um arrastar). **Nota honesta**: no iOS, o Fabric recebe o `blockNativeResponder` e
+  ignora-o (`RCTMountingManager.mm` só chama `setIsJSResponder`), por isso esta mudança **não**
+  explica uma lentidão de scroll sentida no iPhone - o que ela corrige é o Android, onde o bloqueio
+  é mesmo aplicado. Uma lentidão que se sinta nos dois merece ser medida antes de mexer: a app já
+  publica o `tti` por ecrã no EAS Observe (integração `'expo-router'`).
 
 ## Contas de teste
 

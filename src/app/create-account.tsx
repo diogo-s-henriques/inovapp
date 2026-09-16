@@ -7,6 +7,7 @@ import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { keyboardDismissProps } from '@/components/ui/KeyboardDismiss';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { Logo } from '@/components/ui/Logo';
@@ -53,7 +54,10 @@ export default function CreateAccountScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    // Tocar fora de um campo fecha o teclado (ver components/ui/KeyboardDismiss).
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      {...keyboardDismissProps}>
       <View style={styles.header}>
         <Logo />
         <LanguageSwitcher />

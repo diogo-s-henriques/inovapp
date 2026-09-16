@@ -173,7 +173,12 @@ export default function SessionRequestScreen() {
         onBack={() => goBack(router)}
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        // Este ecrã tem campos e rola: um toque que um botão não trata fecha o teclado, e um
+        // arrastar continua a ser um arrastar (é o que substitui o toque que existia na raiz).
+        keyboardShouldPersistTaps="handled">
         <ThemedText type="body" themeColor="textMuted">
           {i18n.sessionRequest.requestingFrom(`${firstName ?? ''} ${lastName ?? ''}`.trim())}
         </ThemedText>

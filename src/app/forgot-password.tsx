@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { getAuthErrorMessage, requestPasswordReset } from '@/auth/actions';
 import { goBack } from '@/lib/navigation';
 import { Button } from '@/components/ui/Button';
+import { keyboardDismissProps } from '@/components/ui/KeyboardDismiss';
 import { SuccessModal } from '@/components/ui/SuccessModal';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -40,7 +41,10 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    // Tocar fora de um campo fecha o teclado (ver components/ui/KeyboardDismiss).
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      {...keyboardDismissProps}>
       <View style={styles.header}>
         <Logo />
         <LanguageSwitcher />

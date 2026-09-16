@@ -1,4 +1,4 @@
-import { Observe } from 'expo-observe';
+import { observe } from '@/lib/observe';
 
 /**
  * Por onde passam os erros que a app **apanha** - os que, sem isto, morrem num `catch` e não deixam
@@ -25,13 +25,17 @@ import { Observe } from 'expo-observe';
  *
  * **Nada de dados pessoais.** O que aqui entra é enviado para fora do dispositivo e fica visível
  * nessa página: nomes, emails e ids de utilizadores não podem aparecer no texto do erro.
+ *
+ * **O serviço é opcional.** `observe` é `null` numa build que não tenha o módulo nativo (o Expo Go,
+ * por exemplo - ver src/lib/observe.ts) e nesse caso o erro só fica no terminal, em desenvolvimento.
+ * Perder o rasto de um erro não pode custar a app que o produziu.
  */
 export function reportError(error: unknown, context: string): void {
   // Em desenvolvimento escreve também na consola: quem está a programar olha para o terminal, e no
   // Expo Go (onde o `expo-observe` não existe) isto é o único rasto que aparece.
   if (__DEV__) console.warn(`[${context}]`, error);
 
-  Observe.reportError(withContext(error, context));
+  observe?.Observe.reportError(withContext(error, context));
 }
 
 /**

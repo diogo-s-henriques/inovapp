@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Keyboard, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { Observe, ObserveRoot, useObserve } from 'expo-observe';
 import { SplashScreen, Stack, type ErrorBoundaryProps } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -12,6 +11,7 @@ import { useLocaleStore } from '@/i18n/store';
 import { authStage } from '@/lib/auth-gate';
 import { useNotificationObserver, usePushSync } from '@/push/listener';
 import { reportError } from '@/lib/error-reporting';
+import { observe, useMarkInteractive } from '@/lib/observe';
 import { ErrorScreen } from '@/components/domain/ErrorScreen';
 
 SplashScreen.preventAutoHideAsync();
@@ -32,8 +32,12 @@ SplashScreen.preventAutoHideAsync();
  * **`dispatchInDebug: true` está ligado para se poder ver os primeiros eventos no desenvolvimento
  * build** (por omissão, uma build de debug não envia nada). **Tirar antes de publicar**: as
  * medições de uma build de debug estão distorcidas e sujam o dashboard.
+ *
+ * **Numa build sem o módulo nativo** (o Expo Go, por exemplo) `observe` é `null` e não há nada para
+ * configurar - ver src/lib/observe.ts. A interrogação é o que impede que isto deite abaixo o
+ * arranque da app.
  */
-Observe.configure({
+observe?.Observe.configure({
   dispatchInDebug: true,
   integrations: {
     'expo-router': {
@@ -103,7 +107,7 @@ function AppTree() {
   // da sessão, e é por isso que estão aqui e não no `src/push/`: os hooks vivem do que já foi
   // carregado (ver src/push/listener.ts).
   usePushSync();
-  const { markInteractive } = useObserve();
+  const markInteractive = useMarkInteractive();
   const { initializing, user, profileCompleted } = useAuthStore();
   // O idioma guardado no dispositivo é lido de AsyncStorage de forma assíncrona; esperar pela
   // hidratação evita mostrar a app em português a quem a escolheu em inglês.
@@ -137,58 +141,55 @@ function AppTree() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         {/*
-         * Tocar fora de um campo fecha o teclado, em qualquer ecrã.
+         * Tocar fora de um campo fechar o teclado **não** se faz aqui.
          *
-         * Fica aqui, e não em cada ecrã, por dois motivos: os ecrãs que são só `View` (login,
-         * criar conta, esqueceu-se) não têm `ScrollView` nenhum para herdar
-         * `keyboardShouldPersistTaps`, e repetir isto em cada ecrã novo era uma coisa a mais de
-         * que era fácil esquecer-se. `accessible={false}` impede que isto apareça como um
-         * elemento a mais para leitores de ecrã; um toque num botão continua a ser do botão -
-         * este só apanha o toque que ninguém quis.
+         * Esteve aqui um `TouchableWithoutFeedback` à volta de tudo, e um `Touchable` fica com todos
+         * os toques que apanha: os gestos nativos do que está por dentro (o arrastar de um
+         * `ScrollView`) deixam de lhes chegar. Passou para os ecrãs que dele precisam, de duas
+         * formas - `keyboardDismissProps` nos que não rolam (src/components/ui/KeyboardDismiss) e
+         * `keyboardShouldPersistTaps="handled"` nos que rolam, que é o comportamento nativo.
          */}
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View style={styles.root}>
-            <BottomSheetModalProvider>
-              {isReady && (
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Protected guard={stage === 'signed-out'}>
-                    <Stack.Screen name="login" options={AUTH_SCREEN_ANIMATION} />
-                    <Stack.Screen name="create-account" options={AUTH_SCREEN_ANIMATION} />
-                    <Stack.Screen name="forgot-password" options={AUTH_SCREEN_ANIMATION} />
-                  </Stack.Protected>
+        <View style={styles.root}>
+          <BottomSheetModalProvider>
+            {isReady && (
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Protected guard={stage === 'signed-out'}>
+                  <Stack.Screen name="login" options={AUTH_SCREEN_ANIMATION} />
+                  <Stack.Screen name="create-account" options={AUTH_SCREEN_ANIMATION} />
+                  <Stack.Screen name="forgot-password" options={AUTH_SCREEN_ANIMATION} />
+                </Stack.Protected>
 
-                  {/* Antes do perfil, e por isso antes de qualquer escrita a sério: as regras do
-                      Firestore exigem o email confirmado para tudo o que não seja o próprio
-                      documento (ver firestore.rules). */}
-                  <Stack.Protected guard={stage === 'verify-email'}>
-                    <Stack.Screen name="verify-email" options={AUTH_SCREEN_ANIMATION} />
-                  </Stack.Protected>
+                {/* Antes do perfil, e por isso antes de qualquer escrita a sério: as regras do
+                    Firestore exigem o email confirmado para tudo o que não seja o próprio
+                    documento (ver firestore.rules). */}
+                <Stack.Protected guard={stage === 'verify-email'}>
+                  <Stack.Screen name="verify-email" options={AUTH_SCREEN_ANIMATION} />
+                </Stack.Protected>
 
-                  <Stack.Protected guard={stage === 'profile-setup'}>
-                    <Stack.Screen name="profile-setup" options={AUTH_SCREEN_ANIMATION} />
-                  </Stack.Protected>
+                <Stack.Protected guard={stage === 'profile-setup'}>
+                  <Stack.Screen name="profile-setup" options={AUTH_SCREEN_ANIMATION} />
+                </Stack.Protected>
 
-                  <Stack.Protected guard={stage === 'app'}>
-                    <Stack.Screen name="(tabs)" options={AUTH_SCREEN_ANIMATION} />
-                    <Stack.Screen name="chat/[id]" />
-                    {/* Ecrã empilhado, e não uma mudança de separador, de propósito: chega-se
-                        aqui pela linha "N pedidos de conexão" da Home e pelo aviso das
-                        Notificações, e estes têm de deixar algo por baixo para o gesto de voltar
-                        (o deslize do iOS) ter o que desempilhar. */}
-                    <Stack.Screen name="connection-requests" />
-                    <Stack.Screen name="profile/[id]" />
-                    <Stack.Screen name="profile-edit" />
-                    <Stack.Screen name="settings" />
-                    <Stack.Screen name="notifications" />
-                    <Stack.Screen name="sessions" />
-                    <Stack.Screen name="session-request" />
-                    <Stack.Screen name="materials" />
-                  </Stack.Protected>
-                </Stack>
-              )}
-            </BottomSheetModalProvider>
-          </View>
-        </TouchableWithoutFeedback>
+                <Stack.Protected guard={stage === 'app'}>
+                  <Stack.Screen name="(tabs)" options={AUTH_SCREEN_ANIMATION} />
+                  <Stack.Screen name="chat/[id]" />
+                  {/* Ecrã empilhado, e não uma mudança de separador, de propósito: chega-se
+                      aqui pela linha "N pedidos de conexão" da Home e pelo aviso das
+                      Notificações, e estes têm de deixar algo por baixo para o gesto de voltar
+                      (o deslize do iOS) ter o que desempilhar. */}
+                  <Stack.Screen name="connection-requests" />
+                  <Stack.Screen name="profile/[id]" />
+                  <Stack.Screen name="profile-edit" />
+                  <Stack.Screen name="settings" />
+                  <Stack.Screen name="notifications" />
+                  <Stack.Screen name="sessions" />
+                  <Stack.Screen name="session-request" />
+                  <Stack.Screen name="materials" />
+                </Stack.Protected>
+              </Stack>
+            )}
+          </BottomSheetModalProvider>
+        </View>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -205,15 +206,23 @@ function AppTree() {
  *
  * O erro assim apanhado é registado no EAS Observe **com a stack de componentes React**, que é a
  * parte que nem o gestor global de erros consegue ver.
+ *
+ * **Sem módulo nativo não há `ObserveRoot` para montar** (ver src/lib/observe.ts) e o `AppTree` é a
+ * raiz. Não se perde o tratamento de erros por isso: o limite de erro do Expo Router - o
+ * `ErrorBoundary` acima, e o de cada ecrã em `unstable_settings` - continua a valer.
  */
 export default function RootLayout() {
+  const Root = observe?.ObserveRoot;
+
+  if (!Root) return <AppTree />;
+
   return (
-    <ObserveRoot
+    <Root
       errorBoundaryFallback={({ error, resetError }) => (
         <ErrorScreen error={error} onRetry={resetError} />
       )}>
       <AppTree />
-    </ObserveRoot>
+    </Root>
   );
 }
 

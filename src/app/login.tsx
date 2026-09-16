@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { getRememberedEmail } from '@/lib/remembered-email';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { keyboardDismissProps } from '@/components/ui/KeyboardDismiss';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { Logo } from '@/components/ui/Logo';
@@ -54,7 +55,11 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    // Tocar fora de um campo fecha o teclado. Fica aqui, e não na raiz da app, porque um ecrã sem
+    // lista não tem gesto nenhum a que o toque faça falta (ver components/ui/KeyboardDismiss).
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      {...keyboardDismissProps}>
       <View style={styles.header}>
         <Logo />
         <LanguageSwitcher />

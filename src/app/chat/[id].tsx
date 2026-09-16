@@ -147,6 +147,9 @@ export default function ConversationScreen() {
           keyExtractor={(message) => message.id}
           contentContainerStyle={styles.messages}
           showsVerticalScrollIndicator={false}
+          // Com o teclado aberto, um toque na lista que nenhuma mensagem trata fecha-o - e um toque
+          // que trata (uma mensagem, um botão) chega lá, em vez de ser engolido para o fechar.
+          keyboardShouldPersistTaps="handled"
           onContentSizeChange={handleContentSizeChange}
           ListHeaderComponent={
             <View style={styles.listHeader}>
