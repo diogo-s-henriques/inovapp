@@ -15,7 +15,7 @@ tropeça. O mesmo vale para "grátis": diz-se que não há compras dentro da app
 |---|---|---|
 | **URL da política de privacidade** | publicar o `PRIVACY.md` num endereço público | GitHub Pages do repositório (um clique em *Settings → Pages*) |
 | **URL de suporte** | uma página onde se possa pedir ajuda (não serve `mailto:`) | a mesma página, com o email de contacto por baixo |
-| **Conta de demonstração para a revisão** | a app só entra com email institucional e com o email confirmado — o revisor não tem como criar conta, e sem credenciais a revisão é recusada (diretriz 2.1) | criar em Firebase Auth uma conta `revisao@alunos.iseclisboa.pt`, com o email **confirmado**, uma palavra-passe simples, e um perfil completo (nome, curso, interesses) — e escrever as credenciais em *App Review Information* / *App access* |
+| **Conta de demonstração para a revisão** | a app só entra com email institucional e com o email confirmado — o revisor não tem como criar conta, e sem credenciais a revisão é recusada (diretriz 2.1) | **feita** (`npm run create:demo-account`): `demo@iseclisboa.pt`, com o email confirmado e o perfil completo. Falta escrever as credenciais em *App Review Information* / *App access* |
 
 ## Nome, subtítulo e categoria
 
@@ -216,8 +216,8 @@ A app é para a comunidade do ISEC Lisboa e o registo exige um email institucion
 por link. Não é possível criar conta em revisão, por isso deixamos uma conta de demonstração já
 confirmada e com perfil completo:
 
-  email:    revisao@alunos.iseclisboa.pt
-  palavra-passe: <a que ficar escrita aqui>
+  email:    demo@iseclisboa.pt
+  palavra-passe: a que estiver nas credenciais da loja (não fica neste repositório)
 
 Como chegar a tudo o que a app faz, a partir dessa conta:
 
@@ -230,6 +230,25 @@ Como chegar a tudo o que a app faz, a partir dessa conta:
    fluxo todo sem ficar inutilizável (basta não confirmar o último passo).
 
 Não há compras dentro da app e não há recolha de localização, contactos, câmara ou microfone.
+```
+
+A conta existe, com o email **confirmado** e o perfil **completo** — foi criada por
+`npm run create:demo-account`, que é também o caminho para a repor (a palavra-passe é reescrita e o
+email volta a ficar confirmado):
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/caminho/para/chave.json
+npm run create:demo-account                      # só mostra o que faria
+npm run create:demo-account -- --apply --password=NovaPalavra1!
+```
+
+É uma conta de **docente**, e é isso que o revisor vê: no separador *Match* não há deck de
+descoberta, porque um Tutor não procura mentores — quem procura são os Tutorandos, e são eles que
+lhe chegam como pedidos. Se quiseres que a revisão veja os dois lados da app, faz uma segunda conta
+de **aluno**, que tem o deck inteiro:
+
+```bash
+npm run create:demo-account -- --apply --email=aluno.demo@alunos.iseclisboa.pt --mode=both --password=OutraPalavra1!
 ```
 
 **E a classificação etária:** no questionário da Apple e no IARC da Play, a app não tem conteúdo
