@@ -34,8 +34,8 @@ export default function SessionsScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   // O dia pode vir de quem empilha este ecrã (o calendário do ecrã inicial leva o dia tocado neste
-  // parâmetro). É texto livre até aqui — `/sessions?date=amanhã` é uma coisa que se pode escrever
-  // à mão —, por isso um valor inválido é tratado como "não veio nada": abre-se no mês de hoje, e
+  // parâmetro). É texto livre até aqui - `/sessions?date=amanhã` é uma coisa que se pode escrever
+  // à mão -, por isso um valor inválido é tratado como "não veio nada": abre-se no mês de hoje, e
   // não num mês que não existe.
   const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
   const initialDate = isDateKey(dateParam) ? dateParam : undefined;

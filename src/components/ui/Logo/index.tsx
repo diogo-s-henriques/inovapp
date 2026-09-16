@@ -3,7 +3,7 @@ import { Image, StyleSheet, type ImageStyle, type StyleProp } from 'react-native
 /**
  * Logótipo da INOVAPP nos ecrãs de entrada.
  *
- * O `require` vive ao nível do módulo — a Metro resolve-o uma vez, quando o bundle carrega, em vez
+ * O `require` vive ao nível do módulo - a Metro resolve-o uma vez, quando o bundle carrega, em vez
  * de a cada render. O ficheiro é a versão reduzida (331x72) do logótipo: o original tinha
  * 1898x413 px e obrigava a descodificar 3 MB de bitmap para desenhar 120x24 pt.
  */
@@ -26,7 +26,7 @@ export function Logo({ height = 24, style }: LogoProps) {
       accessibilityLabel="INOVAPP"
       resizeMode="contain"
       // No Android o `Image` anima a entrada com um fade de 300 ms por omissão. Num logótipo
-      // pequeno isso lê-se como "demora a carregar" — e é independente do tamanho do ficheiro,
+      // pequeno isso lê-se como "demora a carregar" - e é independente do tamanho do ficheiro,
       // que foi o que tornou esta demora difícil de identificar. Aqui a entrada é imediata: o
       // `fade` que interessa (entrar/sair da app) é o da transição de ecrã, não o do logótipo.
       fadeDuration={0}

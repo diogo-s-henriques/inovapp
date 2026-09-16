@@ -1,11 +1,11 @@
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { ButtonAddPerson } from '@/components/ui/ButtonAddPerson';
 import { PersonalCardInfo } from '@/components/ui/PersonalCardInfo';
 import { ProfilePicCard } from '@/components/ui/ProfilePicCard';
 import { TagProfile } from '@/components/ui/TagProfile';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export interface StudentCardProps extends ViewProps {
   firstName: string;
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   },
   tags: {
     flexDirection: 'row',
-    // Nunca envolve para uma 2ª linha — sem isto, tags compridas/muitas esticavam o cartão em
+    // Nunca envolve para uma 2ª linha - sem isto, tags compridas/muitas esticavam o cartão em
     // altura. Em vez de quebrar linha, as tags encolhem (ver styles.tag) e o texto trunca com "…".
     flexWrap: 'nowrap',
     overflow: 'hidden',
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   overflowTag: {
-    // O chip "+N" nunca encolhe nem é cortado — as tags reais (styles.tag) é que cedem espaço.
+    // O chip "+N" nunca encolhe nem é cortado - as tags reais (styles.tag) é que cedem espaço.
     flexShrink: 0,
   },
 });

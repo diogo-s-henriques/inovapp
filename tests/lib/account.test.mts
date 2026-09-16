@@ -1,7 +1,7 @@
 /**
  * Testes do **plano** de eliminação de conta (`src/lib/account.ts`).
  *
- * Aqui não se apaga nada: a eliminação a sério — com as regras pelo meio — é exercitada contra os
+ * Aqui não se apaga nada: a eliminação a sério - com as regras pelo meio - é exercitada contra os
  * emuladores em `tests/data/account.test.mts`. O que se fixa neste ficheiro é a parte que se
  * estraga em silêncio, porque não falha: uma coleção que ficou de fora da lista, um dos sentidos de
  * um pedido que ninguém se lembrou de procurar, a ordem dos documentos do dono trocada.
@@ -29,7 +29,7 @@ function camposDe(path: string): string[] {
     .sort();
 }
 
-describe('SHARED_ACCOUNT_QUERIES — onde a conta aparece junto de outras pessoas', () => {
+describe('SHARED_ACCOUNT_QUERIES - onde a conta aparece junto de outras pessoas', () => {
   it('procura os pedidos de conexão nos dois sentidos', () => {
     // Um só sentido deixava metade deles: os documentos são `from` → `to`, e quem apaga a conta
     // tanto pode ser quem pediu como quem foi pedido.
@@ -59,10 +59,10 @@ describe('SHARED_ACCOUNT_QUERIES — onde a conta aparece junto de outras pessoa
     assert.equal(new Set(chaves).size, chaves.length, 'há uma consulta repetida no plano');
   });
 
-  it('não leva as avaliações — o anonimato depende de não se poder apagá-las', () => {
+  it('não leva as avaliações - o anonimato depende de não se poder apagá-las', () => {
     // Uma avaliação vive em `ratings/{sessionId}`, tem só a nota e o mentor, e não guarda quem a
     // escreveu. Levá-la atrás da conta era dar a um mentor a possibilidade de apagar as notas más
-    // que recebeu — e nenhuma regra conseguiria distinguir um caso do outro.
+    // que recebeu - e nenhuma regra conseguiria distinguir um caso do outro.
     assert.equal(SHARED_ACCOUNT_QUERIES.some((query) => query.path === 'ratings'), false);
   });
 });
@@ -75,7 +75,7 @@ describe('documentos do dono', () => {
   });
 
   it('apaga o perfil em último', () => {
-    // Se a operação parar a meio, o que fica é uma conta a que faltam dados — e não uma app que não
+    // Se a operação parar a meio, o que fica é uma conta a que faltam dados - e não uma app que não
     // sabe o que mostrar, porque é do perfil que vem o `profileCompleted`.
     const caminhos = ownedDocumentPaths(UID);
     assert.equal(caminhos.at(-1), `users/${UID}`);

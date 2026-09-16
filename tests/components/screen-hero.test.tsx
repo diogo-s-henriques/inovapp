@@ -1,10 +1,10 @@
 /**
- * Testes do `ScreenHero` — o bloco em gradiente que abre os cinco separadores.
+ * Testes do `ScreenHero` - o bloco em gradiente que abre os cinco separadores.
  *
  * O que se fixa aqui, e porque:
  *
  * 1. **A forma da fotografia** (quadrada de cantos arredondados, com o raio proporcional ao lado).
- *    Um raio fixo dava um círculo e um quadrado em tamanhos diferentes — o tipo de diferença que
+ *    Um raio fixo dava um círculo e um quadrado em tamanhos diferentes - o tipo de diferença que
  *    ninguém procura.
  * 2. **O que o ecrã põe por baixo das linhas** (`identityExtra`, o botão de editar do Perfil). É a
  *    única coisa que distingue o bloco do Perfil do bloco da Home, e é por isso que ela existe:
@@ -16,7 +16,7 @@
  *    blocos, o Matches dizia "Boa tarde," por cima do nome.
  * 5. **A identidade inteira é opcional.** O Matches, o Chat e o Pesquisar levam só o título: se a
  *    identidade voltasse a ser desenhada sempre, esses três separadores passavam a mostrar outra
- *    vez o nome de quem já está na app — e um bloco de 150 px para dizer "Chat".
+ *    vez o nome de quem já está na app - e um bloco de 150 px para dizer "Chat".
  * 6. **A segunda linha cabe numa linha, por omissão.** É o que a Home quer (o papel é uma palavra
  *    fixa); o Perfil pede duas, porque lá a linha é o curso escolhido pela pessoa.
  *
@@ -38,7 +38,7 @@ function estiloDe(element: { props: { style?: unknown } }) {
   };
 }
 
-describe('<ScreenHero /> — a identidade', () => {
+describe('<ScreenHero /> - a identidade', () => {
   it('mostra o nome e o papel', async () => {
     const { getByText } = await render(<ScreenHero {...IDENTIDADE} />);
 
@@ -64,7 +64,7 @@ describe('<ScreenHero /> — a identidade', () => {
     const estilo = estiloDe(getByLabelText('Ana Silva'));
 
     expect(estilo.width).toBe(HERO_AVATAR_SIZE);
-    // Metade do lado seria um círculo — a forma que isto veio substituir.
+    // Metade do lado seria um círculo - a forma que isto veio substituir.
     expect(estilo.borderRadius).toBeLessThan(HERO_AVATAR_SIZE / 2);
     expect(estilo.borderRadius).toBeGreaterThan(0);
   });
@@ -84,7 +84,7 @@ describe('<ScreenHero /> — a identidade', () => {
   });
 });
 
-describe('<ScreenHero /> — o que o ecrã põe por baixo das linhas', () => {
+describe('<ScreenHero /> - o que o ecrã põe por baixo das linhas', () => {
   it('aparece dentro da identidade', async () => {
     const { getByText } = await render(
       <ScreenHero {...IDENTIDADE} identityExtra={<Text>botão de editar</Text>} />,
@@ -93,7 +93,7 @@ describe('<ScreenHero /> — o que o ecrã põe por baixo das linhas', () => {
     expect(getByText('botão de editar')).toBeTruthy();
   });
 
-  it('sem identidade, não é desenhado — não há coluna de texto onde caiba', async () => {
+  it('sem identidade, não é desenhado - não há coluna de texto onde caiba', async () => {
     const { getByText, queryByText } = await render(
       <ScreenHero title="Chat" identityExtra={<Text>botão de editar</Text>} />,
     );
@@ -103,7 +103,7 @@ describe('<ScreenHero /> — o que o ecrã põe por baixo das linhas', () => {
   });
 });
 
-describe('<ScreenHero /> — o título', () => {
+describe('<ScreenHero /> - o título', () => {
   it('aparece por baixo da identidade', async () => {
     const { getByText } = await render(<ScreenHero {...IDENTIDADE} title="Matches" />);
 
@@ -123,8 +123,8 @@ describe('<ScreenHero /> — o título', () => {
   });
 });
 
-describe('<ScreenHero /> — só o título (Matches, Chat, Pesquisar)', () => {
-  it('sem nome, não desenha a identidade — nem a ação do canto que ela segura', async () => {
+describe('<ScreenHero /> - só o título (Matches, Chat, Pesquisar)', () => {
+  it('sem nome, não desenha a identidade - nem a ação do canto que ela segura', async () => {
     const { getByText, queryByText } = await render(
       <ScreenHero title="Chat" rightAction={<Text>campainha</Text>} />,
     );

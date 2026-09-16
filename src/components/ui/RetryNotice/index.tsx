@@ -19,7 +19,7 @@ export interface RetryNoticeProps extends ViewProps {
  * caso das subscrições ao Firestore, que tinham um canal para os dados e nenhum para o erro.
  *
  * O vermelho é o mesmo dos outros avisos (`danger`) e o botão é um link: isto não é uma ação do
- * ecrã, é a saída de um beco — por isso não tem o peso de um botão cheio, e vive ao lado do texto
+ * ecrã, é a saída de um beco - por isso não tem o peso de um botão cheio, e vive ao lado do texto
  * que explica o que aconteceu.
  */
 export function RetryNotice({ message, onRetry, style, ...rest }: RetryNoticeProps) {

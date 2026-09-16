@@ -1,8 +1,8 @@
 /**
- * Testes do `HomeShortcuts` — os atalhos do ecrã inicial. Hoje é um só: os Materiais.
+ * Testes do `HomeShortcuts` - os atalhos do ecrã inicial. Hoje é um só: os Materiais.
  *
  * O que se fixa aqui é a única coisa que o componente decide: a ligação entre o cartão que se vê e
- * o ecrã que ele abre. Um cartão que abre o sítio errado não rebenta nada — abre o sítio errado,
+ * o ecrã que ele abre. Um cartão que abre o sítio errado não rebenta nada - abre o sítio errado,
  * que é o tipo de erro que passa por qualquer verificação que só conte cartões.
  *
  * E fixa-se o que **saiu**: os atalhos das Mensagens e da Pesquisa deixaram de existir porque os

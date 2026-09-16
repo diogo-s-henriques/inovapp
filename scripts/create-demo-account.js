@@ -4,18 +4,18 @@
  * Cria a **conta de demonstração** que a revisão da Apple e a da Google usam.
  *
  * A app só entra com email institucional, e a conta só fica ativa depois de confirmar esse email
- * (ver firestore.rules, `isVerified()`). Um revisor não tem email do ISEC e não recebe link nenhum —
+ * (ver firestore.rules, `isVerified()`). Um revisor não tem email do ISEC e não recebe link nenhum -
  * se não lhe dermos credenciais, a revisão é recusada com a diretriz 2.1 ("a app pede autenticação
  * e não foram fornecidas credenciais de demonstração"). É este script que faz essa conta, e fá-la
  * com o email **já confirmado** e o perfil **já completo**, para o revisor ver a app e não o
  * assistente de configuração.
  *
- * **Isto escreve em produção**, por cima das regras (o Admin SDK não lhes obedece) — daí ser
+ * **Isto escreve em produção**, por cima das regras (o Admin SDK não lhes obedece) - daí ser
  * `--apply` explícito, como o `verify:legacy-accounts`. O script é idempotente: corrido duas vezes,
  * confirma a conta outra vez, repõe a palavra-passe e volta a escrever o perfil.
  *
  * Uso (a chave aceita-se de duas maneiras, porque quem corre isto tanto está em bash como em
- * PowerShell — e em PowerShell um `export` do bash simplesmente não existe):
+ * PowerShell - e em PowerShell um `export` do bash simplesmente não existe):
  *   # 1. Consola Firebase > Definições do projeto > Contas de serviço > Gerar nova chave privada
  *   # 2a. Pelo ambiente:
  *   export GOOGLE_APPLICATION_CREDENTIALS=/caminho/para/chave.json        (bash)
@@ -28,7 +28,7 @@
  *   npm run create:demo-account -- --apply --password=Inovapp-Demo-2026!
  *
  * O `--email` só é preciso para fazer uma segunda conta (ex.: uma de aluno, que vê o deck de
- * descoberta que um Tutor não vê). O papel deriva do domínio, como em src/constants/auth.ts — um
+ * descoberta que um Tutor não vê). O papel deriva do domínio, como em src/constants/auth.ts - um
  * endereço @alunos.iseclisboa.pt é Tutorando, um @iseclisboa.pt é Tutor. E o modo de participação
  * segue a regra da app: um docente ensina (`teach`), porque é isso que o assistente de perfil
  * escreve para ele (ver src/app/profile-setup.tsx).
@@ -63,7 +63,7 @@ function argumento(nome) {
 /**
  * O caminho da chave de serviço, ou `null`.
  *
- * Sem chave, o Admin SDK cai nas credenciais por omissão do Google — que num computador de
+ * Sem chave, o Admin SDK cai nas credenciais por omissão do Google - que num computador de
  * desenvolvimento não existem, e o erro que ele dá nesse caso («Could not load the default
  * credentials») fala de um ficheiro que ninguém sabe onde pôr. Daí este caminho ser lido **aqui**,
  * para o script poder dizer o que falta e como se resolve.
@@ -127,7 +127,7 @@ async function main() {
   }
 
   // Um docente ensina, sempre: é o que a app escreve para ele. Um aluno pode aprender, ensinar ou
-  // as duas coisas — e o modo 'both' é o que dá a um revisor o deck de descoberta inteiro.
+  // as duas coisas - e o modo 'both' é o que dá a um revisor o deck de descoberta inteiro.
   const modo = papel === 'professor' ? 'teach' : (argumento('mode') ?? 'both');
   const palavraPasse = argumento('password') ?? gerarPalavraPasse();
   const passouAPalavraPasse = argumento('password') !== null;
@@ -156,7 +156,7 @@ async function main() {
   console.log(`  nome       ${dados.fullName}`);
   console.log(`  ensina     ${dados.teachingSubjects.join(', ') || '(nada)'}`);
   console.log(`  aprende    ${dados.learningSubjects.join(', ') || '(nada)'}`);
-  console.log(`  conta      ${conta ? `já existe (${conta.uid}) — será atualizada` : 'nova'}`);
+  console.log(`  conta      ${conta ? `já existe (${conta.uid}) - será atualizada` : 'nova'}`);
 
   if (!apply) {
     console.log('\nNada foi escrito. Corre outra vez com --apply (e com a palavra-passe que quiseres).');
@@ -187,7 +187,7 @@ async function main() {
   }
 
   // Os dois documentos da conta, como o registo os cria (ver `signUp` em src/auth/actions.ts): o
-  // perfil visível à comunidade e os dados privados. O `createdAt` só na primeira vez — reescrevê-lo
+  // perfil visível à comunidade e os dados privados. O `createdAt` só na primeira vez - reescrevê-lo
   // a cada corrida fazia a conta parecer nova de cada vez que o script fosse corrido.
   await db
     .doc(`users/${conta.uid}`)
@@ -212,7 +212,7 @@ async function main() {
     '\nFalta pôr as credenciais onde os revisores as vão ler (não ficam no repositório):' +
       '\n  · App Store Connect → a versão → App Review Information → Sign-in required' +
       '\n  · Play Console → App content → App access → All functionality is available without special access: não' +
-      '\n\nE lembrar que esta conta aparece na descoberta como qualquer outra — apaga-a quando a revisão acabar.',
+      '\n\nE lembrar que esta conta aparece na descoberta como qualquer outra - apaga-a quando a revisão acabar.',
   );
 }
 

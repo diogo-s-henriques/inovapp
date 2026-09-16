@@ -27,7 +27,7 @@ import type { MatchCandidate } from '@/types/match';
 const FEEDBACK_EMAIL = 'diogo.henriques@iseclisboa.pt';
 const FEEDBACK_SUBJECT = 'INOVAPP';
 
-// Definições: idioma, pessoas bloqueadas e ajuda. Não tem separador próprio — chega-se por uma
+// Definições: idioma, pessoas bloqueadas e ajuda. Não tem separador próprio - chega-se por uma
 // linha discreta no fim do perfil, porque é sítio para arrumar coisas, não para usar todos os dias.
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -40,13 +40,13 @@ export default function SettingsScreen() {
   const [blockedUsers, setBlockedUsers] = useState<MatchCandidate[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   // Apagar a conta são dois passos, porque são duas perguntas: "queres mesmo?" e "és quem dizes
-  // que és?" — a segunda é do Firebase, que recusa a operação a uma sessão antiga.
+  // que és?" - a segunda é do Firebase, que recusa a operação a uma sessão antiga.
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm' | 'password'>('idle');
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   // O estado que o sistema dá pode ter mudado desde o arranque da app (as definições do telemóvel
-  // não passam por aqui) — por isso volta a ler-se ao abrir este ecrã, em vez de se confiar no que
+  // não passam por aqui) - por isso volta a ler-se ao abrir este ecrã, em vez de se confiar no que
   // o registo do arranque deixou no estado.
   useEffect(() => {
     void refreshPushState();
@@ -94,8 +94,8 @@ export default function SettingsScreen() {
    * outra vez (é isso que o Firebase exige para apagar uma conta).
    *
    * Não há nada depois do `await`: quando corre bem, a conta deixa de existir, o listener da sessão
-   * vê-a desaparecer e a app volta ao ecrã de entrada sozinha. Um erro — palavra-passe errada, quase
-   * sempre — fica no próprio modal, que continua aberto a pedir outra vez.
+   * vê-a desaparecer e a app volta ao ecrã de entrada sozinha. Um erro - palavra-passe errada, quase
+   * sempre - fica no próprio modal, que continua aberto a pedir outra vez.
    */
   const handleDeleteAccount = async (password: string) => {
     setDeleting(true);
@@ -217,7 +217,7 @@ export default function SettingsScreen() {
         </SectionCard>
 
         {/* Em último, e é onde tem de estar: é a única coisa deste ecrã que não se desfaz, e uma
-            ação dessas não se põe ao lado do "Idioma" — quem cá vem mudar a língua não deve
+            ação dessas não se põe ao lado do "Idioma" - quem cá vem mudar a língua não deve
             atravessá-la com o polegar. */}
         <SectionCard label={i18n.settings.accountLabel}>
           <ThemedText type="body" themeColor="textMuted">

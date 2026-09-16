@@ -1,17 +1,17 @@
-import { useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { IconSize, MaxContentWidth, Spacing } from '@/constants/theme';
-import { RATING_LABELS, RATING_TAGS } from '@/constants/rating';
-import { useI18n } from '@/hooks/use-i18n';
-import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/Button';
 import { ChipGroup } from '@/components/ui/ChipGroup';
 import { ProfilePicCard } from '@/components/ui/ProfilePicCard';
 import { StarRatingInput } from '@/components/ui/StarRatingInput';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { RATING_LABELS, RATING_TAGS } from '@/constants/rating';
+import { IconSize, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useI18n } from '@/hooks/use-i18n';
+import { useTheme } from '@/hooks/use-theme';
 import type { NewRatingData } from '@/types/rating';
 
 export interface EvaluationModalProps {
@@ -25,7 +25,7 @@ export interface EvaluationModalProps {
   onSkip: () => void;
 }
 
-/** Sem estado persistido entre sessões diferentes de propósito — o chamador deve montar uma
+/** Sem estado persistido entre sessões diferentes de propósito - o chamador deve montar uma
  * instância nova (ex. via `key={session.id}`) por cada sessão a avaliar. */
 export function EvaluationModal({
   visible,

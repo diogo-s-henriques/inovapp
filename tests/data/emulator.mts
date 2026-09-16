@@ -2,7 +2,7 @@
  * Ligação dos testes de integração aos emuladores do Firestore e do Auth.
  *
  * Estes testes correm o código real da camada de dados (`src/lib/*`) contra o SDK verdadeiro do
- * Firebase, com o `firestore.rules` verdadeiro pelo meio — é a única forma de verificar se a
+ * Firebase, com o `firestore.rules` verdadeiro pelo meio - é a única forma de verificar se a
  * aplicação consegue mesmo escrever o que as regras exigem, sem tocar em dados de produção.
  *
  * Os emuladores são arrancados pelo `emulators:exec` do `npm run test:data`, que define
@@ -10,7 +10,7 @@
  *
  * Os ficheiros correm **um a um** (`--test-concurrency=1`, no script do package.json): todos
  * partilham o mesmo par de emuladores e cada um chama `limparEmulador()` no início, por isso em
- * paralelo apagariam as contas uns dos outros a meio — e os erros apareceriam longe da causa
+ * paralelo apagariam as contas uns dos outros a meio - e os erros apareceriam longe da causa
  * (`auth/email-already-in-use` ao criar uma conta, ou um documento que desaparece debaixo de um
  * teste).
  */
@@ -26,7 +26,7 @@ const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST;
 const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST;
 
 // Sem esta verificação, um `node --test` sem emuladores a correr apontaria o SDK para a base de
-// dados de PRODUÇÃO — e estes testes escrevem pedidos, sessões e avaliações a sério.
+// dados de PRODUÇÃO - e estes testes escrevem pedidos, sessões e avaliações a sério.
 if (!FIRESTORE_HOST || !AUTH_HOST) {
   throw new Error(
     'Os testes da camada de dados só correm contra emuladores, e falta ' +
@@ -43,11 +43,11 @@ export const SENHA_DE_TESTE = 'Password1!';
 
 /** Emails institucionais: o papel deriva sempre do domínio (ver src/constants/auth.ts). */
 export const CONTAS = {
-  /** Aluna que só aprende — o lado "Tutorando" dos fluxos. */
+  /** Aluna que só aprende - o lado "Tutorando" dos fluxos. */
   aluna: 'ana.aluna@alunos.iseclisboa.pt',
-  /** Aluno que ensina — o lado "Mentor". */
+  /** Aluno que ensina - o lado "Mentor". */
   alunoQueEnsina: 'bruno.aluno@alunos.iseclisboa.pt',
-  /** Professora — nunca é "Mentor", é "Tutor". */
+  /** Professora - nunca é "Mentor", é "Tutor". */
   professora: 'carla.professora@iseclisboa.pt',
   /** Aluno que também só aprende, para cenários de terceiro. */
   intruso: 'diogo.aluno@alunos.iseclisboa.pt',
@@ -78,7 +78,7 @@ export async function limparEmulador(): Promise<void> {
  * `Authorization: Bearer owner` significa ali).
  *
  * Os testes de dados criam contas pelo caminho da app e a seguir usam-nas como se fossem pessoas
- * a sério — e uma pessoa a sério, na app, tem o email confirmado (ver a regra `isVerified()` em
+ * a sério - e uma pessoa a sério, na app, tem o email confirmado (ver a regra `isVerified()` em
  * firestore.rules). Sem este passo, tudo o que estes testes exercitam seria recusado pelas regras,
  * e a suite estaria a falhar por uma razão que não é a que diz testar.
  *
@@ -110,7 +110,7 @@ export async function criarConta(email: string): Promise<string> {
 
   await confirmarEmailNoEmulador(user.uid);
   // O token que está em uso foi emitido **antes** desta confirmação: sem o renovar, o pedido
-  // seguinte levava `email_verified: false` e as regras recusavam-no — um erro que apareceria
+  // seguinte levava `email_verified: false` e as regras recusavam-no - um erro que apareceria
   // longe daqui, no teste que estivesse a correr a seguir.
   await user.getIdToken(true);
 
@@ -137,7 +137,7 @@ export async function configurarPerfil(uid: string, dados: Partial<ProfileSetupD
   });
 }
 
-/** Lê um documento como o utilizador com sessão — ou seja, sujeito às regras. */
+/** Lê um documento como o utilizador com sessão - ou seja, sujeito às regras. */
 export async function lerDocumento(caminho: string): Promise<Record<string, unknown> | null> {
   const snapshot = await getDoc(doc(db, caminho));
   return snapshot.exists() ? (snapshot.data() as Record<string, unknown>) : null;

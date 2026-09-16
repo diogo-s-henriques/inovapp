@@ -1,12 +1,12 @@
 /**
- * Testes de `src/lib/live-query.ts` — a leitura viva partilhada.
+ * Testes de `src/lib/live-query.ts` - a leitura viva partilhada.
  *
  * Esta peça existe por duas razões, e as duas estão aqui testadas sem Firestore nenhum: o módulo
  * recebe a função que abre a leitura (ver `open`), por isso um duplo de dez linhas chega para fazer
- * o que a base de dados faria — publicar valores e falhar.
+ * o que a base de dados faria - publicar valores e falhar.
  *
  * 1. **A partilha.** Três ecrãs a ouvir a mesma coisa abriam três subscrições: a mesma pergunta
- *    feita três vezes, e cada alteração contada três vezes. Aqui mede-se isso — `open` é chamado
+ *    feita três vezes, e cada alteração contada três vezes. Aqui mede-se isso - `open` é chamado
  *    **uma vez** com três interessados, e os três recebem o mesmo.
  * 2. **O que se paga de leitura por gesto.** O último a sair fecha a subscrição, e quem entra
  *    depois recebe o que já se sabe sem esperar pela próxima alteração no servidor.
@@ -27,7 +27,7 @@ interface Estado {
 
 /**
  * Um duplo da leitura: guarda os interessados que a base de dados teria, e deixa o teste publicar
- * um valor ou falhar. Conta as aberturas e os fechos — é isso que prova a partilha.
+ * um valor ou falhar. Conta as aberturas e os fechos - é isso que prova a partilha.
  */
 function criarDuplo(inicial = 0) {
   let onValue: (value: number) => void = () => {};
@@ -70,7 +70,7 @@ function criarDuplo(inicial = 0) {
   };
 }
 
-describe('leitura viva — a partilha', () => {
+describe('leitura viva - a partilha', () => {
   it('três interessados, uma só leitura', () => {
     const { live, duplo, ouvir } = criarDuplo();
 
@@ -138,7 +138,7 @@ describe('leitura viva — a partilha', () => {
   });
 });
 
-describe('leitura viva — o erro é um estado', () => {
+describe('leitura viva - o erro é um estado', () => {
   it('uma leitura que falha marca o estado sem apagar o que estava', () => {
     const { publicar, falhar, ouvir } = criarDuplo();
 

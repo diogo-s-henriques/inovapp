@@ -11,7 +11,7 @@ const EMPTY: ConversationsState = { conversations: [], error: false };
  *
  * Existe para os ecrãs não repetirem o mesmo par `useState` + `useEffect`: eram quatro ecrãs a
  * escrever o mesmo efeito (a barra de baixo, a Home, o Chat, as Notificações) e cada um a abrir a
- * sua subscrição à mesma pergunta. A leitura é partilhada (ver `src/lib/live-query.ts`) — este hook
+ * sua subscrição à mesma pergunta. A leitura é partilhada (ver `src/lib/live-query.ts`) - este hook
  * só diz quem está a ver.
  *
  * O `error` não é decoração: sem ele, uma leitura negada deixava a lista vazia, e uma lista vazia é

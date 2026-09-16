@@ -46,10 +46,10 @@ function formatScheduleLabel(dateKey: string, time: string, i18n: Translations, 
 }
 
 /**
- * Ecrã inicial — e a regra que decidiu o que ele tem dentro é **caber sem rolar**.
+ * Ecrã inicial - e a regra que decidiu o que ele tem dentro é **caber sem rolar**.
  *
  * É o bloco com cor no topo com a identidade (saudação, nome completo e papel) e o sino, e por baixo
- * — por ordem — o que espera uma resposta, o calendário da agenda (o mês com um ponto nos dias com
+ * - por ordem - o que espera uma resposta, o calendário da agenda (o mês com um ponto nos dias com
  * sessão; tocar num dia abre a Agenda nesse dia) e o atalho dos Materiais. Foi por isso que quatro
  * coisas saíram daqui, e cada uma levou a sua razão:
  *
@@ -67,7 +67,7 @@ function formatScheduleLabel(dateKey: string, time: string, i18n: Translations, 
  * estar também aqui, em resumo, e eram duas cópias do mesmo em três ecrãs.
  *
  * O que fica é o que a Home sabe fazer melhor do que qualquer outro ecrã: dizer quem és, o que
- * espera por ti e quando tens sessões. Nada disto é só uma questão de gosto — está calculado para
+ * espera por ti e quando tens sessões. Nada disto é só uma questão de gosto - está calculado para
  * caber no ecrã de um telemóvel sem deslizar, e as contas estão escritas no `README`, na entrada
  * do ecrã inicial.
  *
@@ -77,7 +77,7 @@ function formatScheduleLabel(dateKey: string, time: string, i18n: Translations, 
  *
  * A cor da própria lista é a do topo do gradiente do cabeçalho (`styles.scroll`), e o conteúdo
  * dela é claro (`styles.content`): é isso que faz a faixa que aparece ao puxar para baixo ter a
- * cor do cabeçalho em vez de branco — e o `flexGrow` do conteúdo impede que essa cor apareça por
+ * cor do cabeçalho em vez de branco - e o `flexGrow` do conteúdo impede que essa cor apareça por
  * baixo da última secção. As duas têm de andar juntas: `heroTop` aqui e a primeira paragem do
  * gradiente em `HomeHeader`.
  */
@@ -107,7 +107,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // O cabeçalho deste ecrã é claro (ver `heroTop`/`heroBottom`), por isso os ícones da barra de
-  // estado são escuros — eram claros enquanto o bloco era escuro, e sobre um tom quase de
+  // estado são escuros - eram claros enquanto o bloco era escuro, e sobre um tom quase de
   // fundo os brancos da bateria e das horas desapareciam. O estilo é posto por foco, e não no
   // mount, porque os ecrãs dos separadores ficam montados: aplicado uma vez, ficava a valer nos
   // outros separadores.
@@ -118,12 +118,12 @@ export default function HomeScreen() {
     }, []),
   );
 
-  // A Home só quer saber se há **alguma** ligação — é isso que decide o guia de primeiros passos,
+  // A Home só quer saber se há **alguma** ligação - é isso que decide o guia de primeiros passos,
   // porque as listas saíram daqui para o Chat. Chegou a ler as duas listas completas (dois perfis
   // por linha, mais os bloqueios) para responder a uma pergunta de sim/não; agora é `hasConnections`,
   // que a responde com dois documentos.
   //
-  // O `.catch` é o que faltava antes — sem ele, uma leitura negada deixava tudo a zero, e zero é
+  // O `.catch` é o que faltava antes - sem ele, uma leitura negada deixava tudo a zero, e zero é
   // indistinguível de "ainda não tens ninguém". Foi assim que uma falta de regras no Firebase
   // passou meses por "ecrã sem dados".
   useEffect(() => {
@@ -152,7 +152,7 @@ export default function HomeScreen() {
   }, [user?.uid, participationMode, reloadToken]);
 
   // As duas contagens vêm das leituras partilhadas (ver `useConnectionRequests`): os pedidos de
-  // conexão entram aqui porque a secção "Novidades" é um aviso e não uma decisão — quem aceita ou
+  // conexão entram aqui porque a secção "Novidades" é um aviso e não uma decisão - quem aceita ou
   // recusa continua a ser a lista dos Matches, e é para lá que a linha leva (para o ecrã dos
   // pedidos, que é essa mesma lista, empilhada).
   const { requests: connectionRequestList, error: connectionRequestsError } = useConnectionRequests();
@@ -175,7 +175,7 @@ export default function HomeScreen() {
 
 
   // O sino conta o que o ecrã de notificações apresenta como pendente para ler: pedidos de sessão e
-  // mensagens por ler. Os pedidos de conexão ficam de fora de propósito — o aviso deles é a linha
+  // mensagens por ler. Os pedidos de conexão ficam de fora de propósito - o aviso deles é a linha
   // na secção "Precisa de ti" e a bolinha do separador dos Matches, não uma terceira contagem.
   const unreadNotifications = pendingSessionRequests + unreadConversations;
 
@@ -261,7 +261,7 @@ export default function HomeScreen() {
   const nowKey = toSessionKey();
   // Uma sessão terminada pelo mentor antes da hora marcada deixa de contar como agendada, mesmo que
   // a hora marcada ainda não tenha passado. É este número que decide se a Home está vazia; o que
-  // **não** se faz com ele é escolher a "próxima sessão" para destacar aqui — esse cartão saiu, e o
+  // **não** se faz com ele é escolher a "próxima sessão" para destacar aqui - esse cartão saiu, e o
   // quando das sessões é agora o calendário abaixo (ver o comentário da secção da agenda).
   const upcomingSessions = sessions.filter(
     (session) => session.status !== 'completed' && `${session.date}T${session.time}` >= nowKey,
@@ -270,11 +270,11 @@ export default function HomeScreen() {
   // Puxar para baixo relê as ligações. O resto do ecrã não precisa: as sessões, os pedidos e as
   // conversas são subscrições ao vivo, e por isso já estão a par do que mudou. Depois de as listas
   // saírem do ecrã, o que se relê é o **número** de ligações, que só serve para decidir se a Home
-  // ainda está vazia — é pouco para um gesto, mas é o que o gesto sempre fez (e continua a ser a
+  // ainda está vazia - é pouco para um gesto, mas é o que o gesto sempre fez (e continua a ser a
   // forma de tirar o aviso de erro do ecrã sem o fechar).
   //
   // O indicador é apagado no fim da leitura (o `finally` do efeito acima), e não aqui: se a leitura
-  // for negada ou falhar, tem de parar na mesma. E só se põe a rodar quando essa leitura existe —
+  // for negada ou falhar, tem de parar na mesma. E só se põe a rodar quando essa leitura existe -
   // sem ligações para ler, ficava a rodar sobre nada.
   const handleRefresh = () => {
     if (!canRefresh) return;
@@ -283,14 +283,14 @@ export default function HomeScreen() {
   };
 
   // Os dias que levam ponto no calendário: todos os que têm sessão marcada, e não só os que ainda
-  // não passaram — o mês conta a agenda toda, incluindo o que já foi dado.
+  // não passaram - o mês conta a agenda toda, incluindo o que já foi dado.
   const markedDates = useMemo(() => new Set(sessions.map((session) => session.date)), [sessions]);
   const todayKey = toDateKey(new Date());
 
   // A Home está vazia quando não há nada do que é dela: sem sessões, sem ligações e sem pendências.
   //
   // O `!connectionsError` não é detalhe: as ligações deixaram de estar à vista neste ecrã, e uma
-  // leitura que falhou devolve zero em `connections` — sem esta linha, quem tem ligações e uma
+  // leitura que falhou devolve zero em `connections` - sem esta linha, quem tem ligações e uma
   // leitura negada via o guia de quem ainda não tem nada, a dizer-lhe para encontrar um mentor que
   // já tem. É a diferença entre "não tenho ligações" e "não sei as minhas ligações".
   const showFirstSteps =
@@ -308,7 +308,7 @@ export default function HomeScreen() {
         // A cor por trás da lista é a do topo do gradiente: é esta superfície que aparece na faixa
         // que se vê ao puxar a lista para baixo (a barra da puxar para atualizar).
         style={[styles.scroll, { backgroundColor: theme.heroTop }]}
-        // A lista em si é clara — e o `flexGrow` garante que ela cobre o ecrã todo mesmo quando há
+        // A lista em si é clara - e o `flexGrow` garante que ela cobre o ecrã todo mesmo quando há
         // pouco conteúdo, em vez de deixar ver a cor do bloco por baixo das secções.
         contentContainerStyle={[styles.content, { backgroundColor: theme.background }]}
         showsVerticalScrollIndicator={false}
@@ -337,7 +337,7 @@ export default function HomeScreen() {
           photoUri={user?.photoUri}
           unreadNotifications={unreadNotifications}
           onPressNotifications={() => router.push('/notifications')}
-          // O espaço por baixo da barra de estado: 16 px, depois 24 e agora 32 — a identidade
+          // O espaço por baixo da barra de estado: 16 px, depois 24 e agora 32 - a identidade
           // estava encostada aos ícones do sistema. Quem o soma é o bloco (`ScreenHero`), que é
           // quem põe o `paddingTop` a seguir à margem do ecrã.
           topInset={insets.top}

@@ -4,7 +4,7 @@
  * Tira o fundo branco de um logótipo, deixando-o transparente.
  *
  * Existe porque as imagens que recebemos (a faixa dos parceiros, por exemplo) chegam com fundo
- * branco colado — o que num ecrã cinzento-claro se vê logo como uma tira branca por baixo do
+ * branco colado - o que num ecrã cinzento-claro se vê logo como uma tira branca por baixo do
  * logótipo. Com o fundo transparente, a imagem assenta em qualquer fundo.
  *
  * **O que faz, e porque não é só "apagar o branco":** começa nas bordas da imagem e alarga-se
@@ -33,7 +33,7 @@ const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0
 
 /**
  * A partir daqui o pixel entra no fundo: é o canal mais escuro dele que decide, e o valor por
- * omissão (210) é conservador de propósito — um logótipo claro (um amarelo pálido, por exemplo)
+ * omissão (210) é conservador de propósito - um logótipo claro (um amarelo pálido, por exemplo)
  * perde-se com um limite mais alto.
  */
 const DEFAULT_FLOOR = 210;
@@ -233,7 +233,7 @@ function removeBackground({ width, height, pixels }, { floor, white }) {
       pixels[index * 4 + 3] = 0;
       transparent += 1;
     } else {
-      // Borda suavizada: quanto mais escuro o pixel, mais opaco — o que faz a letra "crescer" da
+      // Borda suavizada: quanto mais escuro o pixel, mais opaco - o que faz a letra "crescer" da
       // transparência em vez de aparecer com um contorno duro.
       pixels[index * 4 + 3] = Math.round((255 * (white - lightness)) / (white - floor));
       partial += 1;

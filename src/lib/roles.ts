@@ -9,10 +9,10 @@ import type { Translations } from '@/i18n/translations';
  * Três decisões que se lêem no código:
  *
  * - **"Mentor" é sempre um aluno** a ensinar outro aluno. Um professor (`@iseclisboa.pt`, papel
- *   determinado pelo domínio do email — ver src/constants/auth.ts) nunca é "Mentor", é "Tutor".
+ *   determinado pelo domínio do email - ver src/constants/auth.ts) nunca é "Mentor", é "Tutor".
  * - **Quem ensina e aprende ao mesmo tempo** não escolhe um dos dois rótulos: diz os dois
  *   ("Mentor e Tutorando"), porque é isso que é.
- * - Sem modo definido, cai em "Tutorando" — quem não disse o que quer está, por omissão, à
+ * - Sem modo definido, cai em "Tutorando" - quem não disse o que quer está, por omissão, à
  *   procura de apoio.
  *
  * Recebe o dicionário em vez de o ir buscar, para poder ser testada com um dicionário fixo (é

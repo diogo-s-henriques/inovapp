@@ -1,4 +1,4 @@
-// Material partilhado como anexo numa conversa (ver AttachFileSheet) — não existe upload real
+// Material partilhado como anexo numa conversa (ver AttachFileSheet) - não existe upload real
 // nem uma coleção "materials" à parte; este ecrã só agrega anexos já trocados nas conversas.
 export interface SharedMaterial {
   id: string;

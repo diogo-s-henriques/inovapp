@@ -1,7 +1,7 @@
 import { View, type ViewProps } from 'react-native';
 
-import { useI18n } from '@/hooks/use-i18n';
 import { ExtraCard } from '@/components/ui/ExtraCard';
+import { useI18n } from '@/hooks/use-i18n';
 
 export interface HomeShortcutsProps extends ViewProps {
   onPressMaterials?: () => void;
@@ -13,7 +13,7 @@ export interface HomeShortcutsProps extends ViewProps {
  * Chegaram a ser quatro (Sessões, Materiais, Mensagens e Pesquisar) numa grelha de duas colunas.
  * Sessões saiu porque subiu para o ecrã: o mês com os dias marcados está lá em cima, e um atalho
  * para a agenda ao lado de um calendário é o mesmo destino a dois dedos de distância. Mensagens e
- * Pesquisar saíram porque são **separadores da barra de baixo** — os dois ecrãs mais fáceis de
+ * Pesquisar saíram porque são **separadores da barra de baixo** - os dois ecrãs mais fáceis de
  * alcançar na app não precisavam de um segundo caminho no meio da Home, que é onde há menos espaço
  * e mais coisas para ler.
  *
@@ -26,7 +26,7 @@ export interface HomeShortcutsProps extends ViewProps {
  *
  * O cartão não leva `flex`. Numa coluna, ele estica à largura do ecrã sozinho (o alinhamento por
  * omissão de uma coluna é `stretch`) e a altura continua a vir do conteúdo; o `flex: 1` que os
- * cartões levavam dentro da grelha dava-lhes, ali, a largura da célula — e aqui daria altura zero.
+ * cartões levavam dentro da grelha dava-lhes, ali, a largura da célula - e aqui daria altura zero.
  */
 export function HomeShortcuts({ onPressMaterials, style, ...rest }: HomeShortcutsProps) {
   const i18n = useI18n();

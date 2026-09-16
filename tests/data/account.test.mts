@@ -1,7 +1,7 @@
 /**
  * Testes de **apagar a conta** (`src/lib/account.ts` e `src/auth/actions.ts`) contra os emuladores.
  *
- * É a operação mais destrutiva da app, e a única que apaga a sério — por isso não chega testá-la
+ * É a operação mais destrutiva da app, e a única que apaga a sério - por isso não chega testá-la
  * contra um duplo que regista chamadas: o que pode correr mal aqui é a regra recusar um dos deletes
  * (e a conta ficar a meio, com dados órfãos que ninguém pode remover) ou a operação levar atrás
  * aquilo que não é dela. As duas coisas só se veem com o `firestore.rules` verdadeiro pelo meio, e
@@ -13,11 +13,11 @@
  *    fez, pedidos de conexão e de sessão, sessões, conversas e as mensagens que ela escreveu.
  * 2. **O que é de outra pessoa fica**: o bloqueio que outro lhe fez e a avaliação anónima que
  *    recebeu (esta última fica inalcançável, por não haver sessão nenhuma para a mostrar).
- * 3. **A conta do Auth desaparece no fim** — e é por isso que a ordem importa: apagada primeiro, o
+ * 3. **A conta do Auth desaparece no fim** - e é por isso que a ordem importa: apagada primeiro, o
  *    cliente perdia o direito de apagar o resto (ver o comentário de src/lib/account.ts).
  * 4. **A palavra-passe errada não apaga nada**: é o que a reautenticação à frente de tudo compra.
  *
- * Nada disto toca em dados de produção — ver o guarda em tests/data/emulator.mts.
+ * Nada disto toca em dados de produção - ver o guarda em tests/data/emulator.mts.
  *
  * Como correr (arranca os dois emuladores, corre e desliga):
  *   npm run test:data
@@ -61,10 +61,10 @@ const PROJETO = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? 'inovapp-68021';
 let cenario: Cenario;
 
 /**
- * Se o documento já não existe — ou já não é legível, que dá no mesmo depois de a conta ir.
+ * Se o documento já não existe - ou já não é legível, que dá no mesmo depois de a conta ir.
  *
  * A distinção é do Firestore e não é óbvia: apagar um documento que a regra lê (`resource.data.from`,
- * por exemplo) deixa o `resource` a nulo, e a regra **rebenta** em vez de dizer "não" — o cliente
+ * por exemplo) deixa o `resource` a nulo, e a regra **rebenta** em vez de dizer "não" - o cliente
  * recebe um `permission-denied` no lugar de um documento inexistente. É o mesmo caso que o
  * `hasBlocked` já traduz em src/lib/blocking.ts.
  */
@@ -88,7 +88,7 @@ async function sessoesDe(): Promise<Array<Record<string, unknown> & { id: string
  * Quantos documentos existem **no emulador** por baixo de um caminho, sem regras pelo meio.
  *
  * Serve para responder à pergunta que o SDK não deixa responder: o que ficou na base de dados
- * depois de a conta desaparecer. Depois de a conta ir, ninguém tem permissão para ler aquilo — e é
+ * depois de a conta desaparecer. Depois de a conta ir, ninguém tem permissão para ler aquilo - e é
  * essa a razão de ser desta função em vez de um `getDocs`: a API REST do emulador responde sem
  * autenticação (é o mesmo caminho que o `limparEmulador()` usa para apagar tudo), o que aqui faz o
  * papel de acesso de administrador.
@@ -99,13 +99,13 @@ async function documentosNoEmulador(caminho: string): Promise<number> {
 
   const resposta = await fetch(
     `http://${host}/v1/projects/${PROJETO}/databases/(default)/documents/${caminho}`,
-    // `Bearer owner` é a forma de o emulador reconhecer um pedido de administrador — é o mesmo
+    // `Bearer owner` é a forma de o emulador reconhecer um pedido de administrador - é o mesmo
     // truque que o `confirmarEmailNoEmulador()` usa no emulador do Auth.
     { headers: { Authorization: 'Bearer owner' } },
   );
 
-  // Um documento que já não existe dá 404 (e não uma lista vazia): para o que aqui se pergunta —
-  // "sobrou alguma coisa?" — um 404 é a resposta certa, com o mesmo significado de zero.
+  // Um documento que já não existe dá 404 (e não uma lista vazia): para o que aqui se pergunta -
+  // "sobrou alguma coisa?" - um 404 é a resposta certa, com o mesmo significado de zero.
   if (resposta.status === 404) return 0;
   if (!resposta.ok) {
     throw new Error(`O emulador recusou a leitura de "${caminho}" (HTTP ${resposta.status}).`);
@@ -161,7 +161,7 @@ async function montarConta() {
   await registerDevice(ana, 'telemovel-1', 'ExponentPushToken[ana]', 'ios');
   await blockUser(ana, carla);
 
-  // E um bloqueio de outra pessoa sobre ela — esse não é dela, e fica onde está.
+  // E um bloqueio de outra pessoa sobre ela - esse não é dela, e fica onde está.
   await entrarComo(CONTAS.intruso);
   await blockUser(diogo, ana);
 
@@ -203,7 +203,7 @@ describe('apagar os dados da conta', () => {
     // --- Fica o que é de outra pessoa ---
     assert.ok(
       await lerDocumento(`blocks/${blockId(diogo, ana)}`),
-      'o bloqueio que outra pessoa fez foi apagado — não era dela para apagar',
+      'o bloqueio que outra pessoa fez foi apagado - não era dela para apagar',
     );
     assert.ok(
       await lerDocumento(`ratings/${sessaoId}`),
@@ -216,7 +216,7 @@ describe('apagar os dados da conta', () => {
     const { ana, bruno } = cenario;
 
     // A contagem é feita no emulador, sem regras: depois de a conversa desaparecer, o SDK já não
-    // consegue ler lá dentro — nem para quem fica, porque é a conversa que a regra vai buscar.
+    // consegue ler lá dentro - nem para quem fica, porque é a conversa que a regra vai buscar.
     assert.equal(await documentosNoEmulador(`conversations/${conversa}/messages`), 2);
 
     await deleteAccountData(ana);
@@ -236,7 +236,7 @@ describe('apagar os dados da conta', () => {
     await deleteAccountData(ana);
 
     // Uma varredura pelas coleções todas, pelo emulador: não é para conferir uma coleção em
-    // concreto, é para apanhar a que ainda não existe — se amanhã nascer outra onde a conta
+    // concreto, é para apanhar a que ainda não existe - se amanhã nascer outra onde a conta
     // aparece, é este teste que falha (e não a pessoa que se lembrar de apagar a conta).
     const porColecao: Record<string, number> = {
       blocks: await documentosNoEmulador('blocks'),
@@ -258,7 +258,7 @@ describe('apagar os dados da conta', () => {
       conversations: 0,
       // A avaliação fica (anónima, e sem sessão nenhuma que a mostre).
       ratings: 1,
-      // Os três que restam são as outras contas do cenário — a dela saiu de `users` e de
+      // Os três que restam são as outras contas do cenário - a dela saiu de `users` e de
       // `userAccounts`, e nada ficou órfão a apontar para um UID que já não existe.
       userAccounts: 3,
       users: 3,
@@ -267,7 +267,7 @@ describe('apagar os dados da conta', () => {
 });
 
 describe('apagar a conta (com a conta do Auth)', () => {
-  it('apaga a conta do Firebase — já não se entra com ela', async () => {
+  it('apaga a conta do Firebase - já não se entra com ela', async () => {
     await montarConta();
     const { ana } = cenario;
 

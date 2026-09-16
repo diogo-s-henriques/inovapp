@@ -1,5 +1,5 @@
 /**
- * Testes do `RetryNotice` — o aviso de uma leitura que falhou, com uma segunda tentativa.
+ * Testes do `RetryNotice` - o aviso de uma leitura que falhou, com uma segunda tentativa.
  *
  * O que se fixa aqui é a única coisa que ele tem de fazer: dizer o que falhou e dar uma saída. Sem
  * o botão, o aviso é um beco sem saída (um `onSnapshot` que falha não volta sozinho); sem a

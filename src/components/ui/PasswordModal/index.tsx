@@ -11,7 +11,7 @@ import { ThemedText } from '@/components/ui/ThemedText';
  * Modal que pede a palavra-passe para confirmar uma ação que não se desfaz.
  *
  * Existe como peça própria (e não como um campo a mais dentro do `ConfirmModal`) porque responde a
- * uma pergunta diferente: o `ConfirmModal` pergunta *se* a pessoa quer, e este pergunta *quem* é —
+ * uma pergunta diferente: o `ConfirmModal` pergunta *se* a pessoa quer, e este pergunta *quem* é -
  * o Firebase recusa apagar a conta a uma sessão antiga, e é a palavra-passe que a torna recente
  * outra vez. São dois passos de propósito: quem chega aqui já disse que sim uma vez.
  *
@@ -55,7 +55,7 @@ export function PasswordModal({
   /**
    * Fechar sem confirmar passa sempre por aqui.
    *
-   * A palavra-passe é escrita, usada e esquecida — e "esquecida" tem de querer dizer alguma coisa: o
+   * A palavra-passe é escrita, usada e esquecida - e "esquecida" tem de querer dizer alguma coisa: o
    * campo é limpo ao fechar, para o que ficou escrito não continuar em memória numa coisa que já
    * acabou (a confirmação errada, a palavra-passe ao lado, a pessoa que pega no telemóvel a seguir).
    * Quem confirmou e viu o erro **não** perde o que escreveu: está a corrigir uma letra, e apagá-la
@@ -97,7 +97,7 @@ export function PasswordModal({
               value={password}
               onChangeText={setPassword}
               returnKeyType="done"
-              // O teclado do telemóvel traz um "feito" que faz o mesmo que o botão — pedir a mesma
+              // O teclado do telemóvel traz um "feito" que faz o mesmo que o botão - pedir a mesma
               // coisa por dois caminhos e só um deles funcionar é o tipo de coisa que se descobre
               // por acidente.
               onSubmitEditing={() => {

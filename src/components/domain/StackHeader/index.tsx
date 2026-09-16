@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { Spacing } from '@/constants/theme';
 
 export interface StackHeaderProps extends ViewProps {
   /** O nome do ecrã. É escrito em maiúsculas pelo tipo de texto `title`, como nos separadores. */
@@ -16,17 +16,17 @@ export interface StackHeaderProps extends ViewProps {
 }
 
 /**
- * O cabeçalho dos ecrãs empilhados — os que abrem por cima dos separadores (Notificações, Sessões,
+ * O cabeçalho dos ecrãs empilhados - os que abrem por cima dos separadores (Notificações, Sessões,
  * Materiais, Definições, pedidos de conexão, pedido de sessão).
  *
  * Seis ecrãs tinham a mesma linha copiada, com uma diferença aqui e outra ali: cinco com um
  * chevron nu, um com um círculo com contorno, um `gap` de 12 e outro de 16, um título com
- * `flex: 1` e outro sem. Nada disso era intenção — era terem sido escritos em alturas diferentes.
+ * `flex: 1` e outro sem. Nada disso era intenção - era terem sido escritos em alturas diferentes.
  * Aqui há um só, e o que cada ecrã diz é o título e para onde volta.
  *
  * **Porque é que não é o `ScreenHero`**: o bloco em gradiente dos separadores vive dentro da
  * lista e rola com ela, com a identidade e o sino por cima; este fica **preso ao topo** e é só a
- * seta e o nome do ecrã. São duas peças diferentes porque fazem coisas diferentes — a tentação de
+ * seta e o nome do ecrã. São duas peças diferentes porque fazem coisas diferentes - a tentação de
  * as juntar foi o que criou o `identity` opcional que o `ScreenHero` já teve e perdeu.
  *
  * O `SafeAreaView` de quem usa isto trata da barra de estado (é ele que sabe a altura dela): este

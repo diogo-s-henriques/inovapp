@@ -1,11 +1,11 @@
 /**
- * Testes de `ConnectionRequestsSection` — a lista onde os pedidos de conexão se aceitam/recusam.
+ * Testes de `ConnectionRequestsSection` - a lista onde os pedidos de conexão se aceitam/recusam.
  *
  * A lista tem dois anfitriões: a aba dos Matches e o ecrã `connection-requests` (que existe para a
  * linha da Home e o aviso das Notificações deixarem de dar para uma aba, onde não há gesto de
- * voltar). O que aqui se fixa é a ligação entre cada botão e a decisão que ele representa — trocar
+ * voltar). O que aqui se fixa é a ligação entre cada botão e a decisão que ele representa - trocar
  * os dois (aceitar a recusar) seria um erro silencioso e caro, porque fecha pedidos que a pessoa
- * queria aceitar e abre conversas que ninguém pediu — e que o anfitrião pode calar a etiqueta da
+ * queria aceitar e abre conversas que ninguém pediu - e que o anfitrião pode calar a etiqueta da
  * secção quando o próprio ecrã já tem título (`showHeader`), sem perder os cartões.
  */
 import { fireEvent, render } from '@testing-library/react-native';
@@ -111,7 +111,7 @@ describe('decidir um pedido', () => {
 
     expect(getByText('2')).toBeTruthy();
 
-    // O segundo botão "Aceitar" pertence ao segundo cartão — é o que garante que a lista não
+    // O segundo botão "Aceitar" pertence ao segundo cartão - é o que garante que a lista não
     // está a responder sempre ao mesmo pedido.
     await fireEvent.press(getAllByLabelText(pt.requestCard.accept)[1]);
 

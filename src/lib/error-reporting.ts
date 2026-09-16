@@ -1,7 +1,7 @@
 import { Observe } from 'expo-observe';
 
 /**
- * Por onde passam os erros que a app **apanha** — os que, sem isto, morrem num `catch` e não deixam
+ * Por onde passam os erros que a app **apanha** - os que, sem isto, morrem num `catch` e não deixam
  * rasto nenhum.
  *
  * A app tem uma dúzia de `catch { setError(true) }` e um ecrã de erro para o que rebenta a desenhar
@@ -13,8 +13,8 @@ import { Observe } from 'expo-observe';
  * **Onde entra na app**: o `expo-observe` já instala um gestor global de erros quando é importado
  * (por isso uma exceção não apanhada é registada sozinha) e o `ObserveRoot` em `src/app/_layout.tsx`
  * põe um limite de erro à volta de tudo, que regista o erro **com a stack de componentes React**. O
- * que falta é o que ninguém apanha: os erros que a app decide tratar — uma leitura negada, uma
- * escrita que falhou — chegam nem ao gestor global nem ao limite, porque são apanhados primeiro.
+ * que falta é o que ninguém apanha: os erros que a app decide tratar - uma leitura negada, uma
+ * escrita que falhou - chegam nem ao gestor global nem ao limite, porque são apanhados primeiro.
  * Esses são os que este `reportError` manda.
  *
  * **O contexto vai no início da mensagem** (`[chat] …`), porque o dashboard agrupa os erros por

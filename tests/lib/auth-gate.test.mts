@@ -1,5 +1,5 @@
 /**
- * Testes de `src/lib/auth-gate.ts` — que ecrãs a app mostra.
+ * Testes de `src/lib/auth-gate.ts` - que ecrãs a app mostra.
  *
  * Estes quatro ecrãs excluem-se uns aos outros, e uma guarda trocada não dá erro nenhum: dá um
  * ecrã errado. Dois casos aqui valem mais do que os outros: **quem não confirmou o email não pode
@@ -19,7 +19,7 @@ const SEM_SESSAO = { initializing: false, user: null, profileCompleted: null };
 const CONFIRMADO: AppUser = { uid: 'u1', email: 'aluno@alunos.iseclisboa.pt', emailVerified: true };
 const POR_CONFIRMAR: AppUser = { ...CONFIRMADO, emailVerified: false };
 
-describe('authStage — que ecrãs a app mostra', () => {
+describe('authStage - que ecrãs a app mostra', () => {
   it('enquanto o Firebase não disse se há sessão, não se mostra nada', () => {
     assert.equal(authStage({ ...SEM_SESSAO, initializing: true }), 'loading');
   });
@@ -33,7 +33,7 @@ describe('authStage — que ecrãs a app mostra', () => {
     assert.equal(authStage({ initializing: false, user: CONFIRMADO, profileCompleted: null }), 'loading');
   });
 
-  it('com o email por confirmar, o ecrã é o da confirmação — mesmo com o perfil já completo', () => {
+  it('com o email por confirmar, o ecrã é o da confirmação - mesmo com o perfil já completo', () => {
     assert.equal(authStage({ initializing: false, user: POR_CONFIRMAR, profileCompleted: true }), 'verify-email');
   });
 
@@ -54,7 +54,7 @@ describe('authStage — que ecrãs a app mostra', () => {
   it('o ecrã da confirmação não espera pela leitura do perfil', () => {
     // O caso que trava o arranque: se o `verify-email` viesse depois da leitura do perfil, e uma
     // leitura falhada deixasse o `profileCompleted` a `null`, a app ficava presa no splash para
-    // sempre — o próprio ecrã que explica o que fazer nunca chegava a aparecer. Saber se o email
+    // sempre - o próprio ecrã que explica o que fazer nunca chegava a aparecer. Saber se o email
     // está confirmado não precisa do Firestore: vem do token.
     assert.equal(authStage({ initializing: false, user: POR_CONFIRMAR, profileCompleted: null }), 'verify-email');
   });

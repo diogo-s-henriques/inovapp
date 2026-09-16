@@ -2,7 +2,7 @@ import { Image, StyleSheet, Text, View, type ViewProps } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 
-/** Avatar circular, só apresentação (sem interação) — mostra imagem ou iniciais. */
+/** Avatar circular, só apresentação (sem interação) - mostra imagem ou iniciais. */
 export type ProfilePicCardSize = 'sm' | 'md' | 'lg';
 
 const DIMENSION_BY_SIZE: Record<ProfilePicCardSize, number> = {
@@ -25,7 +25,7 @@ export interface ProfilePicCardProps extends ViewProps {
   size?: ProfilePicCardSize | number;
   fontSize?: number;
   /**
-   * Raio dos cantos, em pixels. Por omissão é metade do lado — um círculo.
+   * Raio dos cantos, em pixels. Por omissão é metade do lado - um círculo.
    *
    * Um valor menor dá um quadrado de cantos arredondados, que é o que o cabeçalho da Home usa:
    * "quadrado" aqui não quer dizer arestas vivas, quer dizer que a forma deixa de ser redonda.
@@ -38,7 +38,7 @@ export interface ProfilePicCardProps extends ViewProps {
   borderWidth?: number;
   /**
    * Cor do contorno. Sem valor explícito, usa o preto quase transparente da paleta
-   * (`theme.photoBorder`) — o mesmo em qualquer fundo.
+   * (`theme.photoBorder`) - o mesmo em qualquer fundo.
    */
   borderColor?: string;
   backgroundColor?: string;
@@ -79,7 +79,7 @@ export function ProfilePicCard({
           borderRadius: radius ?? dimension / 2,
           backgroundColor: backgroundColor ?? theme.primarySoft,
           // O contorno é desenhado **dentro** da caixa (o React Native não tem `box-sizing`), por
-          // isso a fotografia continua a medir exatamente `size` — o que a borda come é a imagem.
+          // isso a fotografia continua a medir exatamente `size` - o que a borda come é a imagem.
           borderWidth: borderWidth ?? 0,
           borderColor: borderColor ?? theme.photoBorder,
         },

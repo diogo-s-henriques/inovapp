@@ -3,13 +3,13 @@
  *
  * A app importa com o alias `@/...` (declarado no tsconfig e resolvido pelo Metro), que o Node
  * não conhece. Este loader traduz `@/x` para `src/x` e substitui por doubles os módulos que não
- * existem num processo de Node — o AsyncStorage (depende do runtime do React Native), o
+ * existem num processo de Node - o AsyncStorage (depende do runtime do React Native), o
  * `src/lib/firebase.ts` (inicializa a app a partir de variáveis EXPO_PUBLIC_*, que aqui não
  * existem) e o JSON de cursos (em Node um import de JSON exige `with { type: 'json' }`, coisa
  * que o Metro não pede).
  *
- * Os doubles só substituem importações vindas de dentro de `src/`. Quem importa de fora — os
- * próprios testes e as bibliotecas em node_modules — usa os pacotes a sério, para que por
+ * Os doubles só substituem importações vindas de dentro de `src/`. Quem importa de fora - os
+ * próprios testes e as bibliotecas em node_modules - usa os pacotes a sério, para que por
  * exemplo os testes das regras continuem a falar com o Firebase verdadeiro.
  *
  * Com INOVAPP_TEST_REAL_FIREBASE=1 (ver tests/data/preload.mjs) os doubles do Firebase e do
@@ -72,7 +72,7 @@ export async function resolve(specifier, context, nextResolve) {
 /**
  * Os ficheiros de `src/` são TypeScript com sintaxe ESM, e o package.json não declara
  * `type: module`. `module-typescript` diz ao Node para os tratar como ESM depois de retirar os
- * tipos — sem isto, tentava interpretá-los como CommonJS e falhava nos `import`.
+ * tipos - sem isto, tentava interpretá-los como CommonJS e falhava nos `import`.
  */
 export async function load(url, context, nextLoad) {
   if (url.startsWith('file:')) {

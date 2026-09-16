@@ -106,7 +106,7 @@ export default function OtherUserProfileScreen() {
   const availabilityItems = candidate.availability.split(' · ');
 
   // Bloquear corta a ligação toda (o chat fica inacessível para os dois), por isso o ecrã tem de
-  // reflectir isso de imediato — deixar "Chat" clicável depois de bloquear seria mentira.
+  // reflectir isso de imediato - deixar "Chat" clicável depois de bloquear seria mentira.
   const handleBlock = async () => {
     if (!user) return;
     setConfirmingBlock(false);
@@ -128,7 +128,7 @@ export default function OtherUserProfileScreen() {
     setBlocked(false);
     try {
       await unblockUser(user.uid, id);
-      // A conversa pode existir (a ligação nunca chegou a ser apagada) — volta a perguntar-se.
+      // A conversa pode existir (a ligação nunca chegou a ser apagada) - volta a perguntar-se.
       setConnected(await conversationExists(user.uid, id));
     } catch {
       setBlocked(true);
@@ -151,7 +151,7 @@ export default function OtherUserProfileScreen() {
           )}
 
           <View style={[styles.topRow, { top: insets.top + Spacing.two }]}>
-            {/* Sobre a fotografia, o botão leva fundo próprio — é o que o `variant="surface"`
+            {/* Sobre a fotografia, o botão leva fundo próprio - é o que o `variant="surface"`
                 significa (fora daqui, nos ecrãs empilhados, é o `StackHeader` que o põe). */}
             <BackButton
               label={i18n.otherProfile.back}

@@ -22,7 +22,7 @@ import { EditButton } from '@/components/domain/Profile/EditButton';
 import { TagList } from '@/components/domain/Profile/TagList';
 import { signOutUser } from '@/auth/actions';
 
-/** Antes de a subscrição responder, e no caso raro de ela falhar, os números são zero — que é a
+/** Antes de a subscrição responder, e no caso raro de ela falhar, os números são zero - que é a
  * verdade para quem ainda não tem sessões. */
 const NO_SESSIONS: SessionStats = { given: 0, received: 0, upcoming: 0 };
 
@@ -31,7 +31,7 @@ const NO_SESSIONS: SessionStats = { given: 0, received: 0, upcoming: 0 };
  *
  * O ecrã foi apertado para caber sem deslizar num telemóvel normal: a identidade em cima, os três
  * números, os interesses e o "sobre", e as duas únicas ações (editar, no cabeçalho; sair, no fim)
- * separadas do resto. Saiu daqui a secção da disponibilidade — é a única informação que se repete
+ * separadas do resto. Saiu daqui a secção da disponibilidade - é a única informação que se repete
  * na marcação de sessões, e era a que fazia o ecrã passar de uma altura de ecrã.
  */
 export default function ProfileScreen() {
@@ -44,7 +44,7 @@ export default function ProfileScreen() {
   const [stats, setStats] = useState<SessionStats>(NO_SESSIONS);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
 
-  // Os números do perfil. Antes eram zeros escritos no código — a caixa dizia "0" mesmo a quem já
+  // Os números do perfil. Antes eram zeros escritos no código - a caixa dizia "0" mesmo a quem já
   // tinha dado aulas. Agora contam-se, e `subscribeToSessionStats` não resolve perfis de ninguém
   // (ao contrário da agenda) para isto custar uma leitura só.
   useEffect(() => {
@@ -56,9 +56,9 @@ export default function ProfileScreen() {
   if (!profile) return null;
 
   const isProfessor = profile.role === 'professor';
-  // "INTERESSES" é o que a pessoa quer aprender, não o que ensina — o que ensina já vive na
+  // "INTERESSES" é o que a pessoa quer aprender, não o que ensina - o que ensina já vive na
   // descoberta (é o que a faz aparecer nos Matches e na pesquisa) e é lá que faz sentido.
-  // Um professor não tem este campo (não o edita — ver profile-edit.tsx), por isso a secção
+  // Um professor não tem este campo (não o edita - ver profile-edit.tsx), por isso a secção
   // desaparece em vez de ficar com uma etiqueta e nada por baixo.
   const interests = isProfessor ? [] : profile.learningSubjects;
 
@@ -73,12 +73,12 @@ export default function ProfileScreen() {
         // O gradiente do bloco tem de chegar ao topo do ecrã; sem isto, o iOS volta a empurrar o
         // conteúdo para baixo da barra de estado e sobra uma faixa clara por cima.
         contentInsetAdjustmentBehavior="never">
-        {/* O bloco é o mesmo da Home — fotografia de 80, nome e uma segunda linha — com duas
+        {/* O bloco é o mesmo da Home - fotografia de 80, nome e uma segunda linha - com duas
             diferenças: a roda dentada no canto (que fica onde se procura uma definição em qualquer
             ecrã, em vez de no fundo do perfil) e o botão de editar por baixo das linhas.
 
             O **título** ("PERFIL") saiu daqui: o nome do ecrã repetido por baixo do nome de quem
-            lá está não diz nada de novo — e o separador da barra de baixo já se chama Perfil. A
+            lá está não diz nada de novo - e o separador da barra de baixo já se chama Perfil. A
             segunda linha é o curso com o ano (ou "Docente ISEC Lisboa"), e não o papel que a Home
             mostra: o papel diz o que se pode fazer, o curso diz o que se estuda. */}
         <ScreenHero
@@ -128,7 +128,7 @@ export default function ProfileScreen() {
         </SectionCard>
 
         {/* Empurra as ações para o fundo quando o conteúdo é curto (o `flexGrow` do contentor dá
-            a altura toda ao conjunto) e desaparece quando o conteúdo é alto — num ecrã pequeno o
+            a altura toda ao conjunto) e desaparece quando o conteúdo é alto - num ecrã pequeno o
             "Sair" desliza para baixo em vez de ficar fora de alcance. */}
         <View style={styles.spacer} />
 
@@ -164,8 +164,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    // `flexGrow` (e não `flex`) para o ecrã encher a altura toda quando há pouco conteúdo — é o
-    // que dá ao `spacer` espaço para empurrar as ações para o fundo — e para o conteúdo claro
+    // `flexGrow` (e não `flex`) para o ecrã encher a altura toda quando há pouco conteúdo - é o
+    // que dá ao `spacer` espaço para empurrar as ações para o fundo - e para o conteúdo claro
     // cobrir a cor que está por trás (o mesmo mecanismo dos outros separadores).
     flexGrow: 1,
     gap: Spacing.four,

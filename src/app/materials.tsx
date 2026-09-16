@@ -26,7 +26,7 @@ function formatDateShort(date: Date | undefined, locale: 'pt' | 'en'): string {
   return date.toLocaleDateString(dateLocaleTag(locale), { day: '2-digit', month: 'short' });
 }
 
-// Só vê os materiais (anexos) já trocados nas conversas do utilizador — não há partilha
+// Só vê os materiais (anexos) já trocados nas conversas do utilizador - não há partilha
 // "para todos" nem upload real (ver src/lib/materials.ts).
 export default function MaterialsScreen() {
   const theme = useTheme();

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
+import { CalendarMonth } from '@/components/domain/CalendarMonth';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { CalendarMonth } from '@/components/domain/CalendarMonth';
 
 export interface AgendaCardProps extends ViewProps {
   /** Dias que têm sessão, no formato 'YYYY-MM-DD' (o mesmo das chaves de data). */
   markedDates: Set<string>;
-  /** O dia que aparece escolhido — no ecrã inicial, hoje. */
+  /** O dia que aparece escolhido - no ecrã inicial, hoje. */
   selectedDate?: string;
   /** O toque num dia. No ecrã inicial leva à agenda desse dia; aqui não se decide nada. */
   onPressDay: (date: string) => void;
@@ -17,13 +17,13 @@ export interface AgendaCardProps extends ViewProps {
 /**
  * O calendário da agenda no ecrã inicial: o mês com um ponto nos dias que têm sessão.
  *
- * **Só mostra o mês.** Escolher um dia não muda nada dentro do cartão — quem trata disso é o ecrã
+ * **Só mostra o mês.** Escolher um dia não muda nada dentro do cartão - quem trata disso é o ecrã
  * (ver `(tabs)/index.tsx`, que empilha a agenda no dia tocado). Foi a decisão que ficou: o cartão
  * diz *quando* há sessões, e a agenda diz *o que* há nelas. Trazer a lista do dia para aqui era
  * repetir no mesmo ecrã a próxima sessão, que já está logo acima.
  *
  * **O mês é dele.** Vive em estado próprio, e não no ecrã inicial: navegar para Outubro para ver
- * o que vem aí é uma pergunta que se faz ao calendário, e não ao ecrã — e o ecrã não tinha mais
+ * o que vem aí é uma pergunta que se faz ao calendário, e não ao ecrã - e o ecrã não tinha mais
  * nada que fazer com esse estado.
  *
  * O dia escolhido (`selectedDate`) é hoje, e não a data de uma sessão: é um calendário de parede,

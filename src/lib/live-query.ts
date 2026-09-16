@@ -3,13 +3,13 @@
  * e uma conta de quantos estão a ver para a fechar quando o último sair.
  *
  * O problema que isto resolve é o dos ecrãs que ouvem a mesma coisa. Os pedidos de conexão
- * pendentes eram ouvidos em três sítios ao mesmo tempo — a barra de baixo (a bolinha), a Home (a
- * contagem) e a aba dos Matches (a lista) — e cada um abria a sua subscrição: a mesma pergunta feita
+ * pendentes eram ouvidos em três sítios ao mesmo tempo - a barra de baixo (a bolinha), a Home (a
+ * contagem) e a aba dos Matches (a lista) - e cada um abria a sua subscrição: a mesma pergunta feita
  * três vezes à mesma base de dados, e cada alteração contada (e paga) três vezes. Aqui a pergunta é
  * feita uma vez; quem chega depois recebe o que já se sabe.
  *
  * A segunda coisa que resolve é **o silêncio**. Uma subscrição ao Firestore tem dois canais: o dos
- * dados e o do erro. Sem o segundo, uma leitura negada pelas regras não é um estado — é uma lista
+ * dados e o do erro. Sem o segundo, uma leitura negada pelas regras não é um estado - é uma lista
  * que fica como estava, indistinguível de "não há nada" (foi assim que faltas de regras no Firebase
  * passaram meses por "ecrã sem dados"). Aqui o erro é um campo do estado, e há uma segunda
  * tentativa: um `onSnapshot` que falha não volta sozinho, por isso `retry` fecha a subscrição e
@@ -18,7 +18,7 @@
  * O `uid` faz parte da chave: sair e entrar com outra conta fecha o que estava aberto e recomeça do
  * zero, em vez de deixar os dados de um utilizador à vista do seguinte.
  *
- * Não sabe nada do Firestore de propósito — recebe a função que abre a leitura (`open`). É o que
+ * Não sabe nada do Firestore de propósito - recebe a função que abre a leitura (`open`). É o que
  * permite testar a partilha, o erro e a segunda tentativa sem base de dados nenhuma (ver
  * tests/lib/live-query.test.mts).
  */
@@ -38,7 +38,7 @@ export interface LiveQuery<T> {
    * da próxima alteração no Firestore para desenhar o que já se sabe.
    */
   subscribe(uid: string, listener: (state: LiveState<T>) => void): () => void;
-  /** Fecha e volta a abrir a leitura, limpando o erro — a segunda tentativa da interface. */
+  /** Fecha e volta a abrir a leitura, limpando o erro - a segunda tentativa da interface. */
   retry(): void;
 }
 

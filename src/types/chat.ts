@@ -10,7 +10,7 @@ export interface ChatSessionRequestInfo {
   time: string;
   modality: string;
   message?: string;
-  // Nome de quem recebeu o pedido (não de quem vê a mensagem — ver ChatSessionRequestCard).
+  // Nome de quem recebeu o pedido (não de quem vê a mensagem - ver ChatSessionRequestCard).
   toFirstName: string;
 }
 

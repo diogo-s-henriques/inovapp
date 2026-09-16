@@ -1,10 +1,10 @@
 /**
- * Testes do `BackButton` e do `StackHeader` — o cabeçalho dos ecrãs empilhados.
+ * Testes do `BackButton` e do `StackHeader` - o cabeçalho dos ecrãs empilhados.
  *
  * O que aqui se fixa é a inconsistência que isto veio desfazer: os ecrãs empilhados andaram com
  * **três** botões de voltar diferentes (um chevron de 22 px nu, um círculo de 36 com contorno, um
  * círculo de 36 sobre a fotografia) para a mesma ação. O tamanho é o único que não se vê num teste
- * de conteúdo — um botão estreito continua a voltar para trás —, por isso é ele que se mede: é um
+ * de conteúdo - um botão estreito continua a voltar para trás -, por isso é ele que se mede: é um
  * **limite** (≥ 36 px de lado, o do valor de hoje), para o próximo ecrã não voltar a desenhá-lo
  * mais pequeno sem ninguém dar por isso.
  *

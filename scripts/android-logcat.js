@@ -4,7 +4,7 @@
  * Apanha a causa de um crash no telemóvel Android.
  *
  * Existe por causa de um sintoma que não deixa rasto: quando o Expo Go **fecha** (em vez de mostrar
- * o ecrã vermelho), não é um erro de JavaScript — é o processo a morrer, e sem log não há nada a
+ * o ecrã vermelho), não é um erro de JavaScript - é o processo a morrer, e sem log não há nada a
  * que agarrar. O que mata a app aparece no `logcat` do Android, em duas formas:
  *
  *   - exceção de Java/Kotlin (`FATAL EXCEPTION` + stack trace, no buffer `crash`);
@@ -20,7 +20,7 @@
  *   npm run logcat -- --app       # só as linhas da app, para um log mais limpo
  *
  * Antes disto, no telemóvel: Definições > Opções de programador > Depuração USB ligada, e ligá-lo
- * por cabo. O `adb` está fora do projeto (ver a secção "Android" do README) — este script
+ * por cabo. O `adb` está fora do projeto (ver a secção "Android" do README) - este script
  * encontra-o em três sítios: a variável `ADB`, o PATH, ou a pasta onde este projeto o instalou.
  */
 const { spawn, spawnSync } = require('child_process');
@@ -78,7 +78,7 @@ const LINE_TAG = /^\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+\d+\s+\d+\s+([VDIWEF
 /**
  * Agrupar pelo **tag**, não pelo texto da linha. A diferença é o que faz este script servir: um
  * stack trace de Java são dezenas de linhas seguidas com o tag `AndroidRuntime`, e filtrar pelo
- * conteúdo deixaria só a primeira (`FATAL EXCEPTION`) — ou seja, guardaria a notícia de que houve
+ * conteúdo deixaria só a primeira (`FATAL EXCEPTION`) - ou seja, guardaria a notícia de que houve
  * crash e deitaria fora *onde* rebentou, que é a única parte útil.
  */
 const TAG_RULES = [
@@ -106,7 +106,7 @@ const PATTERNS = [
   { label: 'WORKLETS/REANIMATED', regex: /Worklets|Reanimated/ },
 ];
 
-/** Ordem de apresentação — o que mata a app primeiro, o ruído da app no fim. */
+/** Ordem de apresentação - o que mata a app primeiro, o ruído da app no fim. */
 const LABEL_ORDER = [
   'CRASH NATIVO',
   'ERRO NATIVO',
@@ -126,7 +126,7 @@ function classify(line) {
     }
   }
 
-  // Sem tag reconhecido, vale o conteúdo — é o caso das linhas sem o cabeçalho `-v time`.
+  // Sem tag reconhecido, vale o conteúdo - é o caso das linhas sem o cabeçalho `-v time`.
   for (const pattern of PATTERNS) {
     if (pattern.regex.test(line)) return pattern.label;
   }
@@ -163,7 +163,7 @@ async function main() {
     process.exit(1);
   }
   if (device.state !== 'device') {
-    console.error(`O telemóvel está em estado "${device.state}" — não dá para ler o log.`);
+    console.error(`O telemóvel está em estado "${device.state}" - não dá para ler o log.`);
     process.exit(1);
   }
 
@@ -245,7 +245,7 @@ async function main() {
 }
 
 // Só corre quando é executado a sério. Assim o classificador pode ser importado e verificado
-// sem ligar nenhum telemóvel — é a única forma de provar que o filtro reconhece um crash de
+// sem ligar nenhum telemóvel - é a única forma de provar que o filtro reconhece um crash de
 // verdade, já que neste caso o "input" é um telemóvel.
 if (require.main === module) {
   main().catch((error) => {

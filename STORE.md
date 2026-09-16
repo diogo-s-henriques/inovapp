@@ -1,10 +1,10 @@
-# Ficha das lojas — INOVAPP
+# Ficha das lojas - INOVAPP
 
 O texto que vai para a App Store Connect e para a Google Play Console, com os limites de cada campo
 já contados (o `scripts/check-store-limits.js` confere-os contra este ficheiro: `npm run store:check`).
 
-**Os dois textos dizem a mesma coisa de duas maneiras** — a App Store aceita um texto mais cuidado e
-a Play pede descrições curtas e objetivas —, mas há **uma regra que vale para os dois**: não se
+**Os dois textos dizem a mesma coisa de duas maneiras** - a App Store aceita um texto mais cuidado e
+a Play pede descrições curtas e objetivas -, mas há **uma regra que vale para os dois**: não se
 prometem avisos no telemóvel. A app sabe recebê-los, mas ainda ninguém os envia (faltam as Cloud
 Functions), e uma função anunciada que não acontece é o primeiro sítio onde a revisão da Apple
 tropeça. O mesmo vale para "grátis": diz-se que não há compras dentro da app, que é verdade.
@@ -13,13 +13,13 @@ tropeça. O mesmo vale para "grátis": diz-se que não há compras dentro da app
 
 | | o que é | estado |
 |---|---|---|
-| **URL da política de privacidade** | um endereço público com a política | **decidido**: `https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf` — ler a nota abaixo antes de o colar |
+| **URL da política de privacidade** | um endereço público com a política | **decidido**: `https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf` - ler a nota abaixo antes de o colar |
 | **URL de suporte** | uma página onde se possa pedir ajuda (não serve `mailto:`) | **decidido**: `https://happycampus.pt` |
-| **Conta de demonstração para a revisão** | a app só entra com email institucional e com o email confirmado — o revisor não tem como criar conta, e sem credenciais a revisão é recusada (diretriz 2.1) | **feita** (`npm run create:demo-account`): `aluno.demo@alunos.iseclisboa.pt` e `demo@iseclisboa.pt`, com o email confirmado e o perfil completo. Falta escrever as credenciais em *App Review Information* / *App access* |
+| **Conta de demonstração para a revisão** | a app só entra com email institucional e com o email confirmado - o revisor não tem como criar conta, e sem credenciais a revisão é recusada (diretriz 2.1) | **feita** (`npm run create:demo-account`): `aluno.demo@alunos.iseclisboa.pt` e `demo@iseclisboa.pt`, com o email confirmado e o perfil completo. Falta escrever as credenciais em *App Review Information* / *App access* |
 
 ### Sobre a política de privacidade que vai ligada (decisão assumida)
 
-O URL é um **PDF publicado pela Universitas/Cooperativa de Ensino Superior** — e é os *Termos e
+O URL é um **PDF publicado pela Universitas/Cooperativa de Ensino Superior** - e é os *Termos e
 Condições da aplicação «Buddy App»*, não desta. Tem uma secção de proteção de dados (RGPD,
 finalidades, direitos), é HTTPS e abre sem autenticação, por isso as duas lojas aceitam-no como
 política. A decisão de o usar foi tomada com isto à frente: **o documento nomeia outra aplicação e
@@ -30,7 +30,7 @@ avisos, Firebase/Expo/EAS Observe).
 Duas consequências que ficam desta escolha:
 
 - o **questionário** *App Privacy* (Apple) e *Segurança de dados* (Play) tem de descrever o que a
-  app faz **na mesma** — responder pelo documento alinhado era declarar dados que não existem e
+  app faz **na mesma** - responder pelo documento alinhado era declarar dados que não existem e
   calar os que existem, e é essa incoerência que a revisão procura;
 - o `PRIVACY.md` deste repositório continua a ser a descrição exata da app. Se um dia o ISEC
   publicar o equivalente para a INOVAPP, é trocar **uma linha** aqui (o URL) e alinhar os dois
@@ -69,7 +69,7 @@ Inglês (en-US) · **Preço** grátis, sem compras dentro da app.
 
 ```
 Encontra quem te ajude na disciplina que te está a dar trabalho. Pede conexão, combina uma sessão e
-leva os materiais contigo — tudo dentro do ISEC.
+leva os materiais contigo - tudo dentro do ISEC.
 ```
 
 ## Descrição (App Store, máx. 4000)
@@ -78,8 +78,8 @@ leva os materiais contigo — tudo dentro do ISEC.
 A INOVAPP liga quem quer aprender a quem pode ensinar, dentro do ISEC Lisboa.
 
 Procurar quem te ajude numa disciplina não devia dar mais trabalho do que a própria disciplina.
-Aqui, quem precisa de apoio encontra quem já passou pela mesma unidade curricular — colegas mais
-avançados e docentes — e combina uma sessão em dois toques.
+Aqui, quem precisa de apoio encontra quem já passou pela mesma unidade curricular - colegas mais
+avançados e docentes - e combina uma sessão em dois toques.
 
 O QUE PODE FAZER
 
@@ -87,15 +87,15 @@ O QUE PODE FAZER
   para dar.
 · Procura por disciplina, curso e disponibilidade, e vê o perfil de quem está por trás de cada nome.
 · Pede conexão a um mentor ou tutor. Só se fala depois de o pedido ser aceite.
-· Marca sessões de apoio com data, hora e modalidade — presencial ou online.
+· Marca sessões de apoio com data, hora e modalidade - presencial ou online.
 · Troca mensagens e deixa os materiais da sessão na conversa, para não se perderem.
 · Acompanha o que tens marcado: sessões agendadas, dadas e recebidas.
 · Avalia a sessão no fim. A avaliação é anónima.
 
 PARA QUEM É
 
-Para estudantes e docentes do ISEC Lisboa. Entra-se com o email institucional —
-@alunos.iseclisboa.pt ou @iseclisboa.pt —, e a conta só fica ativa depois de confirmares esse email.
+Para estudantes e docentes do ISEC Lisboa. Entra-se com o email institucional -
+@alunos.iseclisboa.pt ou @iseclisboa.pt -, e a conta só fica ativa depois de confirmares esse email.
 Não há contas para pessoas de fora.
 
 O QUE NÃO FAZ
@@ -116,8 +116,8 @@ inteiro e não por referência: é daqui que se cola):
 A INOVAPP liga quem quer aprender a quem pode ensinar, dentro do ISEC Lisboa.
 
 Procurar quem te ajude numa disciplina não devia dar mais trabalho do que a própria disciplina.
-Aqui, quem precisa de apoio encontra quem já passou pela mesma unidade curricular — colegas mais
-avançados e docentes — e combina uma sessão em dois toques.
+Aqui, quem precisa de apoio encontra quem já passou pela mesma unidade curricular - colegas mais
+avançados e docentes - e combina uma sessão em dois toques.
 
 O QUE PODE FAZER
 
@@ -125,15 +125,15 @@ O QUE PODE FAZER
   para dar.
 · Procura por disciplina, curso e disponibilidade, e vê o perfil de quem está por trás de cada nome.
 · Pede conexão a um mentor ou tutor. Só se fala depois de o pedido ser aceite.
-· Marca sessões de apoio com data, hora e modalidade — presencial ou online.
+· Marca sessões de apoio com data, hora e modalidade - presencial ou online.
 · Troca mensagens e deixa os materiais da sessão na conversa, para não se perderem.
 · Acompanha o que tens marcado: sessões agendadas, dadas e recebidas.
 · Avalia a sessão no fim. A avaliação é anónima.
 
 PARA QUEM É
 
-Para estudantes e docentes do ISEC Lisboa. Entra-se com o email institucional —
-@alunos.iseclisboa.pt ou @iseclisboa.pt —, e a conta só fica ativa depois de confirmares esse email.
+Para estudantes e docentes do ISEC Lisboa. Entra-se com o email institucional -
+@alunos.iseclisboa.pt ou @iseclisboa.pt -, e a conta só fica ativa depois de confirmares esse email.
 Não há contas para pessoas de fora.
 
 O QUE NÃO FAZ
@@ -157,10 +157,10 @@ separado, e é onde as apps costumam mentir). Responde-se assim:
 
 | categoria | o que se declara |
 |---|---|
-| Informações pessoais | nome e email — **recolhidos**, para gerir a conta; não partilhados; não vendidos |
-| Fotos | fotografia de perfil — **recolhida**, para o perfil; visível a quem tem sessão iniciada |
-| Mensagens | mensagens dentro da app — **recolhidas**, visíveis só a quem participa da conversa |
-| Atividade na app | pedidos, sessões e avaliações — **recolhidos**; a avaliação é anónima por construção |
+| Informações pessoais | nome e email - **recolhidos**, para gerir a conta; não partilhados; não vendidos |
+| Fotos | fotografia de perfil - **recolhida**, para o perfil; visível a quem tem sessão iniciada |
+| Mensagens | mensagens dentro da app - **recolhidas**, visíveis só a quem participa da conversa |
+| Atividade na app | pedidos, sessões e avaliações - **recolhidos**; a avaliação é anónima por construção |
 | Diagnóstico | erros e tempos de arranque por ecrã, **sem dados pessoais** (EAS Observe) |
 | Eliminação de conta | **disponível na app**: Perfil → Definições → Apagar conta |
 | Publicidade / compras | **nenhuma** nos dois |
@@ -200,8 +200,8 @@ mentoring,tutor,ISEC,study help,peers,lecturers,sessions,subjects,campus,college
 INOVAPP connects people who want to learn with people who can teach, inside ISEC Lisboa.
 
 Finding someone to help you with a subject should not be harder than the subject itself. Here,
-whoever needs support finds someone who has already been through the same course unit — students
-ahead of them and lecturers — and books a session in two taps.
+whoever needs support finds someone who has already been through the same course unit - students
+ahead of them and lecturers - and books a session in two taps.
 
 WHAT YOU CAN DO
 
@@ -209,15 +209,15 @@ WHAT YOU CAN DO
   what you have to give.
 · Search by subject, course and availability, and see the profile behind each name.
 · Ask someone to connect. You only talk once the request is accepted.
-· Book support sessions with a date, time and mode — in person or online.
+· Book support sessions with a date, time and mode - in person or online.
 · Exchange messages and keep the session materials in the conversation.
 · Track what you have booked: scheduled, given and received sessions.
 · Rate the session at the end. Ratings are anonymous.
 
 WHO IT IS FOR
 
-For students and lecturers at ISEC Lisboa. You sign in with your institutional email —
-@alunos.iseclisboa.pt or @iseclisboa.pt — and the account only becomes active after you confirm
+For students and lecturers at ISEC Lisboa. You sign in with your institutional email -
+@alunos.iseclisboa.pt or @iseclisboa.pt - and the account only becomes active after you confirm
 that email.
 
 WHAT IT DOES NOT DO
@@ -234,7 +234,7 @@ You can delete your account inside the app, in Profile → Settings → Delete a
 ```
 A app é para a comunidade do ISEC Lisboa e o registo exige um email institucional, que é confirmado
 por link. Não é possível criar conta em revisão, por isso deixamos duas contas já confirmadas e com
-perfil completo — uma de cada lado da app:
+perfil completo - uma de cada lado da app:
 
   Aluno   aluno.demo@alunos.iseclisboa.pt
   Tutor   demo@iseclisboa.pt
@@ -242,23 +242,23 @@ perfil completo — uma de cada lado da app:
 
 Comece pela conta de **Aluno**, que é a que mostra a app inteira:
 
-1. Início — o resumo da atividade e os atalhos (sessões, materiais, pedidos).
-2. Match — a lista de pessoas que ensinam o que esta conta quer aprender; tocar num perfil mostra
+1. Início - o resumo da atividade e os atalhos (sessões, materiais, pedidos).
+2. Match - a lista de pessoas que ensinam o que esta conta quer aprender; tocar num perfil mostra
    os detalhes e o botão de bloquear. É aqui que se pede conexão.
-3. Chat — as conversas com quem está ligado, com os materiais partilhados.
-4. Perfil — os dados da conta e as estatísticas de sessões; a roda dentada abre as Definições.
-5. Perfil → Definições → Apagar conta — o caminho de eliminação de conta (diretriz 5.1.1(v)).
+3. Chat - as conversas com quem está ligado, com os materiais partilhados.
+4. Perfil - os dados da conta e as estatísticas de sessões; a roda dentada abre as Definições.
+5. Perfil → Definições → Apagar conta - o caminho de eliminação de conta (diretriz 5.1.1(v)).
    Pede a palavra-passe antes de apagar, ou seja, as contas de demonstração podem ser usadas para o
    fluxo todo sem ficarem inutilizadas (basta não confirmar o último passo).
 
-E com a conta de **Tutor** vê-se o outro lado: no Match não há lista de mentores — quem ensina
+E com a conta de **Tutor** vê-se o outro lado: no Match não há lista de mentores - quem ensina
 recebe pedidos, e são os Tutorandos que o encontram (é a app a funcionar como foi desenhada, não
 uma limitação da conta).
 
 Não há compras dentro da app e não há recolha de localização, contactos, câmara ou microfone.
 ```
 
-A conta existe, com o email **confirmado** e o perfil **completo** — foi criada por
+A conta existe, com o email **confirmado** e o perfil **completo** - foi criada por
 `npm run create:demo-account`, que é também o caminho para a repor (a palavra-passe é reescrita e o
 email volta a ficar confirmado):
 
@@ -269,7 +269,7 @@ npm run create:demo-account -- --apply --password=NovaPalavra1!
 ```
 
 É uma conta de **docente**, e é isso que o revisor vê: no separador *Match* não há deck de
-descoberta, porque um Tutor não procura mentores — quem procura são os Tutorandos, e são eles que
+descoberta, porque um Tutor não procura mentores - quem procura são os Tutorandos, e são eles que
 lhe chegam como pedidos. Se quiseres que a revisão veja os dois lados da app, faz uma segunda conta
 de **aluno**, que tem o deck inteiro:
 
@@ -278,7 +278,7 @@ npm run create:demo-account -- --apply --email=aluno.demo@alunos.iseclisboa.pt -
 ```
 
 **E a classificação etária:** no questionário da Apple e no IARC da Play, a app não tem conteúdo
-gerado publicamente, nem jogos, nem publicidade — a única coisa a declarar é a **comunicação entre
+gerado publicamente, nem jogos, nem publicidade - a única coisa a declarar é a **comunicação entre
 utilizadores** (mensagens privadas entre duas pessoas que aceitaram ligar-se) e os **dados do
 utilizador** (nome, fotografia, email). Responde-se, e não se declara "sem interação": é
 exatamente esse o campo em que estas apps são apanhadas a mentir.
@@ -286,6 +286,6 @@ exatamente esse o campo em que estas apps são apanhadas a mentir.
 ## Datas do lado da Play
 
 Se a conta de programador for **pessoal** (criada depois de novembro de 2023), a produção só abre
-depois de um teste fechado com **12 testadores durante 14 dias** — ou seja, há duas semanas entre o
+depois de um teste fechado com **12 testadores durante 14 dias** - ou seja, há duas semanas entre o
 primeiro `.aab` e o público, e os testadores têm de aceitar o convite. Contas de **organização**
 (ISEC) não têm este requisito. Vale a pena confirmar qual é antes de contar com uma data.

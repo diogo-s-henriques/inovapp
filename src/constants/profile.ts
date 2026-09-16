@@ -41,8 +41,8 @@ export const PERIOD_OPTIONS = ['Manhãs', 'Tardes', 'Fins de tarde', 'Fins de se
 export const MODALITY_OPTIONS = ['Presencial', 'Online', 'Ambos'];
 
 /** Opção de participação: só o modo e o ícone são fixos no código. Todas as etiquetas
- * (chip, papel, título/subtítulo do cartão) vêm do i18n — ver `participationModes` em
- * src/i18n/translations.ts — para acompanharem o idioma escolhido. */
+ * (chip, papel, título/subtítulo do cartão) vêm do i18n - ver `participationModes` em
+ * src/i18n/translations.ts - para acompanharem o idioma escolhido. */
 export interface ParticipationModeOption {
   mode: ParticipationMode;
   icon: IoniconsName;

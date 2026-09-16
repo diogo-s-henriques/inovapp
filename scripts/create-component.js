@@ -52,7 +52,7 @@ async function createComponent() {
     }
     fs.mkdirSync(componentDir, { recursive: true });
 
-    // 5. Templates — alinhados com os tokens reais do design system (@/constants/theme, useTheme)
+    // 5. Templates - alinhados com os tokens reais do design system (@/constants/theme, useTheme)
     const indexTsxTemplate = `import { StyleSheet, Text, View, type ViewProps } from 'react-native';
 
 import { Spacing, type ThemeColor } from '@/constants/theme';

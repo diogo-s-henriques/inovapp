@@ -15,7 +15,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'link' | 'ghost' | 'danger
  *
  * `brand` (por omissão) usa o acento da app; `neutral` usa o quase-preto. Vive aqui, e não numa
  * variante nova, porque a diferença não é o que o botão faz mas de que lado está: as duas decisões
- * de um pedido de conexão ("Recusar"/"Aceitar") são simétricas e nenhuma delas é a ação da app —
+ * de um pedido de conexão ("Recusar"/"Aceitar") são simétricas e nenhuma delas é a ação da app -
  * pintar uma com o acento dava a uma delas uma importância que a outra não tem.
  */
 export type ButtonTone = 'brand' | 'neutral';
@@ -35,7 +35,7 @@ export interface ButtonProps extends Omit<PressableProps, 'style'> {
  * Os dois vermelhos não são a mesma coisa, e é por isso que são dois. `danger` é o vermelho **suave**
  * (fundo `dangerSoft`, texto `danger`): é o que o "Sair" usa, uma ação que se desfaz entrando outra
  * vez. `dangerStrong` é vermelho **cheio**, branco por cima, e está reservado para o que não se
- * desfaz — apagar a conta. Se os dois fossem iguais, o "Sair" parecia tão definitivo como aquilo, e
+ * desfaz - apagar a conta. Se os dois fossem iguais, o "Sair" parecia tão definitivo como aquilo, e
  * quem carregasse nele com a mesma confiança carregava no outro.
  */
 export function Button({ label, variant = 'primary', tone = 'brand', icon, disabled, style, ...rest }: ButtonProps) {

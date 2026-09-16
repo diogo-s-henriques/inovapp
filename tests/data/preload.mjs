@@ -6,7 +6,7 @@
  *
  * 1. Preenche as variáveis `EXPO_PUBLIC_FIREBASE_*` com valores de emulador. O
  *    `src/lib/firebase.ts` lê-as no momento em que é importado e chama `initializeApp`; sem elas
- *    a inicialização rebentava. Nenhum destes valores sai da máquina — a ligação é desviada para
+ *    a inicialização rebentava. Nenhum destes valores sai da máquina - a ligação é desviada para
  *    o emulador logo a seguir (ver tests/data/emulator.mts), e o emulador aceita qualquer chave.
  * 2. Desliga os doubles do Firebase e regista o resolvedor do alias `@/` (ver tests/node-loader.mjs).
  */

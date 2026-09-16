@@ -1,5 +1,5 @@
 /**
- * Testes do `AttentionCard` — a faixa "Precisa de ti" no topo da Home.
+ * Testes do `AttentionCard` - a faixa "Precisa de ti" no topo da Home.
  *
  * O que se fixa aqui é a ligação entre cada linha e o ecrã que ela abre. Trocar os destinos é um
  * erro que não rebenta nada: quem carrega em "2 pedidos de conexão" vai parar às notificações, os
@@ -9,7 +9,7 @@
  * O título e a contagem da secção **não** vivem aqui: subiram para o `SectionHeader` que fica por
  * cima (ver tests/components/… e o uso em `(tabs)/index.tsx`). Este cartão é só as linhas.
  *
- * O texto de cada linha já traz a contagem, por isso o plural também é testado — "1 pedidos de
+ * O texto de cada linha já traz a contagem, por isso o plural também é testado - "1 pedidos de
  * conexão" denuncia-se sozinho no ecrã, mas passa por qualquer verificação que só conte linhas.
  */
 import { fireEvent, render } from '@testing-library/react-native';

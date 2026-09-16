@@ -1,13 +1,13 @@
 /**
- * Testes do `reportError` — a costura entre a app e o serviço de erros (EAS Observe).
+ * Testes do `reportError` - a costura entre a app e o serviço de erros (EAS Observe).
  *
  * O que se fixa é que um erro apanhado **chega mesmo** ao serviço e chega identificável: o dashboard
- * agrupa os erros pela mensagem, por isso o contexto (o sítio de onde veio) tem de ir à frente —
+ * agrupa os erros pela mensagem, por isso o contexto (o sítio de onde veio) tem de ir à frente -
  * sem ele, o mesmo `TypeError` vindo de dois ecrãs era uma linha só, e o número de pessoas afectadas
  * contava duas coisas diferentes como se fossem uma.
  *
  * Vivem em `tests/components/` e não em `tests/lib/`: precisam do `jest.mock`, e o `expo-observe` é
- * um módulo nativo (não carrega fora da app). Não renderizam nada — é o único sítio onde este
+ * um módulo nativo (não carrega fora da app). Não renderizam nada - é o único sítio onde este
  * ficheiro podia estar, dado o `testMatch` do Jest.
  */
 jest.mock('expo-observe', () => ({ Observe: { reportError: jest.fn() } }));

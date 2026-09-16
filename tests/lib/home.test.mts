@@ -1,10 +1,10 @@
 /**
- * Testes de `src/lib/home.ts` — a saudação por hora do dia, o que conta como pendência e quando a
+ * Testes de `src/lib/home.ts` - a saudação por hora do dia, o que conta como pendência e quando a
  * Home está vazia.
  *
  * O que interessa aqui são as fronteiras, porque é só nelas que estas funções decidem algo: a
  * saudação a mudar uma hora mais cedo, uma faixa de "0 pedidos" a aparecer no topo, ou o guia de
- * primeiros passos a tapar conteúdo real. Nenhum destes erros rebenta — todos se vêem no ecrã.
+ * primeiros passos a tapar conteúdo real. Nenhum destes erros rebenta - todos se vêem no ecrã.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -80,7 +80,7 @@ describe('isHomeEmpty', () => {
     assert.equal(isHomeEmpty({ sessions: 0, connections: 0, attention: 0 }), true);
   });
 
-  // Qualquer uma das três chega para haver conteúdo — é isto que impede o guia de primeiros passos
+  // Qualquer uma das três chega para haver conteúdo - é isto que impede o guia de primeiros passos
   // de aparecer a quem já tem vida na app.
   const comConteudo: Array<[string, { sessions: number; connections: number; attention: number }]> = [
     ['uma sessão marcada', { sessions: 1, connections: 0, attention: 0 }],

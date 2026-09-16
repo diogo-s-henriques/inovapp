@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/ui/ThemedText';
 /**
  * Cabeçalho de secção com contagem e/ou ação opcionais (ex.: \"Ver todos\").
  *
- * O título já não leva o traço vertical à frente. Era um risco azul de 3 px antes de cada título —
+ * O título já não leva o traço vertical à frente. Era um risco azul de 3 px antes de cada título -
  * e, lido de perto, parecia um separador ("Novidades |") que não separava nada: era decoração a
  * competir com o texto numa secção que só tem duas ou três palavras.
  *

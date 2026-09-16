@@ -17,10 +17,10 @@ import { db } from '@/lib/firebase';
 /**
  * Bloqueios entre utilizadores (`blocks/{blocker}_{blocked}`).
  *
- * O documento tem um sentido (foi o blocker que o criou — é o que as regras exigem), mas o efeito
+ * O documento tem um sentido (foi o blocker que o criou - é o que as regras exigem), mas o efeito
  * é **simétrico**: a partir do momento em que existe, os dois deixam de se ver na descoberta, de
- * se poder ligar, de falar e de pedir sessões. É por isso que há duas leituras — a minha lista de
- * bloqueios e a lista de quem me bloqueou — sempre que o que interessa é "com quem não falo".
+ * se poder ligar, de falar e de pedir sessões. É por isso que há duas leituras - a minha lista de
+ * bloqueios e a lista de quem me bloqueou - sempre que o que interessa é "com quem não falo".
  */
 
 /** ID determinístico e orientado: só quem bloqueia (`blocker`) pode criar o documento. */
@@ -36,7 +36,7 @@ export async function blockUser(blockerUid: string, blockedUid: string): Promise
   });
 }
 
-/** Desbloquear é a única eliminação permitida no projeto — e só a faz o autor do bloqueio. */
+/** Desbloquear é a única eliminação permitida no projeto - e só a faz o autor do bloqueio. */
 export async function unblockUser(blockerUid: string, blockedUid: string): Promise<void> {
   await deleteDoc(doc(db, 'blocks', blockId(blockerUid, blockedUid)));
 }
@@ -44,7 +44,7 @@ export async function unblockUser(blockerUid: string, blockedUid: string): Promi
 /**
  * Se **eu** bloqueei esta pessoa em concreto (só o sentido meu). É o que decide se o botão do
  * perfil diz "Bloquear" ou "Desbloquear": quem me bloqueou a mim continua a ver "Bloquear", e
- * carregar nele cria o bloqueio do meu lado — os dois ficam a ver o mesmo (nada).
+ * carregar nele cria o bloqueio do meu lado - os dois ficam a ver o mesmo (nada).
  */
 export async function hasBlocked(blockerUid: string, blockedUid: string): Promise<boolean> {
   try {
@@ -53,8 +53,8 @@ export async function hasBlocked(blockerUid: string, blockedUid: string): Promis
   } catch (error) {
     // Um bloqueio que não existe também não é legível: a regra lê `resource.data.blocker`, que
     // nesse caso é nulo, e o Firestore responde com permission-denied em vez de "não encontrado".
-    // Sem isto, este get() rebentava para toda a gente que nunca bloqueou ninguém — ou seja, para
-    // o caso comum — e o ecrã de perfil mostrava um erro em vez do perfil. É o mesmo padrão de
+    // Sem isto, este get() rebentava para toda a gente que nunca bloqueou ninguém - ou seja, para
+    // o caso comum - e o ecrã de perfil mostrava um erro em vez do perfil. É o mesmo padrão de
     // `conversationExists` (src/lib/chat.ts): só um permission-denied é lido como "não existe".
     if ((error as FirestoreError)?.code === 'permission-denied') return false;
     throw error;

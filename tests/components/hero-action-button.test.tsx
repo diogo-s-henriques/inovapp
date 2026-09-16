@@ -1,11 +1,11 @@
 /**
- * Testes do `HeroActionButton` — o botão do canto do cabeçalho (o sino da Home, a roda dentada do
+ * Testes do `HeroActionButton` - o botão do canto do cabeçalho (o sino da Home, a roda dentada do
  * Perfil).
  *
  * A razão de existir destes testes é uma inconsistência que já aconteceu: o sino era um círculo
  * branco de 40 px com raio 13, enquanto os atalhos do mesmo ecrã eram quadrados cinzentos de 40 com
  * raio 12. O lado é fixado em `IconBoxSize` (o mesmo dos outros ícones) para não voltar a haver dois
- * tamanhos de quadrado na mesma página — a diferença de 1 px de raio não se testa, mas o lado sim.
+ * tamanhos de quadrado na mesma página - a diferença de 1 px de raio não se testa, mas o lado sim.
  *
  * Nota: a partir do `@testing-library/react-native` v14, `render` e `fireEvent` são assíncronos.
  */

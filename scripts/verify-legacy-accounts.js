@@ -5,7 +5,7 @@
  *
  * A partir do momento em que as regras passam a exigir `email_verified` (ver `isVerified()` em
  * firestore.rules), quem já tinha conta e nunca confirmou nada **deixa de conseguir ler ou
- * escrever** — e isso é a intenção: um email institucional que ninguém provou ser seu não devia
+ * escrever** - e isso é a intenção: um email institucional que ninguém provou ser seu não devia
  * estar a ver o perfil de ninguém. O caminho normal para ficar bem é abrir o link que o Firebase
  * mandou ao email (o ecrã da confirmação reenvia-o).
  *
@@ -28,7 +28,7 @@
  *   # 4. Ou todas as que faltam, de uma vez:
  *   npm run verify:legacy-accounts -- --apply
  *
- * Nota: o `firebase-admin` passa por cima das regras de segurança — é por isso que só corre à mão.
+ * Nota: o `firebase-admin` passa por cima das regras de segurança - é por isso que só corre à mão.
  * Se a chave não ficar no computador (boa prática), apaga-a no fim.
  */
 const fs = require('fs');
@@ -88,7 +88,7 @@ async function main() {
   }
 
   for (const conta of alvo) {
-    // `emailVerified: true` é o que o link do Firebase faria ao ser aberto — a diferença é quem
+    // `emailVerified: true` é o que o link do Firebase faria ao ser aberto - a diferença é quem
     // decide, e é por isso que este script é à mão e não automático.
     await auth.updateUser(conta.uid, { emailVerified: true });
     console.log(`✔ ${conta.email ?? conta.uid} confirmado`);

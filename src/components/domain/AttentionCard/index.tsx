@@ -1,12 +1,12 @@
-import type { ComponentProps } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
+import { ThemedText } from '@/components/ui/ThemedText';
 import { IconBoxSize, IconSize, Spacing } from '@/constants/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import type { AttentionItem, AttentionKind } from '@/lib/home';
-import { ThemedText } from '@/components/ui/ThemedText';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
@@ -15,12 +15,12 @@ type IoniconsName = ComponentProps<typeof Ionicons>['name'];
  *
  * Passou por quatro versões: o ícone colorido sobre quadrado suave; o preto sobre quadrado suave
  * por categoria (com o amarelo a marcar o pedido de sessão, o único com data marcada); o quadrado
- * preto cheio com o ícone a branco; e este — que é o mesmo de antes da cor por categoria. A cor
+ * preto cheio com o ícone a branco; e este - que é o mesmo de antes da cor por categoria. A cor
  * por tipo perdeu-se, e o que distingue as três linhas é o texto que cada uma mostra.
  *
  * A cor **do símbolo** também mudou: era preto e passou a ser o acento da app, dentro da caixa
  * suave que os outros ícones do ecrã usam. Um adorno por tipo de pendência já tinha sido tentado e
- * recusado; a cor que ficou não distingue tipos nenhuns — é a mesma nas três linhas, e vem só de a
+ * recusado; a cor que ficou não distingue tipos nenhuns - é a mesma nas três linhas, e vem só de a
  * caixa de ícone ter passado a ser o acento da app em todo o lado.
  */
 const ATTENTION_ICON: Record<AttentionKind, IoniconsName> = {
@@ -39,10 +39,10 @@ export interface AttentionCardProps extends ViewProps {
  * toma (os pedidos de conexão no ecrã dos pedidos, o resto nas Notificações).
  *
  * Não tem rótulo próprio: o título e a contagem vivem no `SectionHeader` acima, que é onde se lê
- * o que a secção é — e onde a contagem tem espaço para ser um número a sério em vez de uma
+ * o que a secção é - e onde a contagem tem espaço para ser um número a sério em vez de uma
  * etiqueta dentro de um cartão.
  *
- * Não decide nem responde a nada aqui de propósito — a mesma decisão não pode existir em dois
+ * Não decide nem responde a nada aqui de propósito - a mesma decisão não pode existir em dois
  * sítios, senão fica uma lista a mostrar algo que já foi resolvido no outro ecrã.
  *
  * Não desenha nada quando não há pendências.
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   },
   // A mesma caixa dos atalhos e dos cartões com ícone (`IconBoxSize`): a caixa menor (34) que
   // esteve aqui durante uma volta deixava o ícone dos pedidos de conexão a parecer mais pequeno do
-  // que o das Sessões, Materiais, Mensagens e Pesquisar — no mesmo ecrã, a duas secções de
+  // que o das Sessões, Materiais, Mensagens e Pesquisar - no mesmo ecrã, a duas secções de
   // distância.
   iconBox: {
     width: IconBoxSize,

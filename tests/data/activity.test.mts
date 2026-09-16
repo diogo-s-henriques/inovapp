@@ -1,22 +1,22 @@
 /**
- * Testes de integração de `src/lib/activity.ts` — o histórico "Recentes" do ecrã de notificações.
+ * Testes de integração de `src/lib/activity.ts` - o histórico "Recentes" do ecrã de notificações.
  *
  * Este módulo é o que mais depende de consultas ao Firestore, e é onde estavam os piores problemas
  * de leitura: lia a lista completa de pedidos aceites e *todas* as sessões do utilizador para
  * depois mostrar oito linhas. Passou a ser ordenado e limitado no servidor, o que só se verifica a
- * correr as consultas contra uma base de dados a sério — no emulador, com o `firestore.rules`
+ * correr as consultas contra uma base de dados a sério - no emulador, com o `firestore.rules`
  * verdadeiro pelo meio.
  *
- * Nada disto toca em dados de produção — ver o guarda em tests/data/emulator.mts.
+ * Nada disto toca em dados de produção - ver o guarda em tests/data/emulator.mts.
  *
  * Como correr (arranca os dois emuladores, corre e desliga):
  *   npm run test:data
  *
- * ATENÇÃO — o que estes testes NÃO provam: o emulador do Firestore não aplica os índices
+ * ATENÇÃO - o que estes testes NÃO provam: o emulador do Firestore não aplica os índices
  * compostos, por isso as consultas com `where` + `orderBy` passam aqui mesmo que o
  * firestore.indexes.json deixe de as cobrir. Em produção dariam `The query requires an index`. Os
  * três formatos usados pelo activity.ts (connectionRequests e sessionRequests por
- * from+status+respondedAt, e sessions por participants+date) estão declarados naquele ficheiro —
+ * from+status+respondedAt, e sessions por participants+date) estão declarados naquele ficheiro -
  * quem mexer nas consultas tem de confirmar isso à mão.
  */
 import assert from 'node:assert/strict';
@@ -104,14 +104,14 @@ async function aceitarSessao(requestId: string, date: string): Promise<void> {
   );
 }
 
-/** A atividade que a Ana vê (a pessoa que pede é quem recebe estas entradas — ver o teste sobre
+/** A atividade que a Ana vê (a pessoa que pede é quem recebe estas entradas - ver o teste sobre
  * a assimetria dos dois lados). */
 async function atividadeDaAna(): Promise<ActivityItem[]> {
   await entrarComo(CONTAS.aluna);
   return fetchRecentActivity(cenario.ana, pt);
 }
 
-describe('activity — o histórico só tem o que aconteceu', () => {
+describe('activity - o histórico só tem o que aconteceu', () => {
   it('sem nada feito, o histórico está vazio', async () => {
     assert.deepEqual(await atividadeDaAna(), []);
   });
@@ -146,7 +146,7 @@ describe('activity — o histórico só tem o que aconteceu', () => {
     assert.match(itens[0].description, /Bruno/);
 
     // `respondedAt` é um serverTimestamp: se a consulta devolvesse o documento antes de o campo
-    // existir, a entrada sairia com uma data inválida — e o ecrã mostraria "NaN".
+    // existir, a entrada sairia com uma data inválida - e o ecrã mostraria "NaN".
     assert.ok(itens[0].timestamp instanceof Date);
     assert.ok(Number.isFinite(itens[0].timestamp.getTime()));
   });
@@ -165,7 +165,7 @@ describe('activity — o histórico só tem o que aconteceu', () => {
   });
 });
 
-describe('activity — a sessão de amanhã', () => {
+describe('activity - a sessão de amanhã', () => {
   it('aparece com a disciplina, o outro participante e a hora', async () => {
     await ligarCom({ email: CONTAS.alunoQueEnsina, uid: cenario.bruno });
     const requestId = await pedirSessao(amanha());
@@ -194,7 +194,7 @@ describe('activity — a sessão de amanhã', () => {
   });
 });
 
-describe('activity — limites e privacidade', () => {
+describe('activity - limites e privacidade', () => {
   it('a atividade de outras pessoas não aparece', async () => {
     // O Bruno liga-se à Carla (duas contas sem nada a ver com a Ana) e aceitam.
     await entrarComo(CONTAS.alunoQueEnsina);
@@ -209,7 +209,7 @@ describe('activity — limites e privacidade', () => {
 
   it('quem aceitou não vê o pedido nos Recentes', async () => {
     // A consulta filtra por `from == uid`, por isso estas entradas são para quem PEDIU: quem
-    // aceitou já sabe o que fez. É o contrato atual — se um dia passar a ser para os dois lados,
+    // aceitou já sabe o que fez. É o contrato atual - se um dia passar a ser para os dois lados,
     // este teste é que tem de mudar.
     await ligarCom({ email: CONTAS.alunoQueEnsina, uid: cenario.bruno });
 

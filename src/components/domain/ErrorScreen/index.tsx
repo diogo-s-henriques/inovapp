@@ -1,12 +1,12 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/ui/Button';
+import { ThemedText } from '@/components/ui/ThemedText';
 import { IconSize, Spacing } from '@/constants/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
-import { Button } from '@/components/ui/Button';
-import { ThemedText } from '@/components/ui/ThemedText';
 
 export interface ErrorScreenProps {
   /** O erro apanhado. A mensagem só aparece em desenvolvimento (ver abaixo). */
@@ -25,7 +25,7 @@ function errorDetail(error: unknown): string | null {
  * O ecrã que substitui o que rebentou.
  *
  * Existe porque uma app sem isto **fecha**: uma exceção a desenhar um ecrã, em produção, termina o
- * processo e a pessoa não fica com nada nas mãos — nem um aviso. Com o limite (ver
+ * processo e a pessoa não fica com nada nas mãos - nem um aviso. Com o limite (ver
  * `src/app/_layout.tsx`), o ecrã que falhou dá lugar a isto e a pessoa pode tentar outra vez.
  *
  * **A mensagem do erro só aparece em desenvolvimento.** Em produção não serve de nada a quem está a

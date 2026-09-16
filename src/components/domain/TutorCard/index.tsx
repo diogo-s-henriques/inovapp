@@ -1,9 +1,9 @@
 import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { ProfilePicCard } from '@/components/ui/ProfilePicCard';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export interface TutorCardProps extends Omit<PressableProps, 'style'> {
   firstName: string;
@@ -12,24 +12,24 @@ export interface TutorCardProps extends Omit<PressableProps, 'style'> {
   year: string;
   image?: string;
   /**
-   * Rótulo do botão dentro do cartão — a ação que se segue a conhecer a pessoa.
+   * Rótulo do botão dentro do cartão - a ação que se segue a conhecer a pessoa.
    *
    * Sem ele o cartão é só a pessoa, e isso é uma diferença de domínio, não de estilo: quem já é
    * teu contacto pode receber um pedido de sessão a partir daqui, mas uma sugestão de alguém com
-   * quem nunca falaste não pode — primeiro há a ligação, e essa decide-se nos Matches.
+   * quem nunca falaste não pode - primeiro há a ligação, e essa decide-se nos Matches.
    */
   actionLabel?: string;
   onPressAction?: () => void;
 }
 
 /**
- * Cartão de uma pessoa nas listagens de conexões — o mentor em "Tutores para ti" e o tutorando
+ * Cartão de uma pessoa nas listagens de conexões - o mentor em "Tutores para ti" e o tutorando
  * em "Os teus tutorandos". A avaliação por estrelas é interna (ver ratings) e não é para ser
  * mostrada publicamente.
  *
  * A fotografia é maior do que era (48 → 56) porque passou a ser a miniatura que identifica a
  * linha; o cartão inteiro continua a abrir o perfil, e o botão, quando existe, é uma segunda ação
- * dentro dele — o toque no botão não chega ao cartão, por ser o mais interior a responder.
+ * dentro dele - o toque no botão não chega ao cartão, por ser o mais interior a responder.
  */
 export function TutorCard({
   firstName,

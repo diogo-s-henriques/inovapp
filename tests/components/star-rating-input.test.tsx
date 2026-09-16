@@ -1,5 +1,5 @@
 /**
- * Testes de `StarRatingInput` — o input de avaliação usado no ecrã de avaliação de sessão.
+ * Testes de `StarRatingInput` - o input de avaliação usado no ecrã de avaliação de sessão.
  *
  * O que interessa aqui é a correspondência entre a estrela tocada e o valor devolvido (é fácil
  * ficar com um desvio de um) e o facto de o número de estrelas ser configurável.

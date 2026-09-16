@@ -1,10 +1,10 @@
 /**
- * Testes de `CalendarMonth` — a grelha de datas usada no ecrã de pedido de sessão e na agenda.
+ * Testes de `CalendarMonth` - a grelha de datas usada no ecrã de pedido de sessão e na agenda.
  *
  * O que interessa aqui é a grelha em si (células, dias desativados, marcadores, seleção) e a
  * navegação de mês, que tem de atravessar a mudança de ano. A chave de data `toDateKey`, que a
  * grelha usa para comparar dias, vive agora em `src/lib/time.ts` e é testada sem React em
- * tests/lib/time.test.mts — aqui importa-se, não se testa.
+ * tests/lib/time.test.mts - aqui importa-se, não se testa.
  */
 import { fireEvent, render } from '@testing-library/react-native';
 
@@ -18,7 +18,7 @@ beforeEach(() => {
   useLocaleStore.getState().setLocale('pt');
 });
 
-describe('<CalendarMonth /> — grelha', () => {
+describe('<CalendarMonth /> - grelha', () => {
   it('mostra o mês e o ano do mês recebido', async () => {
     const { getByText } = await render(
       <CalendarMonth month={OUTUBRO_2026} onChangeMonth={jest.fn()} onSelectDate={jest.fn()} />,
@@ -57,7 +57,7 @@ describe('<CalendarMonth /> — grelha', () => {
   });
 });
 
-describe('<CalendarMonth /> — escolher um dia', () => {
+describe('<CalendarMonth /> - escolher um dia', () => {
   it('devolve a chave do dia tocado', async () => {
     const onSelectDate = jest.fn();
     const { getByLabelText } = await render(
@@ -103,7 +103,7 @@ describe('<CalendarMonth /> — escolher um dia', () => {
   });
 });
 
-describe('<CalendarMonth /> — navegação de mês', () => {
+describe('<CalendarMonth /> - navegação de mês', () => {
   it('avança um mês mantendo o dia 1', async () => {
     const onChangeMonth = jest.fn();
     const { getByLabelText } = await render(

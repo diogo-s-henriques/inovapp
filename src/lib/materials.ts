@@ -22,11 +22,11 @@ interface MessageWithAttachmentDoc {
 const MESSAGES_PER_CONVERSATION_LIMIT = 50;
 
 /**
- * Não existe uma coleção "materials" nem partilha "para todos" — um material é só um anexo
+ * Não existe uma coleção "materials" nem partilha "para todos" - um material é só um anexo
  * (ver AttachFileSheet) trocado numa conversa. Este ecrã agrega, em tempo real, os anexos de
  * todas as conversas do utilizador (enviados ou recebidos), ordenados do mais recente.
  *
- * Subscreve as conversas e, para cada uma, as suas mensagens — número de listeners proporcional
+ * Subscreve as conversas e, para cada uma, as suas mensagens - número de listeners proporcional
  * ao número de conversas do utilizador, que não se espera ser grande o suficiente para justificar
  * uma collection group query dedicada.
  */

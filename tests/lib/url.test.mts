@@ -1,5 +1,5 @@
 /**
- * Testes de `src/lib/url.ts` — a validação que a app faz antes de `Linking.openURL`.
+ * Testes de `src/lib/url.ts` - a validação que a app faz antes de `Linking.openURL`.
  *
  * O URL vem de outro utilizador (anexo de conversa ou material), por isso este é o ponto onde um
  * link malicioso (`intent://`, `file://`, …) deixaria de lançar outra aplicação no dispositivo.
@@ -9,7 +9,7 @@ import { describe, it } from 'node:test';
 
 import { isHttpUrl } from '@/lib/url';
 
-describe('isHttpUrl — aceita', () => {
+describe('isHttpUrl - aceita', () => {
   const aceites = [
     'http://exemplo.pt',
     'https://exemplo.pt',
@@ -29,7 +29,7 @@ describe('isHttpUrl — aceita', () => {
   }
 });
 
-describe('isHttpUrl — recusa', () => {
+describe('isHttpUrl - recusa', () => {
   const recusados: Array<[string, string]> = [
     ['file:///etc/passwd', 'esquema local'],
     ['file:///sdcard/Download/foto.jpg', 'ficheiro no dispositivo'],
@@ -56,7 +56,7 @@ describe('isHttpUrl — recusa', () => {
   }
 });
 
-describe('isHttpUrl — normalização', () => {
+describe('isHttpUrl - normalização', () => {
   it('aceita o mesmo link com espaços à volta', () => {
     assert.equal(isHttpUrl('   https://exemplo.pt   '), true);
   });

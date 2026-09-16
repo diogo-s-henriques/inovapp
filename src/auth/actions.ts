@@ -16,8 +16,24 @@ import { deleteAccountData } from '@/lib/account';
 import { useAuthStore } from '@/auth/store';
 import { setRememberedEmail } from '@/lib/remembered-email';
 import { getAccountRole } from '@/constants/auth';
-import { getTranslations } from '@/i18n/store';
+import { getLocale, getTranslations } from '@/i18n/store';
 import type { ProfileSetupData } from '@/types/profile';
+
+/*
+ * Os emails de confirmação e de reposição da palavra-passe não são escritos pela app: quem os
+ * escreve é o Firebase, a partir de um modelo do projeto, e a app só pode dizer em **que idioma** o
+ * quer. Sem isto, o idioma por omissão do projeto é o inglês - verificado no próprio link que o
+ * Firebase gera (`lang=en`) - e um aluno do ISEC recebia um email em inglês de uma app que fala
+ * português.
+ *
+ * Aviso honesto: isto é o que a app pode fazer, não uma garantia. Há relatos de o `languageCode` do
+ * cliente não vencer sempre o idioma escolhido no modelo (firebase-js-sdk#5846); quem decide de
+ * facto é o idioma do modelo em Authentication -> Templates, e é lá que se confirma.
+ */
+function setEmailLanguage(): void {
+  // `pt-PT` e não `pt`: sem a região, o Firebase serve o português do Brasil.
+  auth.languageCode = getLocale() === 'pt' ? 'pt-PT' : 'en';
+}
 
 // Fora de React (sem hooks), lê-se o dicionário do idioma atual com getTranslations().
 export function getAuthErrorMessage(error: unknown): string {
@@ -48,8 +64,8 @@ export function getAuthErrorMessage(error: unknown): string {
 
 /**
  * Cria a conta no Firebase Auth e os dois documentos do utilizador, no mesmo writeBatch:
- * - `users/{uid}` — perfil visível a quem tem sessão iniciada (o que a pesquisa/matching leem);
- * - `userAccounts/{uid}` — dados privados da conta (email, última entrada, sessão prolongada),
+ * - `users/{uid}` - perfil visível a quem tem sessão iniciada (o que a pesquisa/matching leem);
+ * - `userAccounts/{uid}` - dados privados da conta (email, última entrada, sessão prolongada),
  *   legíveis só pelo próprio (ver firestore.rules). Sem esta separação, qualquer utilizador
  *   autenticado conseguiria ler o email e a última entrada de todos os outros.
  */
@@ -68,13 +84,13 @@ export async function signUp(email: string, password: string, remember: boolean)
     createdAt: serverTimestamp(),
   });
   // "Lembrar-me" também decide se o email fica guardado no dispositivo para o ecrã de entrada o
-  // voltar a preencher (ver src/lib/remembered-email.ts) — a sessão em si é duração, não isto.
+  // voltar a preencher (ver src/lib/remembered-email.ts) - a sessão em si é duração, não isto.
   await setRememberedEmail(remember ? (credential.user.email ?? email) : null);
 
   // O email gravado é o que o Firebase autenticou, não o que foi escrito no formulário: o Auth
   // normaliza-o (fica sempre em minúsculas) e a regra de `userAccounts` exige que seja igual ao
   // do token. A gravar a string do formulário, uma única maiúscula fazia as regras recusarem a
-  // criação do documento — com a conta já criada no Auth e sem perfil.
+  // criação do documento - com a conta já criada no Auth e sem perfil.
   batch.set(doc(db, 'userAccounts', credential.user.uid), {
     email: credential.user.email ?? email,
     role,
@@ -88,9 +104,10 @@ export async function signUp(email: string, password: string, remember: boolean)
   // para voltar a pedir o email. O que não pode acontecer é a pessoa ficar à espera de um email
   // que ninguém pediu.
   try {
+    setEmailLanguage();
     await sendEmailVerification(credential.user);
   } catch {
-    // ignorado de propósito — ver acima
+    // ignorado de propósito - ver acima
   }
 }
 
@@ -119,7 +136,7 @@ export async function signIn(email: string, password: string, remember: boolean)
 
   // Reparação do perfil e migração dos documentos antigos, que ainda tinham
   // email/lastLoginAt/rememberSession dentro de `users` (legível por qualquer utilizador
-  // autenticado) — deleteField() não faz nada quando o campo já não existe. Não é crítica:
+  // autenticado) - deleteField() não faz nada quando o campo já não existe. Não é crítica:
   // se as regras a recusarem, a entrada continua a funcionar.
   try {
     await setDoc(
@@ -133,7 +150,7 @@ export async function signIn(email: string, password: string, remember: boolean)
       { merge: true },
     );
   } catch {
-    // ignorado de propósito — ver comentário acima
+    // ignorado de propósito - ver comentário acima
   }
 }
 
@@ -142,17 +159,17 @@ export async function signOutUser(): Promise<void> {
 }
 
 /**
- * Apaga a conta — a do Auth e tudo o que é dela no Firestore. É definitivo e não há caminho de
+ * Apaga a conta - a do Auth e tudo o que é dela no Firestore. É definitivo e não há caminho de
  * volta; quem chama tem de ter avisado antes (ver src/app/settings.tsx).
  *
  * **A palavra-passe é pedida sempre, e verificada antes de se apagar seja o que for.** O Firebase só
  * se queixa de uma entrada antiga (`auth/requires-recent-login`) no momento em que a conta é
- * apagada — ou seja, depois de os dados já terem ido. Reautenticar primeiro tem duas vantagens: uma
+ * apagada - ou seja, depois de os dados já terem ido. Reautenticar primeiro tem duas vantagens: uma
  * palavra-passe errada não deixa nada a meio, e a pergunta que a pessoa vê é sempre a mesma em vez
  * de aparecer só de vez em quando.
  *
  * **A ordem: dados, depois conta.** A conta apagada tira o token, e sem token o cliente já não pode
- * apagar nada — o que sobrasse no Firestore ficava órfão (o raciocínio todo está em
+ * apagar nada - o que sobrasse no Firestore ficava órfão (o raciocínio todo está em
  * src/lib/account.ts).
  */
 export async function deleteAccount(password: string): Promise<void> {
@@ -172,7 +189,7 @@ export async function deleteAccount(password: string): Promise<void> {
   await setRememberedEmail(null);
 
   // A conta em último. A partir daqui o token deixa de valer, o `onAuthStateChanged` dispara com
-  // `null` e a app volta ao ecrã de entrada sozinha (ver src/app/_layout.tsx) — não é preciso
+  // `null` e a app volta ao ecrã de entrada sozinha (ver src/app/_layout.tsx) - não é preciso
   // navegar para lado nenhum a partir daqui.
   await deleteUser(current);
 }
@@ -187,6 +204,9 @@ export async function sendVerificationEmail(): Promise<void> {
   const current = auth.currentUser;
   if (!current) return;
 
+  // Reenviar é a altura em que o idioma mais importa: quem carrega aqui já não recebeu o primeiro
+  // (ou não o encontrou), e muitas vezes é porque está em inglês no meio da caixa de correio.
+  setEmailLanguage();
   await sendEmailVerification(current);
 }
 
@@ -195,7 +215,7 @@ export async function sendVerificationEmail(): Promise<void> {
  *
  * O `reload()` não basta, e é esta a parte que engana: o link abre no browser e a app não é
  * avisada; mesmo depois de o Firebase saber que o email está confirmado, o token que já está no
- * dispositivo continua a dizer `email_verified: false` durante até uma hora — e são as regras do
+ * dispositivo continua a dizer `email_verified: false` durante até uma hora - e são as regras do
  * Firestore que leem o token, não o objeto local. Sem o `getIdToken(true)`, a app deixava entrar e
  * o servidor recusava as escritas com um erro que não diz nada sobre o que falta.
  *
@@ -209,7 +229,7 @@ export async function refreshEmailVerified(): Promise<boolean> {
   if (current.emailVerified) await current.getIdToken(true);
 
   // O utilizador que o listener guardou é **o mesmo objeto** que este, e o `reload()` escreveu lá
-  // dentro: os dois já veem `true`. O que falta é avisar quem está a olhar para ele — sem isto, a
+  // dentro: os dois já veem `true`. O que falta é avisar quem está a olhar para ele - sem isto, a
   // app ficava no ecrã da confirmação até algo voltar a mexer no estado.
   const { user, setUser } = useAuthStore.getState();
   if (user) setUser({ ...user, emailVerified: current.emailVerified });
@@ -224,6 +244,7 @@ export async function refreshEmailVerified(): Promise<boolean> {
  */
 export async function requestPasswordReset(email: string): Promise<void> {
   try {
+    setEmailLanguage();
     await sendPasswordResetEmail(auth, email.trim());
   } catch (error) {
     if ((error as AuthError)?.code === 'auth/user-not-found') return;
@@ -232,7 +253,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
 }
 
 export async function completeProfileSetup(uid: string, data: ProfileSetupData): Promise<void> {
-  // Campos undefined (ex.: curso/ano de um professor) não são enviados — o Firestore rejeita
+  // Campos undefined (ex.: curso/ano de um professor) não são enviados - o Firestore rejeita
   // updateDoc com valores undefined.
   const cleanData = Object.fromEntries(
     Object.entries(data).filter(([, value]) => value !== undefined),

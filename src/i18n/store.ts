@@ -35,7 +35,7 @@ export const useLocaleStore = create<LocaleState>()(
 );
 
 /**
- * Dicionário do idioma atual, para código que corre fora de React (sem hooks) — mesmo padrão já
+ * Dicionário do idioma atual, para código que corre fora de React (sem hooks) - mesmo padrão já
  * usado em src/auth/actions.ts. Dentro de componentes usa-se `useI18n`, que reage à mudança de
  * idioma; aqui lê-se o valor no momento da chamada.
  */

@@ -32,13 +32,13 @@ import type { MatchCandidate } from '@/types/match';
 /**
  * Ecrã de descoberta e de decisão. Em cima, os pedidos de conexão que chegaram (aceitar/recusar
  * acontece aqui, não nas Notificações: um pedido decide-se num sítio só); por baixo, os candidatos
- * que ainda não são nada para nós. Quem só ensina não tem lista de candidatos — não procura mentor,
- * são os Tutorandos que o encontram — mas vê na mesma os pedidos.
+ * que ainda não são nada para nós. Quem só ensina não tem lista de candidatos - não procura mentor,
+ * são os Tutorandos que o encontram - mas vê na mesma os pedidos.
  *
  * A lista de candidatos é uma **lista**, e não um cartão de ecrã inteiro que se vira: era um deck
  * com uma bandeja de botões fixa em baixo, e nenhum outro ecrã da app se parecia com aquilo. Agora
  * é a mesma linha de cartão que os resultados da pesquisa usam, com as duas decisões dentro do
- * cartão — de quem se está a ler. O que se perdeu (descrição e disponibilidade) vive no perfil de
+ * cartão - de quem se está a ler. O que se perdeu (descrição e disponibilidade) vive no perfil de
  * cada candidato, a um toque de distância.
  *
  * Os pedidos recusados ou aceites saem da lista sozinhos (deixam de estar pendentes), e um pedido
@@ -49,7 +49,7 @@ import type { MatchCandidate } from '@/types/match';
  * lista de candidatos para carregar, o estado de carregamento nunca chegava ao fim).
  *
  * O cabeçalho é o mesmo bloco em gradiente da Home (`ScreenHero`), mas só com o título: sem
- * identidade e sem sino — o nome de quem já está na app não diz nada de novo aqui, e o sino já
+ * identidade e sem sino - o nome de quem já está na app não diz nada de novo aqui, e o sino já
  * está na Home (e o número que ele mostraria obrigava a repetir, neste ecrã, as subscrições que só
  * a Home tem).
  */
@@ -62,7 +62,7 @@ export default function MatchesScreen() {
   const participationMode = useAuthStore((state) => state.profile?.participationMode);
   const learningSubjects = useAuthStore((state) => state.profile?.learningSubjects ?? []);
   // Match serve para procurar mentor; quem está definido só como Mentor (não Tutorando) não
-  // tem uso para esta funcionalidade — são os Tutorandos que os encontram, não o contrário.
+  // tem uso para esta funcionalidade - são os Tutorandos que os encontram, não o contrário.
   const blocked = !canLearn(participationMode);
 
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
@@ -82,8 +82,8 @@ export default function MatchesScreen() {
 
     (async () => {
       try {
-        // Exclui perfis com pedido de conexão entre os dois — em qualquer sentido e estado, para
-        // quem já me pediu não aparecer aqui em baixo depois de estar lá em cima — e perfis
+        // Exclui perfis com pedido de conexão entre os dois - em qualquer sentido e estado, para
+        // quem já me pediu não aparecer aqui em baixo depois de estar lá em cima - e perfis
         // passados neste dispositivo (local), para nenhum voltar a aparecer.
         const [excludeIds, passedIds] = await Promise.all([fetchExcludedCandidateIds(user.uid), getPassedCandidateIds()]);
         passedIds.forEach((id) => excludeIds.add(id));
@@ -93,7 +93,7 @@ export default function MatchesScreen() {
         setLoadError(false);
       } catch {
         // Sem este `catch`, uma leitura que falhasse deixava a lista vazia e o ecrã a dizer "sem
-        // mais perfis por agora" — ou seja, a app a afirmar que não há ninguém quando não sabe.
+        // mais perfis por agora" - ou seja, a app a afirmar que não há ninguém quando não sabe.
         if (!cancelled) setLoadError(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   hero: {
     marginHorizontal: -Spacing.five,
   },
-  // O que vem depois do bloco (os pedidos por decidir) — o topo é 0 porque quem chega ao limite do
+  // O que vem depois do bloco (os pedidos por decidir) - o topo é 0 porque quem chega ao limite do
   // ecrã é o bloco, não a lista.
   headerBody: {
     paddingTop: Spacing.five,

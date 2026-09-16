@@ -7,7 +7,7 @@ import type { SessionRequestsState } from '@/lib/sessions';
 const EMPTY: SessionRequestsState = { requests: [], error: false };
 
 /**
- * Os pedidos de sessão pendentes que chegaram, ao vivo — o simétrico de `useConnectionRequests`,
+ * Os pedidos de sessão pendentes que chegaram, ao vivo - o simétrico de `useConnectionRequests`,
  * e pela mesma razão: a Home conta-os e as Notificações mostram-nos, e eram duas subscrições
  * abertas para responder à mesma pergunta.
  */

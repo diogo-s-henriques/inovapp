@@ -20,7 +20,7 @@ import { LanguageSwitcher } from '@/components/domain/LanguageSwitcher';
  * escritas sem dizer porquê (as regras exigem `email_verified`, ver firestore.rules).
  *
  * Não há navegação nenhuma aqui: quando o email fica confirmado, o `authStage` do layout da raiz
- * troca de ecrã sozinho — este ecrã não tem de saber para onde ir a seguir.
+ * troca de ecrã sozinho - este ecrã não tem de saber para onde ir a seguir.
  */
 export default function VerifyEmailScreen() {
   const theme = useTheme();
@@ -33,8 +33,8 @@ export default function VerifyEmailScreen() {
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * `silent` é para a verificação automática: quando a app volta a ficar à frente — o que acontece
-   * sempre que a pessoa sai do browser do email e regressa — não faz sentido dizer "ainda não",
+   * `silent` é para a verificação automática: quando a app volta a ficar à frente - o que acontece
+   * sempre que a pessoa sai do browser do email e regressa - não faz sentido dizer "ainda não",
    * porque ela não pediu nada. A resposta a um toque é que merece uma mensagem.
    */
   const check = useCallback(async ({ silent = false } = {}) => {

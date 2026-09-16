@@ -27,7 +27,7 @@ const RECENT_SAVE_MIN_LENGTH = 2;
  *
  * O ecrã tem um esqueleto só para quatro estados (recentes, a ler, erro e resultados): o bloco do
  * cabeçalho, o campo de pesquisa e o que o estado tiver a dizer são o **cabeçalho da lista**, e a
- * lista é sempre a mesma — com resultados ou vazia. Antes eram quatro ramos no JSX, e o campo de
+ * lista é sempre a mesma - com resultados ou vazia. Antes eram quatro ramos no JSX, e o campo de
  * pesquisa ficava preso ao topo enquanto o bloco do cabeçalho rolava por baixo dele.
  */
 export default function SearchScreen() {
@@ -55,7 +55,7 @@ export default function SearchScreen() {
 
   const isSearching = query.trim().length > 0 || selectedTags.length > 0 || !!selectedCourse;
   // `mentors === null` sozinho não chega para dizer "a carregar": quando a leitura falha ele fica
-  // a null para sempre, e o ecrã passava a rodar sem fim — a pior das falhas, porque não parece uma.
+  // a null para sempre, e o ecrã passava a rodar sem fim - a pior das falhas, porque não parece uma.
   const loading = isSearching && mentors === null && !loadError;
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function SearchScreen() {
     (async () => {
       try {
         // Quem já tem um pedido de conexão connosco (em qualquer sentido e estado) começa com o "+"
-        // já marcado — não é possível pedir duas vezes a mesma ligação.
+        // já marcado - não é possível pedir duas vezes a mesma ligação.
         const excludeIds = await fetchExcludedCandidateIds(user.uid);
         if (cancelled) return;
         setAddedIds((current) => Array.from(new Set([...current, ...excludeIds])));
@@ -125,7 +125,7 @@ export default function SearchScreen() {
     });
   }, [mentors, query, selectedCourse, selectedTags]);
 
-  // Só trata o caso de "adicionar" — um pedido de conexão já enviado não pode ser desfeito
+  // Só trata o caso de "adicionar" - um pedido de conexão já enviado não pode ser desfeito
   // (allow delete: if false nas regras), por isso ignora tentativas de "remover".
   const handleToggleAdded = async (id: string, added: boolean) => {
     if (!user || !added || addedIds.includes(id)) return;
@@ -148,7 +148,7 @@ export default function SearchScreen() {
     setReloadToken((token) => token + 1);
   };
 
-  // Só há resultados quando há uma pesquisa ativa e ela já respondeu — nos outros estados a lista
+  // Só há resultados quando há uma pesquisa ativa e ela já respondeu - nos outros estados a lista
   // está vazia e o cabeçalho é que fala.
   const showResults = isSearching && !loading && !loadError;
 

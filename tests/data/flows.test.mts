@@ -1,13 +1,13 @@
 /**
  * Testes de integração da camada de dados (`src/lib/*`) contra os emuladores do Firestore e Auth.
  *
- * Ao contrário dos testes de `tests/lib` — lógica pura, sem rede — estes exercitam o SDK
+ * Ao contrário dos testes de `tests/lib` - lógica pura, sem rede - estes exercitam o SDK
  * verdadeiro do Firebase com o `firestore.rules` verdadeiro pelo meio. Verificam as regras que
  * a app não pode violar e que ninguém vê até falharem em produção: não há conversa sem pedido
  * aceite, não há sessão sem pedido aceite, só o tutorando avalia e a avaliação não guarda quem
  * a escreveu.
  *
- * Nada disto toca em dados de produção — ver o guarda em tests/data/emulator.mts.
+ * Nada disto toca em dados de produção - ver o guarda em tests/data/emulator.mts.
  *
  * Como correr (arranca os dois emuladores, corre e desliga):
  *   npm run test:data
@@ -93,7 +93,7 @@ const semPermissao = (erro: { code?: string }) => {
  *
  * A regra das mensagens vai buscar os participantes da conversa
  * (`get(conversations/…).data.participants`). Para quem não é participante, esse `get()` não é um
- * "não" — é um erro de avaliação, porque o documento também não lhe é legível. O emulador
+ * "não" - é um erro de avaliação, porque o documento também não lhe é legível. O emulador
  * devolve então `invalid-argument`; em produção, qualquer recusa é `permission-denied`. A recusa
  * em si está confirmada sem depender do código: "um terceiro NÃO lê nem escreve nas mensagens" em
  * tests/firestore-rules.test.mts.
@@ -174,7 +174,7 @@ describe('criação de conta e entrada', () => {
   it('a criação guarda o "Lembrar" escolhido e o email que o Firebase autenticou', async () => {
     // O email leva uma maiúscula de propósito: o Auth normaliza-o para minúsculas e a regra de
     // `userAccounts` exige que o email gravado seja igual ao do token. Ao gravar a string do
-    // formulário, a conta era criada no Auth e o documento era recusado pelas regras — a pessoa
+    // formulário, a conta era criada no Auth e o documento era recusado pelas regras - a pessoa
     // ficava com uma conta sem perfil, e sem forma de a completar.
     await signOut(auth).catch(() => undefined);
     await signUp('Nova.Conta@alunos.iseclisboa.pt', SENHA_DE_TESTE, true);
@@ -249,9 +249,9 @@ describe('pedido de conexão', () => {
   it('o mentor passa a ter a lista dos seus tutorandos', async () => {
     await ligar(cenario.ana, cenario.bruno);
 
-    // A sessão ficou aberta como Bruno (o mentor) — é a leitura que a app dele faz. Este teste
+    // A sessão ficou aberta como Bruno (o mentor) - é a leitura que a app dele faz. Este teste
     // também fixa o sentido: um pedido vai sempre do Tutorando (`from`) para o Mentor (`to`),
-    // por isso a lista de tutorandos do mentor são os `from` — procurar os `from` do próprio
+    // por isso a lista de tutorandos do mentor são os `from` - procurar os `from` do próprio
     // Bruno devolveria vazio e é isso que este teste apanha.
     const tutorandos = await fetchConnectedTutees(cenario.bruno);
     assert.deepEqual(tutorandos.map((tutorando) => tutorando.id), [cenario.ana]);
@@ -261,7 +261,7 @@ describe('pedido de conexão', () => {
   it('quem enviou vê a resposta do outro lado, sem reler nada', async () => {
     await ligar(cenario.ana, cenario.bruno);
 
-    // A subscrição abre como a Ana — quem **pede**. Era o lado que não tinha subscrição nenhuma:
+    // A subscrição abre como a Ana - quem **pede**. Era o lado que não tinha subscrição nenhuma:
     // a app só ouvia o que chega (`to == eu`), e a resposta a um pedido só aparecia quando algum
     // ecrã voltasse a ler.
     await entrarComo(CONTAS.aluna);
@@ -297,7 +297,7 @@ describe('pedido de conexão', () => {
 
     // A consulta filtra por `to == uid`, e a regra de leitura só deixa ver os pedidos de que se é
     // parte: pedir os pedidos do **Bruno** com a sessão da Ana é uma leitura que as regras negam.
-    // Era esta a falha que passava por "ecrã sem dados" — o canal do erro não existia.
+    // Era esta a falha que passava por "ecrã sem dados" - o canal do erro não existia.
     const estado = await esperarPor<ConnectionRequestsState>(
       (emitir) => subscribePendingConnectionRequests(cenario.bruno, emitir),
       (proximo) => proximo.error,
@@ -374,7 +374,7 @@ describe('pedido de conexão', () => {
     await entrarComo(CONTAS.aluna);
     await blockUser(cenario.ana, cenario.bruno);
 
-    // A ligação continua aceite na base de dados — o que muda é deixar de ser apresentada.
+    // A ligação continua aceite na base de dados - o que muda é deixar de ser apresentada.
     assert.deepEqual(await fetchConnectedMentors(cenario.ana), []);
 
     await entrarComo(CONTAS.alunoQueEnsina);
@@ -404,7 +404,7 @@ describe('pedido de conexão', () => {
     assert.deepEqual(await fetchBlockedUids(cenario.ana), []);
   });
 
-  it('a lista de bloqueados mostra o perfil de quem bloqueei — e só os meus', async () => {
+  it('a lista de bloqueados mostra o perfil de quem bloqueei - e só os meus', async () => {
     await entrarComo(CONTAS.aluna);
     await blockUser(cenario.ana, cenario.bruno);
 
@@ -547,7 +547,7 @@ describe('lista de conversas ao vivo', () => {
   it('quem entra depois recebe logo o que já se sabia', async () => {
     await entrarComo(CONTAS.alunoQueEnsina);
 
-    // A primeira "janela" — a barra de baixo, que está montada em toda a app — fica aberta.
+    // A primeira "janela" - a barra de baixo, que está montada em toda a app - fica aberta.
     let daBarra: ConversationsState = { conversations: [], error: false };
     const fecharBarra = subscribeToConversations(cenario.bruno, (estado) => {
       daBarra = estado;
@@ -807,7 +807,7 @@ describe('quem fica fora da descoberta', () => {
   });
 
   it('quem me pediu conexão não aparece no deck mesmo que ensine', async () => {
-    // Só quem aprende pode pedir, e só quem ensina entra no deck — é entre quem faz as duas
+    // Só quem aprende pode pedir, e só quem ensina entra no deck - é entre quem faz as duas
     // coisas que o mesmo par podia acabar em cima (o pedido) e em baixo (o deck).
     const elsa = await criarConta('elsa.ambos@alunos.iseclisboa.pt');
     await configurarPerfil(elsa, {

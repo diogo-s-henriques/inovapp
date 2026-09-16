@@ -9,7 +9,7 @@ import { usePushStore } from '@/push/store';
 /**
  * Onde o ecrã deve ir quando se toca num aviso. O aviso traz o destino nos dados (`data.url`),
  * escrito por quem o enviou, e é por isso que é um campo: um aviso de "pedido de conexão" tem de
- * abrir os pedidos, e um de "sessão marcada" a agenda — a app não pode adivinhar qual é qual.
+ * abrir os pedidos, e um de "sessão marcada" a agenda - a app não pode adivinhar qual é qual.
  * Sem destino, vai para as Notificações, que é onde as duas coisas já aparecem.
  */
 function redirectToTarget(notification: Notifications.Notification): void {
@@ -18,7 +18,7 @@ function redirectToTarget(notification: Notifications.Notification): void {
 }
 
 /**
- * Regista este dispositivo para receber avisos — uma vez por conta e por arranque.
+ * Regista este dispositivo para receber avisos - uma vez por conta e por arranque.
  *
  * Só quando o perfil está completo: pedir a permissão de avisos no instante a seguir ao login é
  * pedi-la antes de a pessoa ter visto para que serve a app, e um pedido recusado não se repete.
@@ -43,7 +43,7 @@ export function usePushSync(): void {
  * Trata do toque num aviso: com a app **fechada** (o aviso que a abriu) e com a app aberta.
  *
  * `ready` evita o pior caso: com a sessão ainda por ler, um `router.push` para um ecrã protegido
- * era ignorado e o toque no aviso não levava a lado nenhum — ou seja, a app abria no sítio errado e
+ * era ignorado e o toque no aviso não levava a lado nenhum - ou seja, a app abria no sítio errado e
  * sem o pedido que a pessoa tinha ido ver.
  */
 export function useNotificationObserver(ready: boolean): void {

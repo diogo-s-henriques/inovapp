@@ -1,9 +1,9 @@
 /**
- * Testes do `TutorCard` — a pessoa nas listas de ligações da Home.
+ * Testes do `TutorCard` - a pessoa nas listas de ligações da Home.
  *
  * O que vale a pena fixar é o botão de dentro. O cartão inteiro abre o perfil, e o botão é uma
  * segunda ação **dentro** dele: se o toque no botão escapar para o cartão, carregar em "Marcar
- * sessão" abre o perfil — e o utilizador fica a olhar para outra coisa, convencido de que a app
+ * sessão" abre o perfil - e o utilizador fica a olhar para outra coisa, convencido de que a app
  * não fez nada. É o tipo de erro que só se vê a usar.
  *
  * E o botão é opcional por uma razão de domínio: quem já é teu contacto pode receber um pedido de
@@ -21,7 +21,7 @@ const BASE = {
   year: '3.º ano',
 };
 
-describe('<TutorCard /> — a pessoa', () => {
+describe('<TutorCard /> - a pessoa', () => {
   it('mostra o nome e o curso com o ano', async () => {
     const { getByText, queryByText } = await render(<TutorCard {...BASE} onPress={jest.fn()} />);
 
@@ -48,7 +48,7 @@ describe('<TutorCard /> — a pessoa', () => {
   });
 });
 
-describe('<TutorCard /> — o botão de dentro', () => {
+describe('<TutorCard /> - o botão de dentro', () => {
   it('sem rótulo não há botão nenhum', async () => {
     const { queryByLabelText } = await render(<TutorCard {...BASE} onPress={jest.fn()} />);
 

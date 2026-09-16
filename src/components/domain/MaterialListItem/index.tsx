@@ -12,7 +12,7 @@ export interface MaterialListItemProps extends ViewProps {
   onPressOpen: () => void;
 }
 
-/** Linha de material partilhado (anexo de chat) — sempre um link, sem upload real. */
+/** Linha de material partilhado (anexo de chat) - sempre um link, sem upload real. */
 export function MaterialListItem({ title, subtitle, onPressOpen, style, ...rest }: MaterialListItemProps) {
   const theme = useTheme();
   const i18n = useI18n();
@@ -21,7 +21,7 @@ export function MaterialListItem({ title, subtitle, onPressOpen, style, ...rest 
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }, style]} {...rest}>
       {/* A caixa do ícone leva o acento da app (`primarySoft`/`primary`): é a mesma família das
           caixas dos atalhos e das linhas "Novidades", e um documento é a informação que esta lista
-          dá — não é um estado nem um aviso. */}
+          dá - não é um estado nem um aviso. */}
       <View style={[styles.iconCircle, { backgroundColor: theme.primarySoft }]}>
         <Ionicons name="document-attach-outline" size={IconSize.ui} color={theme.primary} />
       </View>

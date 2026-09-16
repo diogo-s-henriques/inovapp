@@ -12,20 +12,20 @@ import {
 import { db } from '@/lib/firebase';
 
 /**
- * Apagar uma conta — a camada de dados, sem tocar no Firebase Auth.
+ * Apagar uma conta - a camada de dados, sem tocar no Firebase Auth.
  *
  * O que aqui está é **o plano**: onde a conta aparece no Firestore, por que ordem se apaga e em que
  * lotes. Quem apaga a conta em si (`deleteUser`) é o `src/auth/actions.ts`, e a ordem entre os dois
  * é a parte que importa: os dados primeiro, a conta depois.
  *
  * **Porque é que esta ordem não é indiferente.** As regras do Firestore decidem pelo token, e depois
- * de a conta do Auth desaparecer não há token nenhum — o cliente perde o direito de apagar o que
+ * de a conta do Auth desaparecer não há token nenhum - o cliente perde o direito de apagar o que
  * sobrou, e ficavam documentos órfãos que ninguém, nem o próprio, podia remover. Ao contrário,
  * apagados os dados e falhando a conta, o que resta é recuperável: repetir a operação volta a passar
  * pelos mesmos passos (todos idempotentes) e acaba onde tinha de acabar.
  *
  * **O que fica de fora, e porquê:** as avaliações (`ratings/{sessionId}`). São anónimas, não têm
- * autor nenhum dentro do documento, e a chave é a sessão — apagada a sessão, ninguém lá chega. Abrir
+ * autor nenhum dentro do documento, e a chave é a sessão - apagada a sessão, ninguém lá chega. Abrir
  * `delete` nos ratings para as levar atrás da conta seria dar a um mentor a possibilidade de apagar
  * as avaliações más que recebeu, que é precisamente o que o anonimato existe para impedir.
  * As **mensagens que a outra pessoa escreveu** também ficam: não são dela, e ficam inalcançáveis
@@ -47,7 +47,7 @@ export interface SharedAccountQuery {
  * Os dois sentidos de `connectionRequests` e `sessionRequests` estão lá por uma razão prática, e
  * não por simetria: os documentos são sempre `from` → `to`, e a regra de leitura é um **ou**
  * (`from == uid || to == uid`). O Firestore avalia as regras contra a consulta, e um `||` só passa
- * se a consulta provar um dos lados — daí uma consulta por cada sentido, e não uma só.
+ * se a consulta provar um dos lados - daí uma consulta por cada sentido, e não uma só.
  */
 export const SHARED_ACCOUNT_QUERIES: readonly SharedAccountQuery[] = [
   { path: 'connectionRequests', field: 'from', mode: 'equals' },
@@ -58,7 +58,7 @@ export const SHARED_ACCOUNT_QUERIES: readonly SharedAccountQuery[] = [
   { path: 'conversations', field: 'participants', mode: 'contains' },
 ];
 
-/** Subcoleções privadas, varridas por inteiro (`users/{uid}/devices` — um token por dispositivo). */
+/** Subcoleções privadas, varridas por inteiro (`users/{uid}/devices` - um token por dispositivo). */
 export function ownedCollectionPaths(uid: string): string[] {
   return [`users/${uid}/devices`];
 }
@@ -68,7 +68,7 @@ export function ownedCollectionPaths(uid: string): string[] {
  * perfil.
  *
  * O perfil em último porque é ele que a app lê para saber que a conta existe (é dele que vem o
- * `profileCompleted` — ver src/lib/auth-gate.ts): se a operação parar a meio, o que fica é uma conta
+ * `profileCompleted` - ver src/lib/auth-gate.ts): se a operação parar a meio, o que fica é uma conta
  * a que faltam dados, e não uma app que não sabe o que mostrar a quem está a entrar.
  */
 export function ownedDocumentPaths(uid: string): string[] {
@@ -77,12 +77,12 @@ export function ownedDocumentPaths(uid: string): string[] {
 
 /**
  * O limite de um lote. O Firestore aceita 500 escritas por `writeBatch` e o `delete` conta como
- * uma — 400 deixa margem para este passo crescer sem se partir por um número redondo.
+ * uma - 400 deixa margem para este passo crescer sem se partir por um número redondo.
  */
 export const DELETION_BATCH_SIZE = 400;
 
 /**
- * Apaga tudo o que é da conta no Firestore. A conta do Auth fica para quem chama — e é apagada
+ * Apaga tudo o que é da conta no Firestore. A conta do Auth fica para quem chama - e é apagada
  * **depois** disto (ver o comentário do topo deste ficheiro).
  *
  * É idempotente de propósito: repetir não encontra metade das coisas e não se queixa disso, o que é
@@ -91,7 +91,7 @@ export const DELETION_BATCH_SIZE = 400;
 export async function deleteAccountData(uid: string): Promise<void> {
   // 1. As conversas. Por dentro de cada uma, primeiro as mensagens que **esta** pessoa escreveu e
   //    só depois a conversa: a regra das mensagens exige que a conversa exista, e apagada a
-  //    conversa as que sobrassem ficavam inalcançáveis — e, por isso mesmo, impossíveis de apagar.
+  //    conversa as que sobrassem ficavam inalcançáveis - e, por isso mesmo, impossíveis de apagar.
   const conversations = await findShared('conversations', uid);
   for (const conversation of conversations) {
     await deleteInBatches(
@@ -100,7 +100,7 @@ export async function deleteAccountData(uid: string): Promise<void> {
   }
   await deleteInBatches(conversations);
 
-  // 2. Os pedidos de conexão, os de sessão e as sessões — o resto dos documentos que são de dois.
+  // 2. Os pedidos de conexão, os de sessão e as sessões - o resto dos documentos que são de dois.
   for (const { path, field, mode } of SHARED_ACCOUNT_QUERIES) {
     if (path === 'conversations') continue;
     await deleteInBatches(await findWhere(path, field, mode, uid));
@@ -150,7 +150,7 @@ async function findAll(path: string): Promise<DocumentReference[]> {
 /**
  * Apaga em lotes.
  *
- * Um `writeBatch` é atómico: ou passa tudo, ou não passa nada — e um lote de 500 documentos falhado
+ * Um `writeBatch` é atómico: ou passa tudo, ou não passa nada - e um lote de 500 documentos falhado
  * a meio por causa de **um** documento rejeitado deixava os outros 499 por apagar sem se saber
  * quais. Em lotes, o que falha é o lote, e repetir a operação volta a passar por cima dos mesmos.
  */
@@ -168,7 +168,7 @@ async function deleteInBatches(references: DocumentReference[]): Promise<void> {
  * Uma coleção a partir do caminho (`users/abc/devices` → a coleção `devices` de `users/abc`).
  *
  * O SDK aceita o caminho inteiro numa string e recusa-o se o número de segmentos não der uma
- * coleção (número ímpar) — a validação é dele, e é por isso que os caminhos deste ficheiro são
+ * coleção (número ímpar) - a validação é dele, e é por isso que os caminhos deste ficheiro são
  * escritos por extenso em vez de montados em pedaços.
  */
 function collectionAt(path: string): CollectionReference {

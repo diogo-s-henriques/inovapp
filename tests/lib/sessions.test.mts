@@ -37,7 +37,7 @@ function contar(sessoes: CountableSession[]): SessionStats {
   return summarizeSessions(sessoes, EU, AGORA);
 }
 
-describe('summarizeSessions — sessões dadas e recebidas', () => {
+describe('summarizeSessions - sessões dadas e recebidas', () => {
   it('conta como dada uma sessão concluída em que eu era o mentor', () => {
     assert.deepEqual(contar([sessao({ status: 'completed', date: '2026-09-01', time: '10:00' })]), {
       given: 1,
@@ -66,7 +66,7 @@ describe('summarizeSessions — sessões dadas e recebidas', () => {
   });
 });
 
-describe('summarizeSessions — o que está por vir', () => {
+describe('summarizeSessions - o que está por vir', () => {
   it('conta como por vir uma sessão marcada para o futuro, e não como dada', () => {
     assert.deepEqual(contar([sessao({ date: '2026-09-20', time: '10:00' })]), {
       given: 0,
@@ -98,7 +98,7 @@ describe('summarizeSessions — o que está por vir', () => {
   });
 });
 
-describe('summarizeSessions — sessões antigas e listas', () => {
+describe('summarizeSessions - sessões antigas e listas', () => {
   it('trata uma sessão sem `status` como marcada (sessões anteriores ao campo existir)', () => {
     const semStatus = sessao({ status: undefined, date: '2026-09-20' });
     assert.deepEqual(contar([semStatus]), { given: 0, received: 0, upcoming: 1 });

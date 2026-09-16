@@ -1,5 +1,5 @@
 /**
- * Testes de `PasswordModal` — a confirmação por palavra-passe que precede apagar a conta.
+ * Testes de `PasswordModal` - a confirmação por palavra-passe que precede apagar a conta.
  *
  * É a última coisa que a pessoa vê antes de uma operação irreversível, e por isso o que aqui se
  * fixa são as três guardas que a tornam difícil de fazer por engano: não se confirma com o campo

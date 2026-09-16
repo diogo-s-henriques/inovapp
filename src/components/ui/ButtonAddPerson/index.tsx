@@ -16,7 +16,7 @@ export interface ButtonAddPersonProps {
  *
  * Os dois sinais são **ícones de contorno** (`add-outline` / `checkmark-outline`) e não os
  * caracteres `+` e `✓` num `Text`: eram a única coisa da app desenhada com um glifo de texto, e num
- * conjunto de ícones linear notava-se — o `+` de uma fonte não tem o mesmo traço dos outros.
+ * conjunto de ícones linear notava-se - o `+` de uma fonte não tem o mesmo traço dos outros.
  */
 export function ButtonAddPerson({ added, defaultAdded = false, onToggle }: ButtonAddPersonProps) {
   const theme = useTheme();

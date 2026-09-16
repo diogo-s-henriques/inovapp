@@ -3,14 +3,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // O role deriva sempre do domínio do email institucional do token autenticado
-    // (student = @alunos.iseclisboa.pt, professor = @iseclisboa.pt) — nunca de uma escolha
+    // (student = @alunos.iseclisboa.pt, professor = @iseclisboa.pt) - nunca de uma escolha
     // do cliente.
     function roleMatchesEmailDomain(role) {
       return (role == 'student' && request.auth.token.email.matches('(?i)^[^@]+@alunos\\.iseclisboa\\.pt$'))
         || (role == 'professor' && request.auth.token.email.matches('(?i)^[^@]+@iseclisboa\\.pt$'));
     }
 
-    // A caixa de correio institucional **confirmada** — o link que o Firebase manda ao registar e
+    // A caixa de correio institucional **confirmada** - o link que o Firebase manda ao registar e
     // que só quem lê aquele email pode abrir.
     //
     // É esta a peça que o domínio do email não dá: `roleMatchesEmailDomain` só garante que o
@@ -22,7 +22,7 @@ service cloud.firestore {
     }
 
     // Campos privados da conta. Nunca podem ser criados em `users`, que é legível por qualquer
-    // utilizador autenticado — o sítio deles é userAccounts/{uid}.
+    // utilizador autenticado - o sítio deles é userAccounts/{uid}.
     function hasNoPrivateAccountFields(data) {
       return !('email' in data) && !('lastLoginAt' in data) && !('rememberSession' in data);
     }
@@ -40,7 +40,7 @@ service cloud.firestore {
     // Um bloqueio é guardado num sentido só (`blocks/{blocker}_{blocked}`), mas o efeito é
     // simétrico: basta existir num dos sentidos para o par deixar de se poder ligar, falar ou
     // pedir sessão. A função é usada, entre outros, por regras em que quem avalia NÃO consegue
-    // ler o documento do bloqueio (a pessoa bloqueada) — get()/exists() em regras correm com
+    // ler o documento do bloqueio (a pessoa bloqueada) - get()/exists() em regras correm com
     // acesso total, não com as permissões de quem fez o pedido, e é isso que permite bloquear
     // sem revelar o bloqueio.
     function isBlocked(uidA, uidB) {
@@ -51,28 +51,28 @@ service cloud.firestore {
     match /blocks/{blockId} {
       // Legível pelos dois lados. É o que deixa cada um excluir o outro da descoberta sem
       // falar com o servidor, e é uma consequência assumida: um cliente modificado consegue
-      // descobrir quem o bloqueou. O documento só tem os dois UIDs — nenhum dado pessoal.
+      // descobrir quem o bloqueou. O documento só tem os dois UIDs - nenhum dado pessoal.
       allow read: if isVerified()
         && (resource.data.blocker == request.auth.uid || resource.data.blocked == request.auth.uid);
       allow create: if isVerified()
         && request.resource.data.blocker == request.auth.uid
         && request.resource.data.blocked != request.auth.uid
         && blockId == request.resource.data.blocker + '_' + request.resource.data.blocked;
-      // Desbloquear — e só pelo autor do bloqueio: ninguém desfaz o bloqueio de outra pessoa.
+      // Desbloquear - e só pelo autor do bloqueio: ninguém desfaz o bloqueio de outra pessoa.
       allow delete: if isVerified() && resource.data.blocker == request.auth.uid;
       allow update: if false;
     }
 
     match /users/{userId} {
       // Perfis são legíveis pelos utilizadores **confirmados** (pesquisa/matching precisam de ver
-      // outros perfis) — por isso este documento só pode conter o que é partilhado dentro da
+      // outros perfis) - por isso este documento só pode conter o que é partilhado dentro da
       // comunidade: nada de email, última entrada ou "lembrar sessão" (ver userAccounts).
       //
       // O próprio lê sempre o seu, confirmado ou não: é esta leitura que diz à app se o perfil
       // está completo, e sem ela quem ainda não confirmou o email ficava preso num carregamento
-      // infinito — o ecrã que explica o que falta nunca chegava a aparecer (ver src/lib/auth-gate.ts).
+      // infinito - o ecrã que explica o que falta nunca chegava a aparecer (ver src/lib/auth-gate.ts).
       allow read: if isVerified() || (request.auth != null && request.auth.uid == userId);
-      // O `create` acontece no registo, **antes** de haver confirmação nenhuma — e é por isso que
+      // O `create` acontece no registo, **antes** de haver confirmação nenhuma - e é por isso que
       // ele é a única porta aberta a quem não confirmou. Está fechado ao que o registo escreve, e
       // só a isso: sem a segunda condição, um cliente feito à mão criava aqui um perfil completo
       // (nome, disciplinas, `profileCompleted: true`) em nome de outra pessoa, que é exatamente o
@@ -89,18 +89,18 @@ service cloud.firestore {
       allow update: if isVerified() && request.auth.uid == userId
         && request.resource.data.role == resource.data.role
         && privateFieldsUnchanged(request.resource.data, resource.data);
-      // Apagar o próprio perfil — o primeiro passo de apagar a conta (ver src/lib/account.ts).
+      // Apagar o próprio perfil - o primeiro passo de apagar a conta (ver src/lib/account.ts).
       //
       // Aqui **não** se exige o email confirmado, ao contrário do `update` logo acima, e a diferença
       // é o que cada operação pode fazer de mal. O `update` escreve em nome de alguém (é por isso
       // que a confirmação existe); o `delete` do próprio documento não escreve nada nem deixa
-      // ninguém falar com ninguém — e exigi-la aqui fechava a porta a quem se registou com um email
+      // ninguém falar com ninguém - e exigi-la aqui fechava a porta a quem se registou com um email
       // institucional que não consegue confirmar (perdeu o acesso à caixa, por exemplo) e ficava com
       // uma conta que não podia remover.
       allow delete: if request.auth != null && request.auth.uid == userId;
 
       // Registos de avisos push deste dispositivo: `users/{uid}/devices/{id}` com o token da Expo
-      // (ver src/lib/push.ts). Só o próprio lê e escreve — um token, para quem o tenha, é uma forma
+      // (ver src/lib/push.ts). Só o próprio lê e escreve - um token, para quem o tenha, é uma forma
       // de mandar avisos em nome da app, e é por isso que ele não pode viver no documento do perfil
       // (esse é legível por toda a gente). Quem envia, mais tarde, serão as Cloud Functions, que não
       // passam por estas regras.
@@ -206,7 +206,7 @@ service cloud.firestore {
       // sessionRequest por trás, com o par from/to correspondente. A condição verifica
       // status == 'pending' (não 'accepted'): esta escrita acontece no mesmo writeBatch que
       // marca o sessionRequest como aceite, e get()/exists() em regras leem sempre o estado
-      // anterior ao batch, nunca as escritas ainda pendentes desse mesmo batch — exigir
+      // anterior ao batch, nunca as escritas ainda pendentes desse mesmo batch - exigir
       // 'accepted' aqui faria esta condição falhar sempre. Continua seguro porque só o próprio
       // destinatário (to == mentorUid, já garantido acima) pode desencadear isto.
       allow create: if isVerified()
@@ -221,9 +221,9 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/sessionRequests/$(request.resource.data.sessionRequestId)).data.status == 'pending'
         && !isBlocked(request.resource.data.studentUid, request.resource.data.mentorUid);
       // Só o mentor pode terminar a sessão, só de 'scheduled' para 'completed' (nunca o
-      // contrário), e só isso muda — nenhum outro campo pode ser alterado no mesmo update.
+      // contrário), e só isso muda - nenhum outro campo pode ser alterado no mesmo update.
       // get('status', 'scheduled') trata sessões antigas sem o campo 'status' (criadas antes
-      // desta funcionalidade existir) como 'scheduled' — sem isto, essa leitura direta rebentava
+      // desta funcionalidade existir) como 'scheduled' - sem isto, essa leitura direta rebentava
       // para esses documentos e o mentor nunca conseguia terminá-las.
       allow update: if isVerified()
         && request.auth.uid == resource.data.mentorUid
@@ -233,13 +233,13 @@ service cloud.firestore {
       // A sessão vai atrás da conta de quem participou nela (ver src/lib/account.ts). A avaliação
       // que porventura exista (`ratings/{sessionId}`) **não** é apagada, e é por isso que ela fica
       // inalcançável em vez de removida: sem a sessão, o ecrã que a mostra não tem por onde lá
-      // chegar, e abrir-lhe o `delete` deixava um mentor apagar as notas más que recebeu — que é
+      // chegar, e abrir-lhe o `delete` deixava um mentor apagar as notas más que recebeu - que é
       // exatamente o que o anonimato existe para impedir.
       allow delete: if isVerified() && request.auth.uid in resource.data.participants;
     }
 
     match /ratings/{sessionId} {
-      // ID = ID da sessão (não de quem avalia) e o documento nunca guarda quem escreveu —
+      // ID = ID da sessão (não de quem avalia) e o documento nunca guarda quem escreveu -
       // a regra confirma que quem escreve é o Tutorando da sessão sem persistir essa ligação.
       allow read: if isVerified();
       allow create: if isVerified()
@@ -259,7 +259,7 @@ service cloud.firestore {
       // ordenado). A condição verifica status == 'pending' (não 'accepted'): esta escrita
       // acontece no mesmo writeBatch que marca o connectionRequest como aceite, e get()/exists()
       // em regras leem sempre o estado anterior ao batch, nunca as escritas ainda pendentes
-      // desse mesmo batch — exigir 'accepted' aqui faria esta condição falhar sempre. Continua
+      // desse mesmo batch - exigir 'accepted' aqui faria esta condição falhar sempre. Continua
       // seguro porque exige também que quem cria seja o destinatário (to) desse pedido, ou seja,
       // a mesma pessoa que só podia aceitá-lo de qualquer forma.
       allow create: if isVerified()
@@ -278,14 +278,14 @@ service cloud.firestore {
         && !isBlocked(request.resource.data.participants[0], request.resource.data.participants[1]);
       // A conversa é dos dois, e levá-la é o que resta a quem apaga a conta: sem o documento, a
       // lista de conversas de quem fica apontava para alguém que já não existe. (As mensagens que
-      // **ele** escreveu são apagadas antes disso — ver src/lib/account.ts —, e as outras ficam
+      // **ele** escreveu são apagadas antes disso - ver src/lib/account.ts -, e as outras ficam
       // inalcançáveis, porque é a conversa que a regra abaixo lê para deixar ler lá dentro.)
       allow delete: if isVerified() && request.auth.uid in resource.data.participants;
 
       match /messages/{messageId} {
         // Um bloqueio entre os dois participantes corta a conversa para ambos: ninguém lê nem
         // escreve mais nada ali. O histórico não é apagado (nada neste projeto apaga), fica
-        // inacessível — que é o que "bloquear" tem de significar para ser levado a sério.
+        // inacessível - que é o que "bloquear" tem de significar para ser levado a sério.
         allow read: if isVerified()
           && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
           && !isBlocked(
@@ -299,7 +299,7 @@ service cloud.firestore {
             get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants[1]);
         // Apagar as **próprias** mensagens: é o que leva o texto de quem apaga a conta, e é o que
         // impede isto de ser mais do que isso. Deixar apagar qualquer mensagem da conversa a quem
-        // dela participa era dar a cada um o poder de apagar o que o outro escreveu — o oposto do
+        // dela participa era dar a cada um o poder de apagar o que o outro escreveu - o oposto do
         // caminho que este ficheiro seguiu desde o princípio (só o autor desfaz o que é seu).
         allow delete: if isVerified() && resource.data.senderId == request.auth.uid;
         allow update: if false;

@@ -1,5 +1,5 @@
 /**
- * Testes de `src/lib/push.ts` — a decisão de registo do dispositivo para notificações.
+ * Testes de `src/lib/push.ts` - a decisão de registo do dispositivo para notificações.
  *
  * O que aqui se prova não é o envio dos avisos (isso é do lado das Cloud Functions, ainda por
  * fazer), mas a parte que se pode estragar em silêncio:
@@ -35,7 +35,7 @@ beforeEach(() => {
   AsyncStorage.__reset();
 });
 
-describe('registrationAction — o que fazer com o registo deste dispositivo', () => {
+describe('registrationAction - o que fazer com o registo deste dispositivo', () => {
   it('regista quando a permissão foi dada e ainda não há token escrito', () => {
     assert.equal(
       registrationAction({ permission: 'granted', token: 'token-novo', storedToken: null, optedOut: false }),
@@ -116,7 +116,7 @@ describe('registrationAction — o que fazer com o registo deste dispositivo', (
   });
 });
 
-describe('getInstallationId — um dispositivo, um registo', () => {
+describe('getInstallationId - um dispositivo, um registo', () => {
   it('cria um identificador na primeira chamada e mantém-no depois', async () => {
     const primeiro = await getInstallationId();
     assert.match(primeiro, /^[a-z0-9]+$/);
@@ -125,7 +125,7 @@ describe('getInstallationId — um dispositivo, um registo', () => {
 
   it('sobrevive a uma nova leitura do dispositivo (é o que dispensa um documento por token)', async () => {
     const primeiro = await getInstallationId();
-    // Mesma app, arranque seguinte: o valor tem de vir do dispositivo, não ser gerado outra vez —
+    // Mesma app, arranque seguinte: o valor tem de vir do dispositivo, não ser gerado outra vez -
     // senão cada arranque criava um documento novo e o antigo ficava a receber avisos.
     const entradas = AsyncStorage.__entries();
     assert.equal(entradas.length, 1);

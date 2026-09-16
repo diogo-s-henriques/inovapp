@@ -31,7 +31,7 @@ export function Checkbox({ checked, onChange, label, ...rest }: CheckboxProps) {
             : { backgroundColor: theme.surface, borderColor: theme.border },
         ]}>
         {/* 14 e não `IconSize.ui` (22): este visto vive **dentro** da caixa de 18 px, e a 22 não
-            cabia — o tamanho aqui é ditado pelo controlo, não pelos símbolos da página. */}
+            cabia - o tamanho aqui é ditado pelo controlo, não pelos símbolos da página. */}
         {checked && <Ionicons name="checkmark" size={14} color={theme.onPrimary} />}
       </View>
       {label && <ThemedText type="small">{label}</ThemedText>}

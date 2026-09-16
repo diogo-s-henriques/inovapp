@@ -18,7 +18,7 @@ export interface SessionRequest {
 export type SessionStatus = 'scheduled' | 'completed';
 
 /** Papel do utilizador atual numa sessão concreta: quem pediu é 'student', quem aceitou é
- * 'mentor'. É isto — e não o texto do rótulo — que decide quem vê o botão de terminar. */
+ * 'mentor'. É isto - e não o texto do rótulo - que decide quem vê o botão de terminar. */
 export type SessionRole = 'student' | 'mentor';
 
 // Sessão já confirmada e presente na agenda do utilizador.

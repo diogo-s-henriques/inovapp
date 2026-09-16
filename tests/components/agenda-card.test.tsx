@@ -1,15 +1,15 @@
 /**
- * Testes do `AgendaCard` — o calendário da agenda no ecrã inicial.
+ * Testes do `AgendaCard` - o calendário da agenda no ecrã inicial.
  *
  * O cartão faz três coisas: abre no mês em que estamos, põe um ponto nos dias com sessão e devolve
  * ao ecrã a chave do dia tocado (é o ecrã que empilha a agenda nesse dia). A primeira e a terceira
- * partem-se em silêncio — um calendário a abrir em Outubro, ou a devolver o dia errado, continua a
+ * partem-se em silêncio - um calendário a abrir em Outubro, ou a devolver o dia errado, continua a
  * parecer um calendário.
  *
  * O ponto é o caso mais frágil de todos: um dia marcado e um dia vazio desenham a mesma célula, com
  * a mesma altura e o mesmo número, e a diferença é um círculo de 4 px sem rótulo nenhum (um sinal
  * visual não se anuncia a um leitor de ecrã). Só se lhe chega pelo estilo, e é por isso que o teste
- * o faz — é a única forma de provar que `markedDates` atravessa o cartão até à grelha.
+ * o faz - é a única forma de provar que `markedDates` atravessa o cartão até à grelha.
  */
 import { fireEvent, render } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
@@ -59,7 +59,7 @@ describe('calendário da agenda', () => {
 
   it('avança sozinho para o mês seguinte', async () => {
     // O mês é do cartão, e não do ecrã: navegar para ver o que vem aí é uma pergunta que se faz ao
-    // calendário. Se o estado subisse para o ecrã, isto continuava a passar — mas o ecrã passava a
+    // calendário. Se o estado subisse para o ecrã, isto continuava a passar - mas o ecrã passava a
     // guardar estado que não usa para mais nada.
     const { getByLabelText, getByText } = await render(
       <AgendaCard markedDates={new Set()} onPressDay={jest.fn()} />,
@@ -71,7 +71,7 @@ describe('calendário da agenda', () => {
   });
 });
 
-describe('calendário da agenda — os dias com sessão', () => {
+describe('calendário da agenda - os dias com sessão', () => {
   it('marca os dias com sessão e só esses', async () => {
     const { getByLabelText } = await render(
       <AgendaCard markedDates={new Set([diaDoMes(15), diaDoMes(20)])} onPressDay={jest.fn()} />,
@@ -99,14 +99,14 @@ describe('calendário da agenda — os dias com sessão', () => {
     // A grelha do mês é a peça mais alta da Home, e a Home tem de caber num ecrã sem rolar (a conta
     // está no README, na entrada do ecrã inicial). Isto é um **limite**, e não o valor que lá está:
     // 28 é o de hoje e 30 ainda cabe. O que não pode voltar é o dia de 32 px que lá estava, que
-    // sozinho custava 24 px de altura ao ecrã — e um ecrã que rola sem ter nada a mais.
+    // sozinho custava 24 px de altura ao ecrã - e um ecrã que rola sem ter nada a mais.
     expect(circulo.height).toBeLessThanOrEqual(30);
     expect(circulo.width).toBeLessThanOrEqual(30);
     expect(ponto.height).toBeLessThanOrEqual(4);
   });
 });
 
-describe('calendário da agenda — o toque num dia', () => {
+describe('calendário da agenda - o toque num dia', () => {
   it('devolve a chave do dia tocado, e não a de hoje', async () => {
     const onPressDay = jest.fn();
     const { getByLabelText } = await render(<AgendaCard markedDates={new Set()} onPressDay={onPressDay} />);

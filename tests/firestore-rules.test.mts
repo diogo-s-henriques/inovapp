@@ -65,7 +65,7 @@ beforeEach(async () => {
 
 /**
  * Firestore de um utilizador com sessão iniciada, com o email no token (é dele que as regras
- * derivam o papel) e o email **já confirmado** — que é o estado normal de quem usa a app.
+ * derivam o papel) e o email **já confirmado** - que é o estado normal de quem usa a app.
  *
  * O `email_verified` é o que a regra `isVerified()` lê (ver "email por confirmar" mais abaixo):
  * sem ele no token, quase tudo o que os testes deste ficheiro exercitam seria recusado, e a
@@ -91,7 +91,7 @@ function dbAnonimo() {
   return testEnv.unauthenticatedContext().firestore();
 }
 
-/** Escreve um documento ignorando as regras — serve só para montar o cenário que já existiria
+/** Escreve um documento ignorando as regras - serve só para montar o cenário que já existiria
  * quando a ação testada acontece. */
 async function seed(path: string, data: Record<string, unknown>) {
   await testEnv.withSecurityRulesDisabled(async (context) => {
@@ -141,14 +141,14 @@ function sessionData(sessionRequestId: string) {
  * A política transversal da confirmação do email. Está aqui, e não dentro do bloco de uma coleção,
  * porque não é uma regra de nenhuma coleção: é sobre o **token**.
  *
- * O que se fixa: quem não confirmou o email não lê nem escreve nada — com duas exceções contadas
+ * O que se fixa: quem não confirmou o email não lê nem escreve nada - com duas exceções contadas
  * (o seu próprio documento e o `userAccounts` da entrada), que existem para a app conseguir
  * arrancar e mostrar o ecrã que explica o que falta. E a exceção do `create` em `users` está
  * fechada à forma exata que o registo escreve: é esta restrição que impede o caso que a
- * confirmação existe para travar — registar-se com o email de outra pessoa e escrever logo um
+ * confirmação existe para travar - registar-se com o email de outra pessoa e escrever logo um
  * perfil completo em nome dela.
  */
-describe('email por confirmar — o que um token sem `email_verified` pode e não pode', () => {
+describe('email por confirmar - o que um token sem `email_verified` pode e não pode', () => {
   it('NÃO lê o perfil de outra pessoa', async () => {
     await seed(`users/${PROFESSOR.uid}`, { role: 'professor', profileCompleted: true });
     await assertFails(getDoc(doc(dbAsUnverified(ALUNO), 'users', PROFESSOR.uid)));
@@ -179,7 +179,7 @@ describe('email por confirmar — o que um token sem `email_verified` pode e nã
   });
 
   it('NÃO edita o próprio perfil', async () => {
-    // Por confirmar, o perfil fica como o registo o deixou — vazio. Sem isto, quem se registasse
+    // Por confirmar, o perfil fica como o registo o deixou - vazio. Sem isto, quem se registasse
     // com o email de outra pessoa escrevia o nome dela aqui assim que quisesse.
     await seed(`users/${ALUNO.uid}`, { role: 'student', profileCompleted: false });
     await assertFails(
@@ -210,7 +210,7 @@ describe('email por confirmar — o que um token sem `email_verified` pode e nã
     );
   });
 
-  it('pode ler o seu próprio perfil — é o que faz a app parar no ecrã da confirmação', async () => {
+  it('pode ler o seu próprio perfil - é o que faz a app parar no ecrã da confirmação', async () => {
     await seed(`users/${ALUNO.uid}`, { role: 'student', profileCompleted: false });
     await assertSucceeds(getDoc(doc(dbAsUnverified(ALUNO), 'users', ALUNO.uid)));
   });
@@ -227,7 +227,7 @@ describe('email por confirmar — o que um token sem `email_verified` pode e nã
   });
 });
 
-describe('users — o perfil é público dentro da comunidade, mas não se forja o papel', () => {
+describe('users - o perfil é público dentro da comunidade, mas não se forja o papel', () => {
   it('o aluno cria o próprio perfil como student', async () => {
     const db = dbAs(ALUNO);
     await assertSucceeds(
@@ -325,7 +325,7 @@ describe('users — o perfil é público dentro da comunidade, mas não se forja
   });
 });
 
-describe('users/devices — o token dos avisos é privado (não vive no perfil)', () => {
+describe('users/devices - o token dos avisos é privado (não vive no perfil)', () => {
   const DEVICE = 'dispositivo1';
 
   const registration = (uid: string) => ({
@@ -393,7 +393,7 @@ describe('users/devices — o token dos avisos é privado (não vive no perfil)'
   });
 });
 
-describe('userAccounts — os dados privados da conta são só do próprio', () => {
+describe('userAccounts - os dados privados da conta são só do próprio', () => {
   it('o próprio lê os seus dados de conta', async () => {
     await seed(`userAccounts/${ALUNO.uid}`, { email: ALUNO.email, role: 'student' });
     await assertSucceeds(getDoc(doc(dbAs(ALUNO), 'userAccounts', ALUNO.uid)));
@@ -449,7 +449,7 @@ describe('userAccounts — os dados privados da conta são só do próprio', () 
     );
   });
 
-  // O dono pode apagá-los (é o primeiro passo de apagar a conta — ver "apagar a própria conta"
+  // O dono pode apagá-los (é o primeiro passo de apagar a conta - ver "apagar a própria conta"
   // mais abaixo). O que continua fechado é apagá-los a outra pessoa.
   it('NÃO se apagam os dados de conta de outra pessoa', async () => {
     await seed(`userAccounts/${PROFESSOR.uid}`, { email: PROFESSOR.email, role: 'professor' });
@@ -457,7 +457,7 @@ describe('userAccounts — os dados privados da conta são só do próprio', () 
   });
 });
 
-describe('connectionRequests — só o tutorando inicia, só o destinatário responde', () => {
+describe('connectionRequests - só o tutorando inicia, só o destinatário responde', () => {
   function requestData(from: string, to: string, status = 'pending') {
     return { from, to, status };
   }
@@ -555,7 +555,7 @@ describe('connectionRequests — só o tutorando inicia, só o destinatário res
   });
 });
 
-describe('sessionRequests — só entre duas pessoas já ligadas', () => {
+describe('sessionRequests - só entre duas pessoas já ligadas', () => {
   function requestData(from: string, to: string) {
     return {
       from,
@@ -619,7 +619,7 @@ describe('sessionRequests — só entre duas pessoas já ligadas', () => {
   });
 });
 
-describe('sessions — nasce do pedido aceite e só o mentor a termina', () => {
+describe('sessions - nasce do pedido aceite e só o mentor a termina', () => {
   it('o mentor cria a sessão a partir de um pedido pendente', async () => {
     await seedAcceptedConnection();
     const requestId = await seedPendingSessionRequest();
@@ -730,7 +730,7 @@ describe('sessions — nasce do pedido aceite e só o mentor a termina', () => {
   });
 });
 
-describe('conversations — só existem depois de a conexão ser aceite', () => {
+describe('conversations - só existem depois de a conexão ser aceite', () => {
   it('a conversa nasce de um pedido de conexão pendente dirigido a quem a cria', async () => {
     await seed(`connectionRequests/${CONNECTION_ID}`, {
       from: ALUNO.uid,
@@ -819,7 +819,7 @@ describe('conversations — só existem depois de a conexão ser aceite', () => 
   });
 });
 
-describe('blocks — um bloqueio corta a ligação para os dois', () => {
+describe('blocks - um bloqueio corta a ligação para os dois', () => {
   const BLOCK_ID = `${ALUNO.uid}_${PROFESSOR.uid}`;
 
   function blockData(blocker: string, blocked: string) {
@@ -909,7 +909,7 @@ describe('blocks — um bloqueio corta a ligação para os dois', () => {
     );
   });
 
-  it('torna inacessível a conversa que já existia — para os dois', async () => {
+  it('torna inacessível a conversa que já existia - para os dois', async () => {
     const participants = [ALUNO.uid, PROFESSOR.uid].sort();
     await seed(`conversations/${CONVERSATION_ID}`, { participants });
     await seed(`conversations/${CONVERSATION_ID}/messages/m1`, { text: 'Olá', senderId: ALUNO.uid });
@@ -928,7 +928,7 @@ describe('blocks — um bloqueio corta a ligação para os dois', () => {
   });
 });
 
-describe('ratings — anónimas, uma por sessão, só pelo tutorando', () => {
+describe('ratings - anónimas, uma por sessão, só pelo tutorando', () => {
   async function seedCompletedSession() {
     await seed('sessions/sessao1', { ...sessionData('pedidoSessao1'), status: 'completed' });
   }
@@ -941,7 +941,7 @@ describe('ratings — anónimas, uma por sessão, só pelo tutorando', () => {
     );
   });
 
-  it('o documento guarda só a nota e o mentor — nunca quem avaliou', async () => {
+  it('o documento guarda só a nota e o mentor - nunca quem avaliou', async () => {
     await seedCompletedSession();
     const db = dbAs(ALUNO);
     await assertSucceeds(
@@ -1007,20 +1007,20 @@ describe('ratings — anónimas, uma por sessão, só pelo tutorando', () => {
 /**
  * Apagar a própria conta (ver src/lib/account.ts).
  *
- * O `delete` era a operação mais fechada do ficheiro — só existia nos bloqueios, e só para o autor —
+ * O `delete` era a operação mais fechada do ficheiro - só existia nos bloqueios, e só para o autor -
  * e é agora a que faz um caminho a mais. O que aqui se fixa é o desenho dessa abertura, que é
  * estreito de propósito:
  *
  * 1. **O que é só do próprio** (o perfil, os dados privados da conta, os registos dos avisos) sai
- *    com quem o tem, e não precisa de email confirmado — quem não consegue confirmar o email tem de
+ *    com quem o tem, e não precisa de email confirmado - quem não consegue confirmar o email tem de
  *    conseguir remover a conta que criou.
  * 2. **O que é de dois** (pedidos, sessões, conversas) segue o mesmo critério de sempre
  *    (`isVerified()`), e só o leva quem é uma das duas partes.
  * 3. **O que é de outra pessoa não se toca**: nem o perfil de outro, nem as mensagens que o outro
- *    escreveu, nem as avaliações (que ficam inalcançáveis em vez de apagadas — uma regra que
+ *    escreveu, nem as avaliações (que ficam inalcançáveis em vez de apagadas - uma regra que
  *    deixasse apagá-las dava a um mentor a forma de deitar fora as notas más).
  */
-describe('apagar a própria conta — o que sai com ela e o que fica', () => {
+describe('apagar a própria conta - o que sai com ela e o que fica', () => {
   it('o dono apaga o próprio perfil e os dados privados da conta', async () => {
     await seed(`users/${ALUNO.uid}`, { role: 'student', profileCompleted: true });
     await seed(`userAccounts/${ALUNO.uid}`, { email: ALUNO.email, role: 'student' });
@@ -1064,7 +1064,7 @@ describe('apagar a própria conta — o que sai com ela e o que fica', () => {
 
   it('sem o email confirmado, ainda se apaga o próprio perfil', async () => {
     // A exceção é deliberada: quem se registou com um email institucional que não consegue
-    // confirmar (perdeu o acesso à caixa, por exemplo) tem de poder remover a conta que criou —
+    // confirmar (perdeu o acesso à caixa, por exemplo) tem de poder remover a conta que criou -
     // senão fica com uma conta que não usa e não consegue apagar.
     await seed(`users/${ALUNO.uid}`, { role: 'student', profileCompleted: false });
     await seed(`userAccounts/${ALUNO.uid}`, { email: ALUNO.email, role: 'student' });
@@ -1085,7 +1085,7 @@ describe('apagar a própria conta — o que sai com ela e o que fica', () => {
   });
 
   /** O pedido, montado outra vez: apagado o documento, um segundo delete já não tem onde ler quem
-   * está envolvido (o `resource` fica nulo) e a regra recusa-o — o que faria parecer que falha.
+   * está envolvido (o `resource` fica nulo) e a regra recusa-o - o que faria parecer que falha.
    * Cada caso volta a semear o seu cenário, em vez de encadear deletes sobre o mesmo documento. */
   function seedConnectionRequest() {
     return seed(`connectionRequests/${CONNECTION_ID}`, {
@@ -1156,7 +1156,7 @@ describe('apagar a própria conta — o que sai com ela e o que fica', () => {
     await seed('ratings/sessao1', { mentorUid: PROFESSOR.uid, rating: 2 });
 
     // Nem o mentor avaliado (que é quem tem interesse em apagar uma nota má), nem o tutorando que
-    // a escreveu — é o anonimato que a mantém de pé.
+    // a escreveu - é o anonimato que a mantém de pé.
     await assertFails(deleteDoc(doc(dbAs(PROFESSOR), 'ratings', 'sessao1')));
     await assertFails(deleteDoc(doc(dbAs(ALUNO), 'ratings', 'sessao1')));
 

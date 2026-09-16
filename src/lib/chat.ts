@@ -70,16 +70,16 @@ export interface ConversationsState {
  *
  * Conversas com quem tem um bloqueio connosco não entram: bloqueado quer dizer "inacessível para
  * os dois", e a mensagem mais recente de uma conversa cortada não deve continuar a aparecer no
- * topo da lista. Isto é filtro de cliente — a regra de `messages` é que impede mesmo ler ou
+ * topo da lista. Isto é filtro de cliente - a regra de `messages` é que impede mesmo ler ou
  * escrever, mas as regras não conseguem filtrar uma query ("rules are not filters"), por isso a
  * lista tem de ser escondida aqui.
  *
  * A subscrição é **uma só** (ver src/lib/live-query.ts). Esta pergunta era feita em paralelo pela
  * barra de baixo (a bolinha das mensagens por ler), pela Home (a contagem), pelo Chat (a lista) e
- * pelas Notificações — quatro subscrições abertas ao mesmo tempo com a mesma resposta, e cada
+ * pelas Notificações - quatro subscrições abertas ao mesmo tempo com a mesma resposta, e cada
  * mensagem nova contada (e paga) quatro vezes. Quem chega depois recebe o que já se sabe.
  *
- * O terceiro argumento do `onSnapshot` — o canal do erro — também não existia: uma leitura negada
+ * O terceiro argumento do `onSnapshot` - o canal do erro - também não existia: uma leitura negada
  * deixava a lista como estava, indistinguível de "não tens conversas". Agora é um campo do estado,
  * e quem mostra a lista tem de o dizer (ver `RetryNotice`).
  */
@@ -229,7 +229,7 @@ export async function sendMessage(
 }
 
 /** Deixa um cartão de pedido de sessão na conversa (ver SessionRequestCard), com estado ao vivo
- * lido a partir de sessionRequests/{requestId} — não crítico, ver src/app/session-request.tsx. */
+ * lido a partir de sessionRequests/{requestId} - não crítico, ver src/app/session-request.tsx. */
 export async function sendSessionRequestMessage(
   conversationId: string,
   fromUid: string,

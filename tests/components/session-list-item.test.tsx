@@ -1,9 +1,9 @@
 /**
- * Testes de `SessionListItem` — a linha de sessão na agenda.
+ * Testes de `SessionListItem` - a linha de sessão na agenda.
  *
  * O que aqui se fixa é uma regra de domínio que já foi um bug: só quem é Mentor/Tutor *nessa*
  * sessão pode terminá-la. A decisão era tomada comparando o texto de um rótulo ('Tutorando'),
- * o que partia assim que a interface fosse traduzida — hoje é o campo `role` tipado
+ * o que partia assim que a interface fosse traduzida - hoje é o campo `role` tipado
  * (ver src/types/session.ts) e o botão é escolhido a partir dele.
  *
  * A app não faz chamadas: a linha de sessão só tem a ação de terminar (e só para o mentor).

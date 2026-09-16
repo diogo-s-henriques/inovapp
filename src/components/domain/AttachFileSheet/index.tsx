@@ -1,26 +1,26 @@
+import {
+    BottomSheetBackdrop,
+    BottomSheetModal,
+    BottomSheetView,
+    type BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
 import { forwardRef, useMemo, useState } from 'react';
 import { StyleSheet } from 'react-native';
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetView,
-  type BottomSheetBackdropProps,
-} from '@gorhom/bottom-sheet';
 
-import { Spacing } from '@/constants/theme';
-import { isHttpUrl } from '@/lib/url';
-import { useI18n } from '@/hooks/use-i18n';
-import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { Spacing } from '@/constants/theme';
+import { useI18n } from '@/hooks/use-i18n';
+import { useTheme } from '@/hooks/use-theme';
+import { isHttpUrl } from '@/lib/url';
 import type { ChatAttachment } from '@/types/chat';
 
 export interface AttachFileSheetProps {
   onSubmit: (data: ChatAttachment) => void | Promise<void>;
 }
 
-/** Bottom sheet para anexar um ficheiro ao chat por link (sem upload real — ver materiais). */
+/** Bottom sheet para anexar um ficheiro ao chat por link (sem upload real - ver materiais). */
 export const AttachFileSheet = forwardRef<BottomSheetModal, AttachFileSheetProps>(function AttachFileSheet(
   { onSubmit },
   ref,
@@ -33,7 +33,7 @@ export const AttachFileSheet = forwardRef<BottomSheetModal, AttachFileSheetProps
   const [fileUrl, setFileUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Um material só pode ser partilhado como link http/https — ver src/lib/url.ts.
+  // Um material só pode ser partilhado como link http/https - ver src/lib/url.ts.
   const linkInvalid = fileUrl.trim().length > 0 && !isHttpUrl(fileUrl);
   const canSubmit = !!fileName.trim() && isHttpUrl(fileUrl) && !submitting;
 

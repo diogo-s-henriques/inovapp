@@ -17,15 +17,15 @@ import { ErrorScreen } from '@/components/domain/ErrorScreen';
 SplashScreen.preventAutoHideAsync();
 
 /**
- * Configuração do EAS Observe — tem de correr **antes de qualquer ecrã montar**, e é por isso que
+ * Configuração do EAS Observe - tem de correr **antes de qualquer ecrã montar**, e é por isso que
  * está aqui no topo do ficheiro e não dentro de um componente (`Observe.configure` substitui a
  * configuração inteira, e ligar ou desligar uma integração depois de a app arrancar rebenta).
  *
  * As duas decisões:
  *
- * - **`'expo-router': true`** — sem isto o dashboard só tem números da app toda; com isto tem
+ * - **`'expo-router': true`** - sem isto o dashboard só tem números da app toda; com isto tem
  *   `cold_ttr`/`warm_ttr`/`tti` por ecrã, que é o que diz *qual* ecrã está lento;
- * - **`filteredParams`** — a integração exporta os parâmetros da rota no URL resolvido, e os
+ * - **`filteredParams`** - a integração exporta os parâmetros da rota no URL resolvido, e os
  *   nossos levam nomes, ids e disciplinas de pessoas (`firstName`, `toUid`, `id`…). O que aqui
  *   está é retirado antes de sair do dispositivo; a rota em si (o nome do ecrã) fica.
  *
@@ -46,11 +46,11 @@ Observe.configure({
  * O que se vê quando um ecrã rebenta a desenhar.
  *
  * Sem isto, uma exceção num render, em produção, **fecha a app**: a pessoa fica sem o ecrã e sem
- * aviso nenhum — que foi o que aconteceu quando o Expo Go fechava sem dizer porquê. Com o limite,
+ * aviso nenhum - que foi o que aconteceu quando o Expo Go fechava sem dizer porquê. Com o limite,
  * o ecrã que falhou dá lugar a um aviso e a uma segunda tentativa, e o resto da app continua lá.
  *
  * Vive fora do `Stack` (é o limite da raiz) porque um erro no próprio layout não pode ser apanhado
- * por nada que ele desenhe. Os ecrãs têm o seu, configurado em `unstable_settings` — esse mantém a
+ * por nada que ele desenhe. Os ecrãs têm o seu, configurado em `unstable_settings` - esse mantém a
  * navegação montada, para se poder sair do ecrã que falhou com o gesto de voltar.
  */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -67,7 +67,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
  * O limite de cada **ecrã** do `Stack` da raiz (os separadores e os ecrãs empilhados).
  *
  * Diferente do de cima: este mantém a navegação montada, por isso um erro dentro do Definições não
- * fecha o ecrã todo — desenha o aviso **no lugar dele** e deixa o gesto de voltar funcionar. É a
+ * fecha o ecrã todo - desenha o aviso **no lugar dele** e deixa o gesto de voltar funcionar. É a
  * diferença entre ficar preso e poder sair.
  */
 function ScreenErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -83,7 +83,7 @@ function ScreenErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 export const unstable_settings = { screenErrorBoundary: ScreenErrorBoundary };
 
 /**
- * Entrar e sair da app é uma troca de ecrã inteira, não um "avançar dentro" dela — por isso um
+ * Entrar e sair da app é uma troca de ecrã inteira, não um "avançar dentro" dela - por isso um
  * `fade` (o ecrã de entrada dissolve-se e o outro aparece), em vez do deslize lateral por omissão,
  * que sugere navegação entre ecrãs irmãos. Os ecrãs de detalhe (chat, perfil, agenda, materiais…)
  * ficam com a animação por omissão, que é a certa para eles.
@@ -94,7 +94,7 @@ const AUTH_SCREEN_ANIMATION = { animation: 'fade' } as const;
  * A app em si: aguarda o estado de autenticação/perfil antes de decidir que rotas mostrar.
  *
  * Não é o que o Expo Router exporta (`RootLayout`, no fim do ficheiro), porque por fora disto tem
- * de ficar o `ObserveRoot` — é ele que marca o primeiro render (a métrica de arranque) e que põe o
+ * de ficar o `ObserveRoot` - é ele que marca o primeiro render (a métrica de arranque) e que põe o
  * limite de erro mais externo de todos.
  */
 function AppTree() {
@@ -114,7 +114,7 @@ function AppTree() {
   // este listener apanha a que ainda esteja a decorrer.
   useEffect(() => useLocaleStore.persist.onFinishHydration(() => setLocaleReady(true)), []);
 
-  // Só se considera "pronto" depois de saber que ecrãs mostrar — evita mostrar por instantes o ecrã
+  // Só se considera "pronto" depois de saber que ecrãs mostrar - evita mostrar por instantes o ecrã
   // errado (ex.: login antes de saber que já está autenticado). Quem decide isso é o `authStage`
   // (ver src/lib/auth-gate.ts), e não uma corrente de condições espalhada por aqui.
   const isReady = localeReady && stage !== 'loading';
@@ -124,7 +124,7 @@ function AppTree() {
   useNotificationObserver(isReady && stage === 'app');
 
   // O "já está utilizável" do EAS Observe: é aqui que o trabalho por trás do splash acaba (idioma
-  // lido do disco, sessão do Firebase, perfil). Chamado mais do que uma vez não faz mal — só a
+  // lido do disco, sessão do Firebase, perfil). Chamado mais do que uma vez não faz mal - só a
   // primeira conta. Se ficasse a faltar, o `tti` (tempo até se poder usar a app) não existia.
   useEffect(() => {
     if (isReady) {
@@ -143,7 +143,7 @@ function AppTree() {
          * criar conta, esqueceu-se) não têm `ScrollView` nenhum para herdar
          * `keyboardShouldPersistTaps`, e repetir isto em cada ecrã novo era uma coisa a mais de
          * que era fácil esquecer-se. `accessible={false}` impede que isto apareça como um
-         * elemento a mais para leitores de ecrã; um toque num botão continua a ser do botão —
+         * elemento a mais para leitores de ecrã; um toque num botão continua a ser do botão -
          * este só apanha o toque que ninguém quis.
          */}
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -198,7 +198,7 @@ function AppTree() {
  * A raiz que o Expo Router monta: o `ObserveRoot` por fora de tudo.
  *
  * Faz duas coisas que só ele pode fazer estando tão por fora: marca o **primeiro render** (a base
- * das métricas de arranque) e é o **último limite de erro** da app — o que apanha o que rebentar
+ * das métricas de arranque) e é o **último limite de erro** da app - o que apanha o que rebentar
  * antes de haver ecrã para o mostrar. Leva um `fallback` (o mesmo `ErrorScreen`) com a segunda
  * tentativa que ele próprio dá (`resetError`), porque sem `errorBoundaryFallback` **não é montado
  * limite nenhum** aqui e um erro nesta camada voltava a fechar a app em produção.

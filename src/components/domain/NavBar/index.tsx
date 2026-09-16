@@ -33,7 +33,7 @@ export default function AppTabs() {
   const i18n = useI18n();
   // As duas bolinhas leem as mesmas leituras partilhadas que os ecrãs que mostram as listas (ver
   // `useConnectionRequests` e `useConversations`): uma só subscrição para a app toda. Aqui só
-  // interessa se há algo, e uma leitura falhada deixa a bolinha como está — quem avisa do erro são
+  // interessa se há algo, e uma leitura falhada deixa a bolinha como está - quem avisa do erro são
   // os ecrãs que mostram a lista.
   //
   // Bolinha vermelha nos separadores que têm algo à espera: "Chat" enquanto houver pelo menos uma
@@ -79,7 +79,7 @@ export function TabButton({ label, icon, badge, isFocused, onPressIn, onPressOut
 
   // O ativo fica **ameixa** e o inativo cinzento: os ícones são todos de contorno, por isso a cor é
   // tudo o que distingue um do outro. O acento vive aqui porque este é o único sítio do ecrã que
-  // diz onde estás — e era o único sítio da barra de baixo sem cor nenhuma.
+  // diz onde estás - e era o único sítio da barra de baixo sem cor nenhuma.
   const color = theme[isFocused ? 'primaryDark' : 'textMuted'];
 
   const animatedIconStyle = useAnimatedStyle(() => ({

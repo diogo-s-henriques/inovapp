@@ -27,7 +27,7 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Preenche o email da última entrada feita com "Lembrar-me". Só o email: a sessão em si é apagada
-  // pelo "Sair", de propósito — ver src/lib/remembered-email.ts.
+  // pelo "Sair", de propósito - ver src/lib/remembered-email.ts.
   useEffect(() => {
     let cancelled = false;
     getRememberedEmail().then((saved) => {
@@ -119,7 +119,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   // A margem lateral saiu daqui para o cabeçalho e o formulário: a faixa dos parceiros é filha
-  // deste ecrã e tem de ir de ponta a ponta — com o `padding` no contentor, ficava com uma moldura
+  // deste ecrã e tem de ir de ponta a ponta - com o `padding` no contentor, ficava com uma moldura
   // da cor do fundo dos dois lados.
   container: {
     flex: 1,

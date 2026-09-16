@@ -7,7 +7,7 @@ type IoniconsName = ComponentProps<typeof import('@expo/vector-icons/Ionicons').
  *
  * Um só por separador, e de **contorno**: era um par (contorno/preenchido) e o separador ativo
  * trocava de ícone ao ser tocado. Com o conjunto de ícones a preto de contorno em toda a app, o que
- * distingue o separador ativo é a cor (preto contra cinzento) e não a forma — trocar a forma a cada
+ * distingue o separador ativo é a cor (preto contra cinzento) e não a forma - trocar a forma a cada
  * toque fazia o ícone "saltar" sem dizer mais nada do que a cor já dizia.
  */
 export const TAB_ICONS = {

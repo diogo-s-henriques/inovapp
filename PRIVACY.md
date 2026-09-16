@@ -1,4 +1,4 @@
-# Política de Privacidade — INOVAPP
+# Política de Privacidade - INOVAPP
 
 **Última atualização:** 16 de setembro de 2026
 
@@ -7,7 +7,7 @@ sessões de apoio académico. Esta política explica que dados a aplicação gua
 quem são partilhados e como se pede a sua remoção.
 
 > **O que está publicado nas lojas é outro documento.** O URL que a App Store e a Google Play vão
-> abrir é `https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf` — os *Termos e Condições da aplicação
+> abrir é `https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf` - os *Termos e Condições da aplicação
 > «Buddy App»*, publicados pela Universitas/Cooperativa de Ensino Superior. Foi uma decisão tomada
 > com os olhos abertos (os dois documentos foram lidos lado a lado), e tem duas consequências:
 >
@@ -15,7 +15,7 @@ quem são partilhados e como se pede a sua remoção.
 >   (apoio psicológico, monitorização emocional, dados de bem-estar), e não descreve os desta (email
 >   institucional, fotografia, mensagens, token dos avisos, Firebase/Expo/EAS Observe);
 > - este ficheiro continua a ser a descrição **exata** da INOVAPP, e é ele que serve para responder
->   ao questionário *App Privacy* (Apple) e à *Segurança de dados* (Play) — responder pelo documento
+>   ao questionário *App Privacy* (Apple) e à *Segurança de dados* (Play) - responder pelo documento
 >   das lojas era declarar dados que não existem e calar os que existem.
 >
 > Se o ISEC publicar um TC equivalente para a INOVAPP, troca-se o URL nas duas fichas e este aviso
@@ -23,7 +23,7 @@ quem são partilhados e como se pede a sua remoção.
 >
 > **Por confirmar antes de publicar seja o que for:** quem é o responsável pelo tratamento. Aqui
 > está Diogo Henriques; no documento que as lojas abrem, o responsável é a **Cooperativa de Ensino
-> Superior** (NIPC 503383082). As duas versões não podem estar certas ao mesmo tempo — e a resposta
+> Superior** (NIPC 503383082). As duas versões não podem estar certas ao mesmo tempo - e a resposta
 > certa é a de quem responde pelos dados no ISEC.
 
 ## Quem é responsável
@@ -55,7 +55,7 @@ para venda, e não se recolhe localização, contactos, microfone, câmara nem d
 - pedidos de conexão e de sessão (quem pediu, a quem, em que estado);
 - sessões marcadas (participantes, disciplina, data, hora, modalidade);
 - mensagens trocadas entre pessoas ligadas;
-- avaliações das sessões — **anónimas por construção**: a avaliação de uma sessão não guarda quem a
+- avaliações das sessões - **anónimas por construção**: a avaliação de uma sessão não guarda quem a
   escreveu, só a sessão a que se refere;
 - bloqueios entre utilizadores.
 
@@ -65,7 +65,7 @@ para venda, e não se recolhe localização, contactos, microfone, câmara nem d
 - o email da última entrada, se a opção "Lembrar-me" foi marcada (para voltar a preencher o campo;
   a palavra-passe nunca é guardada);
 - um identificador do dispositivo e a escolha de receber (ou não) avisos;
-- um *token* de notificações, quando os avisos são aceites — este fica associado à conta, para a
+- um *token* de notificações, quando os avisos são aceites - este fica associado à conta, para a
   aplicação conseguir avisar de um pedido novo.
 
 ## Para que servem
@@ -76,8 +76,8 @@ espera resposta. As fotografias servem para as pessoas se reconhecerem entre si.
 
 ## Com quem são partilhados
 
-Os dados são guardados nos serviços da **Google (Firebase)** — autenticação, base de dados e envio
-dos emails de confirmação e de reposição de palavra-passe — e as notificações são entregues através
+Os dados são guardados nos serviços da **Google (Firebase)** - autenticação, base de dados e envio
+dos emails de confirmação e de reposição de palavra-passe - e as notificações são entregues através
 do **Expo Push Service**. Não são vendidos nem cedidos a terceiros para outras finalidades.
 
 Para saber se a aplicação está a funcionar bem, são enviados para o **EAS Observe** (Expo) erros e
@@ -90,7 +90,7 @@ autenticada com email institucional. Mensagens, pedidos e sessões só são vis�
 ## Durante quanto tempo
 
 Enquanto a conta existir. O perfil guarda a fotografia até a pessoa a substituir ou remover, e o
-histórico (pedidos, sessões, mensagens) fica registado enquanto a conta existir — não é apagado por
+histórico (pedidos, sessões, mensagens) fica registado enquanto a conta existir - não é apagado por
 passar tempo.
 
 ## Apagar a conta

@@ -35,7 +35,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import type { MatchCandidate } from '@/types/match';
 
-/** Sugestões mostradas no fim da lista — um resumo, não um deck: ver todos é nos Matches. */
+/** Sugestões mostradas no fim da lista - um resumo, não um deck: ver todos é nos Matches. */
 const SUGGESTIONS_LIMIT = 3;
 
 /** Entradas no histórico "Recentes", no máximo (as três fontes juntas). */
@@ -118,7 +118,7 @@ export default function NotificationsScreen() {
   // lado** (as respostas aos pedidos que eu enviei, ao vivo) e os materiais recebidos (também ao
   // vivo, reaproveitados da secção de Materiais).
   //
-  // As respostas aparecem duas vezes — uma da leitura pontual, outra da subscrição — e é de
+  // As respostas aparecem duas vezes - uma da leitura pontual, outra da subscrição - e é de
   // propósito: a primeira traz o histórico antigo e a segunda o instante. O que as junta é o **id**,
   // `connection-{id}` nos dois lados, por isso o mapa fica com uma só entrada: a última a entrar, que
   // é a ao vivo.
@@ -202,7 +202,7 @@ export default function NotificationsScreen() {
         )}
 
         {/* As duas leituras vivas que este ecrã mostra. Sem estes avisos, "não tens pedidos" e
-            "não consegui ver os teus pedidos" davam o mesmo ecrã — e é este ecrã que decide
+            "não consegui ver os teus pedidos" davam o mesmo ecrã - e é este ecrã que decide
             aceitar/recusar. */}
         {sessionRequestsError && (
           <RetryNotice
@@ -273,7 +273,7 @@ export default function NotificationsScreen() {
             </ThemedText>
             {/* O aviso abre o ecrã dos pedidos, e não a aba dos Matches: um separador não se
                 empilha, e quem entra por aqui tem de poder voltar com o gesto do iOS. A decisão
-                (aceitar/recusar) é a mesma lista nos dois sítios — é o mesmo componente. */}
+                (aceitar/recusar) é a mesma lista nos dois sítios - é o mesmo componente. */}
             <View style={styles.recentList}>
               {connectionRequests.map((request) => (
                 <Pressable

@@ -1,11 +1,11 @@
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/Button';
 import { PersonalCardInfo } from '@/components/ui/PersonalCardInfo';
 import { ProfilePicCard } from '@/components/ui/ProfilePicCard';
 import { TagProfile } from '@/components/ui/TagProfile';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export interface CandidateCardProps extends ViewProps {
   firstName: string;
@@ -29,8 +29,8 @@ export interface CandidateCardProps extends ViewProps {
  * Candidato na lista dos Matches: fotografia, nome, curso e as disciplinas em que ensina, com as
  * duas decisões em botões.
  *
- * É o mesmo desenho da linha de resultados da pesquisa (`StudentCard`) — cartão branco, fotografia
- * à esquerda, informação no meio — porque fazem a mesma pergunta à mesma pessoa: "esta interessa-me?".
+ * É o mesmo desenho da linha de resultados da pesquisa (`StudentCard`) - cartão branco, fotografia
+ * à esquerda, informação no meio - porque fazem a mesma pergunta à mesma pessoa: "esta interessa-me?".
  * Antes isto era um cartão de ecrã inteiro com a fotografia em fundo e uma bandeja de botões fixa
  * em baixo, e o ecrã não se parecia com nenhum dos outros.
  *

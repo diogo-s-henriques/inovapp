@@ -15,7 +15,7 @@ const PASSED_STORAGE_KEY = 'inovapp:passedCandidates';
 
 /**
  * Teto de perfis lidos de uma vez. Antes não havia limite: cada pesquisa ou abertura do deck de
- * Matches lia a coleção `users` inteira. Com este teto, a ordem passa a ser a dos IDs — o que
+ * Matches lia a coleção `users` inteira. Com este teto, a ordem passa a ser a dos IDs - o que
  * também quer dizer que, a partir de `CANDIDATE_POOL_LIMIT` perfis completos, a pesquisa deixa de
  * ver toda a gente (filtra este conjunto no cliente). Resolver isso a sério é fazer a pesquisa no
  * servidor, e é trabalho à parte; aqui o objetivo é só parar de ler a coleção toda.
@@ -91,7 +91,7 @@ export async function fetchCandidateById(uid: string): Promise<MatchCandidate | 
   return toCandidate(uid, snapshot.data() as MentorProfileDoc);
 }
 
-/** Mentores com quem o utilizador (Tutorando) já tem uma conexão aceite — usados na secção
+/** Mentores com quem o utilizador (Tutorando) já tem uma conexão aceite - usados na secção
  * "Mentores para ti" da home, distinta do deck de descoberta em Matches. */
 export async function fetchConnectedMentors(uid: string): Promise<MatchCandidate[]> {
   const [snapshot, bloqueados] = await Promise.all([
@@ -104,7 +104,7 @@ export async function fetchConnectedMentors(uid: string): Promise<MatchCandidate
 }
 
 /**
- * Tutorandos com quem o utilizador (Mentor) já tem uma conexão aceite — a lista de quem
+ * Tutorandos com quem o utilizador (Mentor) já tem uma conexão aceite - a lista de quem
  * acompanha. É o simétrico de `fetchConnectedMentors`: um pedido de conexão vai sempre do
  * Tutorando para o Mentor (ver `sendConnectionRequest`), por isso quem ensina é o `to` e a sua
  * lista de tutorandos são os `from` aceites.
@@ -127,12 +127,12 @@ export async function fetchConnectedTutees(uid: string): Promise<MatchCandidate[
  *
  * A Home só precisa desta resposta booleana (é ela que decide se mostra o guia de primeiros
  * passos) e, para a ter, lia as duas listas completas: duas consultas, um perfil por linha e os
- * dois pares de bloqueios. Aqui a pergunta é feita com `limit(1)` de cada lado — dois documentos em
+ * dois pares de bloqueios. Aqui a pergunta é feita com `limit(1)` de cada lado - dois documentos em
  * vez de duas listas.
  *
  * `limit(1)` e não `count()`: uma ligação bloqueada deixa de ser ligação, e o `count()` conta-a.
  * Quando o único candidato que apareceu tem um bloqueio connosco não se pode responder "não tens
- * ligações" (pode haver outra atrás dele) — nesse caso raro recua-se para a leitura completa, que
+ * ligações" (pode haver outra atrás dele) - nesse caso raro recua-se para a leitura completa, que
  * é a resposta certa. No caso comum (sem bloqueios) nunca se chega lá.
  */
 export async function hasConnections(uid: string): Promise<boolean> {
@@ -173,7 +173,7 @@ export async function hasConnections(uid: string): Promise<boolean> {
 
 /**
  * Cache de perfis com o tempo de vida de UMA subscrição (ex.: enquanto o ecrã de chat/agenda/
- * notificações está montado), não da app inteira — cada chamada a subscribeTo... deve criar a
+ * notificações está montado), não da app inteira - cada chamada a subscribeTo... deve criar a
  * sua própria instância, para que reabrir o ecrã volte a ler perfis entretanto editados.
  */
 export function createProfileResolver() {
@@ -221,7 +221,7 @@ export async function sendConnectionRequest(fromUid: string, toUid: string): Pro
  */
 export async function fetchExcludedCandidateIds(uid: string): Promise<Set<string>> {
   // Os bloqueios entram aqui, e não numa lista à parte, porque o resultado é o mesmo: quem está
-  // bloqueado não pode aparecer na descoberta — nem para pedir, nem para ser pedido.
+  // bloqueado não pode aparecer na descoberta - nem para pedir, nem para ser pedido.
   const [bloqueados, enviados, recebidos] = await Promise.all([
     fetchBlockedPairs(uid),
     getDocs(query(collection(db, 'connectionRequests'), where('from', '==', uid))),
@@ -236,14 +236,14 @@ export async function fetchExcludedCandidateIds(uid: string): Promise<Set<string
 }
 
 /** Perfis de quem o utilizador bloqueou, para a lista em Definições. Só os que ele próprio
- * bloqueou — quem o bloqueou a ele não aparece, para não transformar a lista num aviso. */
+ * bloqueou - quem o bloqueou a ele não aparece, para não transformar a lista num aviso. */
 export async function fetchBlockedUsers(uid: string): Promise<MatchCandidate[]> {
   const blockedUids = await fetchBlockedUids(uid);
   const profiles = await Promise.all(blockedUids.map((blockedUid) => fetchCandidateById(blockedUid)));
   return profiles.filter((candidate): candidate is MatchCandidate => candidate !== null);
 }
 
-/** IDs de candidatos que o utilizador já "passou" no deck de Matches — guardado só no
+/** IDs de candidatos que o utilizador já "passou" no deck de Matches - guardado só no
  * dispositivo (nunca no Firestore, ao contrário de connectionRequests): passar não é uma decisão
  * que precise de ficar visível ao outro lado, só de não voltar a aparecer neste dispositivo. */
 export async function getPassedCandidateIds(): Promise<string[]> {
@@ -262,7 +262,7 @@ export type MatchesView = 'blocked' | 'requests' | 'loading' | 'error' | 'list';
  *
  * É uma função (e não uma corrente de `if` dentro do JSX) por causa de um caso que já falhou: o
  * carregamento (`loading`) só faz sentido para quem **tem** lista de candidatos. O efeito que lê a
- * lista sai mais cedo para quem só ensina — não há nada para ler — e por isso nunca chegava a pôr
+ * lista sai mais cedo para quem só ensina - não há nada para ler - e por isso nunca chegava a pôr
  * `loading` a falso. Com um ecrã que perguntava "ainda estou a carregar?", isso era um indicador a
  * girar para sempre, com os pedidos de conexão que a pessoa tem por decidir escondidos atrás dele.
  *

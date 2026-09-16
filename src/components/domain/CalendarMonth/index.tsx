@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
+import { ThemedText } from '@/components/ui/ThemedText';
 import { IconSize, Spacing } from '@/constants/theme';
-import { toDateKey } from '@/lib/time';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
-import { ThemedText } from '@/components/ui/ThemedText';
+import { toDateKey } from '@/lib/time';
 
 export interface CalendarMonthProps extends ViewProps {
   month: Date;
@@ -14,7 +14,7 @@ export interface CalendarMonthProps extends ViewProps {
   markedDates?: Set<string>;
   selectedDate?: string;
   onSelectDate: (date: string) => void;
-  /** 'YYYY-MM-DD' — dias antes desta data ficam desativados. */
+  /** 'YYYY-MM-DD' - dias antes desta data ficam desativados. */
   minDate?: string;
 }
 
@@ -100,7 +100,7 @@ export function CalendarMonth({
                 accessibilityRole="button"
                 accessibilityLabel={dateKey}
                 // O círculo do dia tem 28 px de altura e o alvo do toque é medido a partir dele: com
-                // 4 px de folga em cima e em baixo, o alvo fica com 36 — abaixo dos 44 pt que a
+                // 4 px de folga em cima e em baixo, o alvo fica com 36 - abaixo dos 44 pt que a
                 // Apple recomenda e acima do mínimo utilizável. Foi o que se ganhou ao compactar a
                 // grelha sem tornar os dias difíceis de acertar.
                 hitSlop={{ top: 4, bottom: 4 }}
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   },
   // 28 e não 32: a grelha do mês é a peça mais alta de uma Home que tem de caber num ecrã sem
   // rolar (ver a entrada do ecrã inicial no README), e são 6 linhas × 4 px que saem daqui. O
-  // alvo do toque não encolhe com ela — quem o garante é o `hitSlop` da célula.
+  // alvo do toque não encolhe com ela - quem o garante é o `hitSlop` da célula.
   dayCircle: {
     width: 28,
     height: 28,

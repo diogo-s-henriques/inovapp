@@ -10,7 +10,7 @@ interface PushState {
   /**
    * Este dispositivo ficou **mesmo** registado. Existe para a permissão dada não ser confundida
    * com o registo feito: sem token (credenciais FCM em falta) a permissão está dada e não há aviso
-   * nenhum — e dizer "recebes um aviso" era mentir. `null` é "ainda não se sabe".
+   * nenhum - e dizer "recebes um aviso" era mentir. `null` é "ainda não se sabe".
    */
   registered: boolean | null;
   setPushState: (state: {

@@ -2,7 +2,7 @@
 /**
  * Confere os limites de caracteres da ficha das lojas (STORE.md).
  *
- * As lojas contam os caracteres e recusam o texto inteiro quando um campo passa do limite — e um
+ * As lojas contam os caracteres e recusam o texto inteiro quando um campo passa do limite - e um
  * subtítulo de 31 caracteres não se vê a olho, sobretudo depois de o texto ser editado. Aqui, cada
  * campo é declarado no cabeçalho que o precede (`**Subtítulo (App Store, máx. 30)**`) e o bloco
  * seguinte é o que se copia: o script mede exatamente esse bloco.
@@ -54,7 +54,7 @@ linhas.forEach((linha, indice) => {
 });
 
 if (campos.length === 0) {
-  console.error('Não encontrei nenhum campo com limite em STORE.md — o formato do ficheiro mudou?');
+  console.error('Não encontrei nenhum campo com limite em STORE.md - o formato do ficheiro mudou?');
   process.exit(1);
 }
 

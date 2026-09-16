@@ -4,7 +4,7 @@ import type { AppUser } from '@/types/auth';
  * Que ecrãs a app mostra, decidido num sítio só.
  *
  * Existe pela mesma razão que o `matchesView`: esta decisão estava espalhada por dentro dos
- * `guard` do `Stack` no `_layout.tsx`, onde não há forma de a testar — e é uma decisão que falha
+ * `guard` do `Stack` no `_layout.tsx`, onde não há forma de a testar - e é uma decisão que falha
  * mal, porque o sintoma de uma guarda errada é um ecrã que aparece quando não devia (ou a app
  * presa no splash). Aqui é uma função de valores para valor.
  */
@@ -23,13 +23,13 @@ export function authStage({ initializing, user, profileCompleted }: AuthGateInpu
   if (!user) return 'signed-out';
 
   /**
-   * A confirmação do email vem **antes de tudo o resto** — antes do perfil, e antes até de se
+   * A confirmação do email vem **antes de tudo o resto** - antes do perfil, e antes até de se
    * saber se o perfil existe (que é o que o `profileCompleted === null` significa).
    *
    * Por duas razões, e as duas são de ordem: um email institucional que ninguém provou ser seu não
-   * pode chegar a escrever um perfil com o nome de outra pessoa (ver firestore.rules — a mesma
+   * pode chegar a escrever um perfil com o nome de outra pessoa (ver firestore.rules - a mesma
    * exigência está no servidor, e é lá que conta); e este ecrã **não pode depender da leitura do
-   * perfil**, senão uma leitura recusada a quem não confirmou deixava a app presa no splash — o
+   * perfil**, senão uma leitura recusada a quem não confirmou deixava a app presa no splash - o
    * próprio ecrã que explica o que fazer nunca chegava a aparecer. Saber se o email está confirmado
    * não precisa do Firestore: vem do token.
    */

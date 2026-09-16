@@ -13,7 +13,7 @@ export const en: Translations = {
     genericError: 'Something went wrong. Please try again.',
     errorTitle: 'Something went wrong',
     errorBody:
-      'This screen tripped over. You can try again; if it keeps happening, close and reopen the app — the rest of it still works.',
+      'This screen tripped over. You can try again; if it keeps happening, close and reopen the app - the rest of it still works.',
     today: 'Today',
     yesterday: 'Yesterday',
     now: 'Now',
@@ -111,7 +111,7 @@ export const en: Translations = {
   emailVerification: {
     title: 'Confirm your email',
     description: (email) =>
-      `We sent a confirmation link to ${email}. Open it and come back here — only then does the app let you in.`,
+      `We sent a confirmation link to ${email}. Open it and come back here - only then does the app let you in.`,
     hint: 'Nothing arrived? Check the spam folder before asking for another one.',
     check: 'I have confirmed',
     checking: 'Checking...',
@@ -165,7 +165,7 @@ export const en: Translations = {
     firstStepsBodyLearn:
       'You have no connections or sessions yet. Find a mentor in Matches, send a connection request, and arrange your first session in the chat.',
     firstStepsBodyTeach:
-      'You have no connections or sessions yet. Since you teach, tutees are the ones who come to you — keep your profile complete to show up in discovery.',
+      'You have no connections or sessions yet. Since you teach, tutees are the ones who come to you - keep your profile complete to show up in discovery.',
     firstStepsCtaLearn: 'Find mentors',
     firstStepsCtaTeach: 'Review my profile',
   },
@@ -233,7 +233,7 @@ export const en: Translations = {
   },
   attachFile: {
     title: 'Attach file',
-    description: "Paste a link (Google Drive, YouTube, etc.) — there's no direct file upload.",
+    description: "Paste a link (Google Drive, YouTube, etc.) - there's no direct file upload.",
     fileNameLabel: 'File name',
     fileNamePlaceholder: 'E.g. Chapter 3 exercises',
     linkLabel: 'Link',
@@ -379,7 +379,7 @@ export const en: Translations = {
     notificationsOff: 'No alerts: you only see requests when you open the app.',
     notificationsUndecided: 'You haven’t decided yet. Turn it on to be alerted when someone asks to connect or requests a session.',
     notificationsBlocked: 'Alerts are blocked in your phone settings.',
-    notificationsFailed: 'Permission is granted, but this phone could not be registered — with no registration, no alert arrives.',
+    notificationsFailed: 'Permission is granted, but this phone could not be registered - with no registration, no alert arrives.',
     notificationsEnable: 'Turn on',
     notificationsDisable: 'Turn off',
     notificationsOpenSettings: 'Open settings',
@@ -393,7 +393,7 @@ export const en: Translations = {
     deleteAccountConfirm: 'Delete account',
     deleteAccountPasswordTitle: 'Confirm it is you',
     deleteAccountPasswordDescription:
-      'Type your password. This is the last step — after this the account does not come back.',
+      'Type your password. This is the last step - after this the account does not come back.',
     deleteAccountPasswordLabel: 'Password',
     deleteAccountWorking: 'Deleting...',
     deleteAccountFailed: 'Could not delete the account. Please try again.',
@@ -422,7 +422,7 @@ export const en: Translations = {
     filterReceived: 'Received',
     sentTo: 'Sent to',
     receivedFrom: 'Received from',
-    empty: 'No materials for now — files you send or receive in a conversation appear here.',
+    empty: 'No materials for now - files you send or receive in a conversation appear here.',
     open: (fileName) => `Open ${fileName}`,
     invalidLink: 'This material has an invalid link.',
   },

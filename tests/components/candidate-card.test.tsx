@@ -1,9 +1,9 @@
 /**
- * Testes do `CandidateCard` — a linha de cada candidato na lista dos Matches.
+ * Testes do `CandidateCard` - a linha de cada candidato na lista dos Matches.
  *
  * Três toques vivem neste cartão e fazem coisas muito diferentes: tocar no cartão abre o perfil,
  * "Passar" esconde a pessoa para sempre (é gravado no dispositivo, não há como voltar atrás) e
- * "Conectar" envia-lhe um pedido de ligação — que não se pode desfazer, porque as regras do
+ * "Conectar" envia-lhe um pedido de ligação - que não se pode desfazer, porque as regras do
  * Firestore não deixam apagar um pedido enviado. Trocá-los entre si era um erro silencioso e caro,
  * e é exatamente o que um teste de componente consegue fixar.
  *
@@ -24,7 +24,7 @@ const BASE = {
   connectLabel: 'Conectar',
 };
 
-describe('<CandidateCard /> — quem é', () => {
+describe('<CandidateCard /> - quem é', () => {
   it('mostra o nome, o curso com o ano e as disciplinas', async () => {
     const { getByText } = await render(
       <CandidateCard {...BASE} onPass={jest.fn()} onConnect={jest.fn()} onPressProfile={jest.fn()} />,
@@ -46,7 +46,7 @@ describe('<CandidateCard /> — quem é', () => {
   });
 });
 
-describe('<CandidateCard /> — os três toques', () => {
+describe('<CandidateCard /> - os três toques', () => {
   it('tocar no cartão abre o perfil', async () => {
     const onPressProfile = jest.fn();
     const { getAllByLabelText } = await render(
@@ -54,7 +54,7 @@ describe('<CandidateCard /> — os três toques', () => {
     );
 
     // Dois elementos anunciam o nome: o cartão inteiro e a fotografia lá dentro. O primeiro na
-    // ordem da árvore é o cartão — é ele o alvo deste toque.
+    // ordem da árvore é o cartão - é ele o alvo deste toque.
     const [cartao] = getAllByLabelText('Ana Aluna');
 
     await fireEvent.press(cartao);

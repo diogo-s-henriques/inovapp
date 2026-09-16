@@ -1,12 +1,12 @@
 /**
  * Testes de `src/lib/time.ts`.
  *
- * `formatTimeAgo` recebe o rótulo de "agora" já traduzido em vez de o fixar em português — foi
+ * `formatTimeAgo` recebe o rótulo de "agora" já traduzido em vez de o fixar em português - foi
  * essa a correcção que tirou os dados do i18n hardcoded. Os testes verificam as fronteiras entre
  * minutos/horas/dias e que o rótulo passa mesmo pelo parâmetro.
  *
  * `toDateKey` vivia dentro do componente `CalendarMonth` e mudou-se para aqui: é lógica pura, sem
- * React, e o `activity.ts` precisa dela para saber quais são as sessões de amanhã — enquanto
+ * React, e o `activity.ts` precisa dela para saber quais são as sessões de amanhã - enquanto
  * estivesse num ficheiro `.tsx`, a camada de dados ficava impossível de testar em Node.
  */
 import assert from 'node:assert/strict';
@@ -35,7 +35,7 @@ describe('dateLocaleTag', () => {
   });
 });
 
-describe('formatTimeAgo — intervalos', () => {
+describe('formatTimeAgo - intervalos', () => {
   const casos: Array<[number, string, string]> = [
     [30 * SEGUNDO, 'agora mesmo', 'menos de um minuto'],
     [59 * SEGUNDO, 'agora mesmo', 'uma distância que continua a arredondar para zero minutos'],
@@ -56,7 +56,7 @@ describe('formatTimeAgo — intervalos', () => {
   }
 });
 
-describe('formatTimeAgo — o rótulo de "agora" vem do chamador', () => {
+describe('formatTimeAgo - o rótulo de "agora" vem do chamador', () => {
   it('usa o rótulo em português', () => {
     assert.equal(formatTimeAgo(haQuantoTempo(0), 'agora'), 'agora');
   });
@@ -70,7 +70,7 @@ describe('formatTimeAgo — o rótulo de "agora" vem do chamador', () => {
   });
 });
 
-describe('formatTimeAgo — sufixos', () => {
+describe('formatTimeAgo - sufixos', () => {
   it('não distingue idiomas nos sufixos (é o mesmo formato para todos)', () => {
     for (const distancia of [MINUTO, HORA, DIA]) {
       const resultado = formatTimeAgo(haQuantoTempo(distancia), 'agora');
@@ -90,7 +90,7 @@ describe('toDateKey', () => {
   });
 
   it('ordena-se alfabeticamente como cronologicamente', () => {
-    // É esta a propriedade que permite comparar dias com `<` em vez de os converter em Date —
+    // É esta a propriedade que permite comparar dias com `<` em vez de os converter em Date -
     // ver o comentário do `isDisabled` em CalendarMonth.
     assert.ok(toDateKey(new Date(2026, 8, 30)) < toDateKey(new Date(2026, 9, 1)));
     assert.ok(toDateKey(new Date(2026, 11, 31)) < toDateKey(new Date(2027, 0, 1)));
@@ -98,7 +98,7 @@ describe('toDateKey', () => {
 
   it('usa a data local e não a data UTC', () => {
     // 00:30 locais. Com `toISOString()` (que converte para UTC), qualquer fuso a leste de
-    // Greenwich devolveria aqui o dia anterior — e a agenda marcaria o dia errado. O teste nunca
+    // Greenwich devolveria aqui o dia anterior - e a agenda marcaria o dia errado. O teste nunca
     // falha num fuso a oeste, por isso não dá falsos positivos: só apanha a regressão.
     assert.equal(toDateKey(new Date(2026, 9, 5, 0, 30)), '2026-10-05');
   });

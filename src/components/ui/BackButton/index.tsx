@@ -25,7 +25,7 @@ export interface BackButtonProps extends Omit<PressableProps, 'onPress' | 'style
   label: string;
   onPress: () => void;
   /**
-   * `surface` põe um fundo próprio com contorno — é para quando o botão assenta sobre uma
+   * `surface` põe um fundo próprio com contorno - é para quando o botão assenta sobre uma
    * fotografia ou um bloco colorido, onde um chevron nu perde o contraste. `plain` (por omissão)
    * é o mesmo botão sem fundo, para quando já está sobre o fundo do ecrã.
    */
@@ -36,7 +36,7 @@ export interface BackButtonProps extends Omit<PressableProps, 'onPress' | 'style
  * O botão de voltar dos ecrãs empilhados (aqueles a que se chega a partir de outro ecrã).
  *
  * Vive aqui, e não em cada ecrã, pela mesma razão do `ScreenHero` nos separadores: um botão
- * desenhado à mão por ecrã diverge. O `hitSlop` é a única parte invisível — o símbolo tem 22 px e
+ * desenhado à mão por ecrã diverge. O `hitSlop` é a única parte invisível - o símbolo tem 22 px e
  * o alvo do toque é bem maior do que ele.
  */
 export function BackButton({ label, onPress, variant = 'plain', style, ...rest }: BackButtonProps) {

@@ -18,7 +18,7 @@ export interface CourseFieldProps {
   style?: StyleProp<ViewStyle>;
 }
 
-// Seletor de curso usado apenas no fluxo de estudante — professores não têm curso/ano
+// Seletor de curso usado apenas no fluxo de estudante - professores não têm curso/ano
 // associado ao perfil, pelo que este campo não é usado no fluxo de professor.
 export function CourseField({ label, selected, onChange, style }: CourseFieldProps) {
   const theme = useTheme();

@@ -6,7 +6,7 @@ import type { NewRatingData } from '@/types/rating';
 
 const DISMISSED_STORAGE_KEY = 'inovapp:dismissedRatings';
 
-/** Documento em ratings/{sessionId} — nunca guarda quem avaliou, só a sessão e a nota. */
+/** Documento em ratings/{sessionId} - nunca guarda quem avaliou, só a sessão e a nota. */
 export async function hasRatingForSession(sessionId: string): Promise<boolean> {
   const snapshot = await getDoc(doc(db, 'ratings', sessionId));
   return snapshot.exists();

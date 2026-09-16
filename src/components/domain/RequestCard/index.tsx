@@ -32,13 +32,13 @@ export interface RequestCardProps extends ViewProps {
   busy?: boolean; // desativa os botões enquanto o pedido está a ser processado
   onAccept?: () => void;
   onDecline?: () => void;
-  // Quando definido, mostra uma pill de estado em vez dos botões Aceitar/Recusar — usado por
+  // Quando definido, mostra uma pill de estado em vez dos botões Aceitar/Recusar - usado por
   // quem não pode responder (ex.: quem enviou o pedido, a vê-lo no chat).
   status?: RequestCardStatus;
 }
 
 /** Cartão usado tanto para pedidos de conexão/sessão no ecrã de notificações como para o pedido
- * de sessão dentro do próprio chat (ver ChatSessionRequestCard) — nesse caso, só quem pode
+ * de sessão dentro do próprio chat (ver ChatSessionRequestCard) - nesse caso, só quem pode
  * responder vê os botões; quem pediu vê o estado (status).
  *
  * É um cartão **branco** como todos os outros, e não um tom com cor: era o único cartão com cor da
@@ -101,7 +101,7 @@ export function RequestCard({
       ) : (
         <View style={styles.actionsRow}>
           {/* As duas decisões são simétricas e levam o tom neutro: recusar é contorno e aceitar é
-              cheio, mas nenhuma das duas é "a ação da app" — o acento é para o que a app promove. */}
+              cheio, mas nenhuma das duas é "a ação da app" - o acento é para o que a app promove. */}
           <Button
             label={i18n.requestCard.decline}
             variant="secondary"

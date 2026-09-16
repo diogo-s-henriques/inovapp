@@ -213,7 +213,7 @@ export interface Translations {
     empty: string;
     /** Falha ao aceitar/recusar um pedido. */
     respondError: string;
-    /** Leitura dos pedidos pendentes que falhou (regras negadas, rede) — sem isto, a lista vazia
+    /** Leitura dos pedidos pendentes que falhou (regras negadas, rede) - sem isto, a lista vazia
      * era indistinguível de "não há pedidos". */
     loadError: string;
   };

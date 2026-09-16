@@ -8,7 +8,7 @@ import { ThemedText } from '@/components/ui/ThemedText';
 export interface EditButtonProps extends Omit<PressableProps, 'style'> {
   label: string;
   /**
-   * Descrição para leitores de ecrã: o botão diz "Editar", mas o que edita é o perfil — sem isto,
+   * Descrição para leitores de ecrã: o botão diz "Editar", mas o que edita é o perfil - sem isto,
    * quem não vê a página ouve um botão chamado "Editar" sem saber o que vai editar.
    */
   accessibilityLabel: string;
@@ -19,7 +19,7 @@ export interface EditButtonProps extends Omit<PressableProps, 'style'> {
  * `ScreenHero`), por baixo do nome e do curso.
  *
  * Chegou a ser maior ("Editar Perfil") e a estar ao lado do nome: tirou-lhe a linha inteira de que
- * o nome precisa. Aqui é um botão pequeno de contorno com o lápis e a palavra, na coluna do texto —
+ * o nome precisa. Aqui é um botão pequeno de contorno com o lápis e a palavra, na coluna do texto -
  * fica perto da fotografia e do nome, que é onde se procura, sem competir com eles.
  *
  * O fundo é **branco** e não transparente: assenta sobre o tom claro do bloco (a mesma superfície

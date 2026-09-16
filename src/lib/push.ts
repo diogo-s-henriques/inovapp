@@ -6,13 +6,13 @@ import { db } from '@/lib/firebase';
 /**
  * Camada de dados das notificações push, sem tocar no `expo-notifications`: o que aqui está é a
  * **decisão** (registo, esquecimento ou nada) e onde ela fica escrita. Quem fala com o sistema
- * —permissões e token da Expo— é o `src/push/actions.ts`, pela mesma razão que o `matching.ts` não
+ * -permissões e token da Expo- é o `src/push/actions.ts`, pela mesma razão que o `matching.ts` não
  * sabe desenhar ecrãs: o que se pode testar sem telemóvel fica de um lado, o que precisa do
  * sistema fica do outro.
  *
  * **Porque é que o token não vive no documento do perfil:** `users/{uid}` é legível por qualquer
  * utilizador autenticado (é o que a pesquisa e o matching precisam, ver firestore.rules), e um
- * ExpoPushToken lá dentro era legível por todos — quem o tivesse podia enviar avisos em nome da
+ * ExpoPushToken lá dentro era legível por todos - quem o tivesse podia enviar avisos em nome da
  * app a qualquer pessoa. O sítio dele é uma subcoleção privada, `users/{uid}/devices/{id}`, que só
  * o próprio lê e escreve; quem envia (as Cloud Functions) usa o Admin SDK e não passa pelas
  * regras.
@@ -32,7 +32,7 @@ export type PushPermission = 'granted' | 'denied' | 'undetermined';
 export type PushAction = 'register' | 'forget' | 'idle';
 
 /**
- * A decisão toda, num sítio só — e por isso testável sem telemóvel nenhum.
+ * A decisão toda, num sítio só - e por isso testável sem telemóvel nenhum.
  *
  * Três casos que valem a pena: **desligado** (`optedOut`) e **sem permissão** dão no mesmo lugar
  * (o registo não vale nada, apaga-se em vez de ficar lá a receber avisos que ninguém quer); e
@@ -60,7 +60,7 @@ export function registrationAction(input: {
  *
  * Existe para o registo ser **um documento por dispositivo** (e não um por token): sem ele, cada
  * vez que a Expo emitisse um token novo ficava um documento velho a receber avisos para um
- * telemóvel que já não os pode mostrar. Não é secreto — as regras é que decidem quem o pode ler.
+ * telemóvel que já não os pode mostrar. Não é secreto - as regras é que decidem quem o pode ler.
  */
 export async function getInstallationId(): Promise<string> {
   const stored = await AsyncStorage.getItem(INSTALLATION_STORAGE_KEY);

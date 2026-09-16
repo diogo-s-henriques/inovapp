@@ -19,8 +19,8 @@ type AuthDependencies = NonNullable<Parameters<typeof initializeAuth>[1]>;
 
 /**
  * A factory de persistência em AsyncStorage existe só no build de React Native do Firebase: na
- * web o `getAuth()` já usa localStorage, e no build de Node — o que os testes da camada de dados
- * usam, ver tests/data/preload.mjs — não existe de todo. Procurá-la no módulo em tempo de
+ * web o `getAuth()` já usa localStorage, e no build de Node - o que os testes da camada de dados
+ * usam, ver tests/data/preload.mjs - não existe de todo. Procurá-la no módulo em tempo de
  * execução (em vez de um `import` com nome, que partiria aqueles dois casos) é o que permite
  * tratar cada plataforma pelo que ela realmente tem.
  */
@@ -46,7 +46,7 @@ function createAuth(): Auth {
     return initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
   } catch (error) {
     // O Fast Refresh reavalia este módulo com a app (e a Auth) já inicializadas; nesse caso a
-    // instância que existe é precisamente a que interessa — voltar a inicializar rebentava com
+    // instância que existe é precisamente a que interessa - voltar a inicializar rebentava com
     // 'auth/already-initialized'. `getAuth` devolve a existente, sem avisar de nada.
     if ((error as { code?: string } | undefined)?.code === 'auth/already-initialized') {
       return getAuth(app);

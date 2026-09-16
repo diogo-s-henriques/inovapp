@@ -1,8 +1,8 @@
 /**
  * Lógica pura do ecrã inicial (`src/app/(tabs)/index.tsx`).
  *
- * Vive fora do componente porque são regras com fronteiras — a hora a que a saudação muda, o que
- * conta como "à espera de resposta", o que faz a Home estar vazia — e nenhuma delas precisa de
+ * Vive fora do componente porque são regras com fronteiras - a hora a que a saudação muda, o que
+ * conta como "à espera de resposta", o que faz a Home estar vazia - e nenhuma delas precisa de
  * React para ser verificada.
  */
 
@@ -31,7 +31,7 @@ export interface AttentionItem {
 const ATTENTION_ORDER: readonly AttentionKind[] = ['connections', 'sessions', 'messages'];
 
 /**
- * Só o que existe: uma linha a dizer "0 pedidos" seria decoração a ocupar o topo do ecrã — e a
+ * Só o que existe: uma linha a dizer "0 pedidos" seria decoração a ocupar o topo do ecrã - e a
  * faixa só vale a pena precisamente enquanto tiver algo para dizer. Uma contagem negativa (que não
  * devia acontecer, mas vem de dados) é tratada como zero em vez de aparecer como "-1 pendências".
  */
@@ -45,13 +45,13 @@ export interface HomeFill {
   sessions: number;
   /** Ligações aceites, nos dois sentidos (mentores e tutorandos). */
   connections: number;
-  /** Pendências — o que `toAttentionItems` devolveu, já contado. */
+  /** Pendências - o que `toAttentionItems` devolveu, já contado. */
   attention: number;
 }
 
 /**
  * Verdadeiro só quando não há mesmo nada: nem sessões, nem ligações, nem pendências. É isto que
- * decide se a Home mostra o guia de primeiros passos — a mesma condição é a razão de o guia
+ * decide se a Home mostra o guia de primeiros passos - a mesma condição é a razão de o guia
  * existir (um ecrã só com a saudação e dois atalhos) e a razão de ele sair (por cima de conteúdo
  * real, passava a ser ruído).
  */

@@ -28,7 +28,7 @@ function scheduleAfter(delayMs: number, callback: () => void): () => void {
 
 /** Liga o estado de autenticação (Firebase Auth) aos documentos do utilizador no Firestore:
  * o perfil (`users/{uid}`, partilhado com a comunidade) e os dados privados da conta
- * (`userAccounts/{uid}`, só do próprio — email, última entrada, sessão prolongada), a partir
+ * (`userAccounts/{uid}`, só do próprio - email, última entrada, sessão prolongada), a partir
  * dos quais se faz o logout automático quando a sessão expira. */
 export function useAuthSync(): void {
   const { setInitializing, setUser, setProfile, setProfileCompleted } = useAuthStore();
@@ -62,7 +62,7 @@ export function useAuthSync(): void {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
         // O `reload()` que confirma o email escreve **neste mesmo objeto**, por isso voltar a
-        // subscrever não é preciso para isto ficar atual — basta voltar a lê-lo (ver
+        // subscrever não é preciso para isto ficar atual - basta voltar a lê-lo (ver
         // `refreshEmailVerified` em src/auth/actions.ts).
         emailVerified: firebaseUser.emailVerified,
       });

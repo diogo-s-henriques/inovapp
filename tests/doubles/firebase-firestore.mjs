@@ -79,7 +79,7 @@ export class FirestoreError extends Error {}
 /**
  * O `Timestamp` é importado como valor pelo `sessions.ts`, mas só é usado como tipo. O Node
  * retira os tipos ao carregar um `.ts` sem tocar nos `import`, por isso o nome tem de existir
- * como export — ver o comentário do `FirestoreError` acima.
+ * como export - ver o comentário do `FirestoreError` acima.
  */
 export class Timestamp {}
 

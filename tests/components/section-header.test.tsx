@@ -1,5 +1,5 @@
 /**
- * Testes do `SectionHeader` — o título de uma secção da Home, com contagem e ação opcionais.
+ * Testes do `SectionHeader` - o título de uma secção da Home, com contagem e ação opcionais.
  *
  * A contagem tem uma regra que é fácil de perder: **zero não se mostra**. Uma secção que anuncia
  * "0" está a chamar a atenção para o facto de não haver nada, e as secções que usam isto (as
@@ -10,7 +10,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 
 import { SectionHeader } from '@/components/ui/SectionHeader';
 
-describe('<SectionHeader /> — a contagem', () => {
+describe('<SectionHeader /> - a contagem', () => {
   it('mostra o número quando há coisas', async () => {
     const { getByText } = await render(<SectionHeader title="Precisa de ti" badge={6} />);
 
@@ -44,7 +44,7 @@ describe('<SectionHeader /> — a contagem', () => {
   });
 });
 
-describe('<SectionHeader /> — a ação', () => {
+describe('<SectionHeader /> - a ação', () => {
   it('sem rótulo não há ação nenhuma', async () => {
     const { queryByLabelText } = await render(<SectionHeader title="Recentes" />);
 

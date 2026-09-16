@@ -1,5 +1,5 @@
 /**
- * Testes do `ErrorScreen` — o ecrã que substitui o que rebentou.
+ * Testes do `ErrorScreen` - o ecrã que substitui o que rebentou.
  *
  * O que se fixa é que ele faz **duas** coisas: diz o que aconteceu e dá por onde sair. Sem a
  * segunda, é um beco sem saída (é o que a app era antes: um erro em produção fechava-a); sem a
@@ -41,7 +41,7 @@ describe('<ErrorScreen />', () => {
     const semErro = await render(<ErrorScreen onRetry={jest.fn()} />);
 
     expect(comErro.getByText('x is not a function')).toBeTruthy();
-    // Um `retry` sem erro nenhum tem de continuar a desenhar o mesmo ecrã — e não uma linha vazia.
+    // Um `retry` sem erro nenhum tem de continuar a desenhar o mesmo ecrã - e não uma linha vazia.
     expect(semErro.queryByText('x is not a function')).toBeNull();
   });
 

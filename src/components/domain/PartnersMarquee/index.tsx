@@ -20,13 +20,13 @@ const STRIP_WIDTH = STRIP_HEIGHT * STRIP_ASPECT_RATIO;
 /**
  * A velocidade da faixa, em pontos por segundo.
  *
- * É a velocidade que se escolhe, e não a **duração** da volta — que é o que aqui estava antes. Uma
+ * É a velocidade que se escolhe, e não a **duração** da volta - que é o que aqui estava antes. Uma
  * duração é o tempo que a faixa leva a andar *uma largura*, e a largura depende da altura: aumentar
  * a faixa deixava-a maior **e** mais rápida sem ninguém ter pedido, o que fazia de qualquer ajuste
  * ao tamanho um ajuste escondido à velocidade. Com a velocidade como valor de entrada, cada uma
  * mexe só no que é dela.
  *
- * Aos 50 pt/s a volta completa dá-se em ~9,3 s (na altura de 56) — entre os ~35 pt/s da primeira
+ * Aos 50 pt/s a volta completa dá-se em ~9,3 s (na altura de 56) - entre os ~35 pt/s da primeira
  * versão e os 72 pt/s que duraram uma volta.
  */
 const STRIP_SPEED_PER_SECOND = 50;
@@ -48,7 +48,7 @@ function copiesForWindow(windowWidth: number): number {
   return Math.max(2, Math.ceil(windowWidth / STRIP_WIDTH) + 1);
 }
 
-/** A definição do sistema "reduzir movimento" — quem a tem ligada vê a faixa parada. */
+/** A definição do sistema "reduzir movimento" - quem a tem ligada vê a faixa parada. */
 function useReduceMotion(): boolean {
   const [reduceMotion, setReduceMotion] = useState(false);
 
@@ -79,7 +79,7 @@ export interface PartnersMarqueeProps {
  *
  * O movimento sem costura não tem truque: são cópias da mesma imagem lado a lado e o ciclo anda
  * exatamente uma largura de faixa, por isso quando ele recomeça o que está à vista é o mesmo que
- * estava — não há salto nem intervalo a branco.
+ * estava - não há salto nem intervalo a branco.
  */
 export function PartnersMarquee({ height = STRIP_HEIGHT }: PartnersMarqueeProps) {
   const reduceMotion = useReduceMotion();

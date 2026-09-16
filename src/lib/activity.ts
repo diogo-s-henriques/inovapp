@@ -9,9 +9,9 @@ import type { ActivityItem } from '@/types/activity';
 const RECENT_LIMIT = 8;
 
 /**
- * Histórico "Recentes" nas notificações — não existe uma coleção de notificações no Firestore;
+ * Histórico "Recentes" nas notificações - não existe uma coleção de notificações no Firestore;
  * deriva-se, de dados já existentes (pedidos aceites, sessões de amanhã). Os materiais recebidos
- * ficam fora daqui de propósito — já vêm de subscribeToSharedMaterials (lib/materials.ts), que o
+ * ficam fora daqui de propósito - já vêm de subscribeToSharedMaterials (lib/materials.ts), que o
  * ecrã de notificações já subscreve para a secção "Mensagens".
  *
  * As três consultas são limitadas e ordenadas no servidor: antes vinha a lista completa de
@@ -44,7 +44,7 @@ export async function fetchRecentActivity(uid: string, i18n: Translations): Prom
         limit(RECENT_LIMIT),
       ),
     ),
-    // Só as sessões de amanhã — é o único caso futuro que esta lista mostra. Antes lia todas as
+    // Só as sessões de amanhã - é o único caso futuro que esta lista mostra. Antes lia todas as
     // sessões do utilizador para depois filtrar as de amanhã no cliente.
     getDocs(
       query(
@@ -93,7 +93,7 @@ export async function fetchRecentActivity(uid: string, i18n: Translations): Prom
       kind: 'session-tomorrow',
       title: i18n.notifications.sessionTomorrowTitle,
       description: i18n.notifications.sessionTomorrow(data.subject, profile?.firstName ?? i18n.common.user, data.time),
-      // Sem uma hora de criação real de "lembrete", usa-se agora — o que importa é aparecer
+      // Sem uma hora de criação real de "lembrete", usa-se agora - o que importa é aparecer
       // no topo da lista enquanto a sessão continuar marcada para amanhã.
       timestamp: new Date(),
     });

@@ -5,7 +5,7 @@
  *
  * 1. O formato dos IDs. `firestore.rules` exige que o ID de um pedido de conexão seja
  *    literalmente `from + '_' + to`, e que o ID da conversa junte os dois UIDs por ordem. Se
- *    alguém mudar estas funções, a app deixa de conseguir escrever — e as regras são o único
+ *    alguém mudar estas funções, a app deixa de conseguir escrever - e as regras são o único
  *    sítio onde isso se nota, em produção.
  * 2. A cache de perfis, cujo tempo de vida é o de UMA subscrição (ver o comentário no código).
  * 3. A tradução dos campos: foi um bug corrigido, o de os rótulos ("Mentor", "Utilizador") estarem
@@ -56,7 +56,7 @@ beforeEach(() => {
   AsyncStorage.__reset();
 });
 
-describe('connectionRequestId — formato que as regras de segurança exigem', () => {
+describe('connectionRequestId - formato que as regras de segurança exigem', () => {
   it('junta o remetente e o destinatário por esta ordem', () => {
     // firestore.rules: requestId == request.resource.data.from + '_' + request.resource.data.to
     assert.equal(connectionRequestId('aluno-1', 'mentor-2'), 'aluno-1_mentor-2');
@@ -72,7 +72,7 @@ describe('connectionRequestId — formato que as regras de segurança exigem', (
   });
 });
 
-describe('matchId — ID da conversa', () => {
+describe('matchId - ID da conversa', () => {
   it('é simétrico: os dois lados chegam ao mesmo ID', () => {
     assert.equal(matchId('a', 'b'), matchId('b', 'a'));
   });
@@ -95,7 +95,7 @@ describe('matchId — ID da conversa', () => {
   });
 });
 
-describe('createProfileResolver — cache com o tempo de vida de uma subscrição', () => {
+describe('createProfileResolver - cache com o tempo de vida de uma subscrição', () => {
   it('lê cada perfil uma só vez', async () => {
     definirPerfil({ fullName: 'Ana Silva' });
     const resolver = createProfileResolver();
@@ -296,7 +296,7 @@ describe('i18n na camada de dados', () => {
   });
 });
 
-describe('candidatos passados — guardados só no dispositivo', () => {
+describe('candidatos passados - guardados só no dispositivo', () => {
   it('começa vazio', async () => {
     assert.deepEqual(await getPassedCandidateIds(), []);
   });
@@ -322,7 +322,7 @@ describe('candidatos passados — guardados só no dispositivo', () => {
   });
 
   it('guarda no dispositivo e não no Firestore', async () => {
-    // "Passar" não é uma decisão que tenha de ficar visível ao outro lado — só de não voltar a
+    // "Passar" não é uma decisão que tenha de ficar visível ao outro lado - só de não voltar a
     // aparecer neste dispositivo. Por isso não pode haver nenhuma escrita no Firestore.
     await passCandidate('u1');
 
@@ -332,7 +332,7 @@ describe('candidatos passados — guardados só no dispositivo', () => {
   });
 });
 
-describe('matchesView — o que o ecrã dos Matches mostra', () => {
+describe('matchesView - o que o ecrã dos Matches mostra', () => {
   /** Quem só ensina (não pode aprender): sem lista de candidatos para ler. */
   const SO_ENSINA = { canLearn: false };
   const APRENDE = { canLearn: true };

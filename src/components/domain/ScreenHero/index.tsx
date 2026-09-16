@@ -1,20 +1,20 @@
-import type { ReactNode } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import type { ReactNode } from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { ProfilePicCard } from '@/components/ui/ProfilePicCard';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 /**
- * A fotografia da identidade no bloco — 80 px, a mesma na Home e no Perfil.
+ * A fotografia da identidade no bloco - 80 px, a mesma na Home e no Perfil.
  *
  * Chegaram a ser dois tamanhos (80 na Home, 56 nos outros separadores), e a razão do 56 era boa: os
  * blocos deles tinham mais uma linha, o título do ecrã, e um bloco de 170 px em cinco separadores é
  * um quinto do ecrã. O que mudou foi quem tem identidade: **dois** separadores, a Home e o Perfil, e
  * nesses dois a fotografia é a cara do ecrã. Um número só é o que faz com que os dois blocos sejam o
- * mesmo bloco — o do Perfil é este, com a roda dentada em vez do sino e o botão de editar por baixo.
+ * mesmo bloco - o do Perfil é este, com a roda dentada em vez do sino e o botão de editar por baixo.
  */
 export const HERO_AVATAR_SIZE = 80;
 
@@ -42,14 +42,14 @@ export interface ScreenHeroProps extends ViewProps {
    * lado.
    */
   subtitleLines?: number;
-  /** A linha por cima do nome — a saudação da Home. Nenhum outro ecrã a usa. */
+  /** A linha por cima do nome - a saudação da Home. Nenhum outro ecrã a usa. */
   eyebrow?: string;
   photoUri?: string;
   initials?: string;
   avatarSize?: number;
   /**
    * Título do ecrã. É o que os ecrãs sem identidade mostram (o Matches, o Chat e o Pesquisar); a
-   * Home e o Perfil, que levam identidade, não o usam — o nome do ecrã repetido por baixo do nome
+   * Home e o Perfil, que levam identidade, não o usam - o nome do ecrã repetido por baixo do nome
    * de quem lá está não diz nada de novo.
    */
   title?: string;
@@ -61,7 +61,7 @@ export interface ScreenHeroProps extends ViewProps {
    *
    * Vive aqui, e não num componente de identidade próprio do ecrã, por uma razão que já se pagou
    * uma vez: o Perfil chegou a trazer o seu bloco de identidade (`ProfileHeader`), com a fotografia,
-   * o nome e o curso desenhados à parte — e o resultado foi uma fotografia de 96, um nome de 20 e um
+   * o nome e o curso desenhados à parte - e o resultado foi uma fotografia de 96, um nome de 20 e um
    * curso cinzento ao lado dos 80, 22 e near-black da Home. Duas cópias da mesma identidade só
    * divergem. O que o Perfil tem de diferente é **isto**: uma coisa a mais por baixo das linhas.
    */
@@ -74,7 +74,7 @@ export interface ScreenHeroProps extends ViewProps {
 }
 
 /**
- * O bloco em gradiente que abre os separadores — o mesmo esqueleto da Home em todos eles.
+ * O bloco em gradiente que abre os separadores - o mesmo esqueleto da Home em todos eles.
  *
  * Cinco ecrãs montavam cinco cabeçalhos diferentes: a Home com identidade e sino, o Chat e o
  * Pesquisar com o título e o campo de pesquisa, o Matches com um título só, o Perfil com o título
@@ -93,12 +93,12 @@ export interface ScreenHeroProps extends ViewProps {
  *
  * | | identidade | título | canto |
  * |---|---|---|---|
- * | Home | saudação + nome + papel (foto 80) | — | sino |
- * | Perfil | nome + curso + **Editar** (foto 80) | — | roda dentada |
- * | Matches, Chat, Pesquisar | — | o nome do ecrã | — |
+ * | Home | saudação + nome + papel (foto 80) | - | sino |
+ * | Perfil | nome + curso + **Editar** (foto 80) | - | roda dentada |
+ * | Matches, Chat, Pesquisar | - | o nome do ecrã | - |
  *
  * A identidade é opcional: sem `name`, o bloco fica só com o título, que sobe para o lugar dela. É
- * o caso do Matches, do Chat e do Pesquisar — o nome de quem já está a ver a app, repetido em três
+ * o caso do Matches, do Chat e do Pesquisar - o nome de quem já está a ver a app, repetido em três
  * separadores, diz menos do que o nome do ecrã, e um bloco de 150 px só para dizer "Chat" é altura
  * que sai da lista.
  *
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     // por cima dela.
     alignItems: 'center',
     // 12 e não 16: numa linha com uma fotografia grande, a ação e os intervalos roubam largura ao
-    // nome — e o nome é a única das peças que é informação variável (um nome comprido trunca-se,
+    // nome - e o nome é a única das peças que é informação variável (um nome comprido trunca-se,
     // uma fotografia não).
     gap: Spacing.two,
   },
@@ -210,13 +210,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   // O que os ecrãs põem por baixo das linhas (o botão de editar do Perfil): o intervalo é daqui e
-  // não do `intro`, porque um `gap` na coluna mudava também a Home — que já está como deve estar.
+  // não do `intro`, porque um `gap` na coluna mudava também a Home - que já está como deve estar.
   extra: {
     marginTop: Spacing.two,
     alignItems: 'flex-start',
   },
   // As linhas vivem aqui, e não no JSX, para a escala do bloco estar num sítio só. O nome é preto
-  // cheio; a saudação e o papel são o mesmo preto a 70% — sobre um tom tão claro, a hierarquia
+  // cheio; a saudação e o papel são o mesmo preto a 70% - sobre um tom tão claro, a hierarquia
   // faz-se por tamanho e por essa diferença pequena de peso, não por cor.
   eyebrow: {
     fontSize: EYEBROW_FONT_SIZE,

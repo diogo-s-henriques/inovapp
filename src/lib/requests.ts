@@ -35,11 +35,11 @@ const ACCEPTED_LIMIT = 5;
  *
  * A subscrição é uma só, e é por isso que este módulo tem estado: a bolinha da barra de baixo, a
  * contagem da Home e a lista dos Matches são a mesma pergunta (`to == eu` e `status == 'pending'`),
- * e chegaram a ser três subscrições abertas ao mesmo tempo — a mesma pergunta feita três vezes, e
+ * e chegaram a ser três subscrições abertas ao mesmo tempo - a mesma pergunta feita três vezes, e
  * cada alteração contada (e paga) três vezes. Quem chega depois recebe o que já se sabe.
  *
  * O terceiro argumento do `onSnapshot` é o que **não** existia: sem ele, uma leitura negada pelas
- * regras não era um estado — era uma lista que ficava como estava, indistinguível de "não há
+ * regras não era um estado - era uma lista que ficava como estava, indistinguível de "não há
  * pedidos". Foi assim que uma falta de regras no Firebase passou meses por "ecrã sem dados".
  */
 const pendingRequests = createLiveQuery<ConnectionRequest[]>({
@@ -95,7 +95,7 @@ export function retryPendingConnectionRequests(): void {
 }
 
 export interface ConnectionResponse {
-  /** O id do pedido de conexão — a mesma chave que a linha do histórico usa (`connection-{id}`),
+  /** O id do pedido de conexão - a mesma chave que a linha do histórico usa (`connection-{id}`),
    * para a mesma resposta não aparecer duas vezes quando as duas leituras coincidem. */
   id: string;
   /** Quem aceitou. */
@@ -111,7 +111,7 @@ export interface ConnectionResponse {
  * outro lado passa a aparecer no histórico das Notificações no momento em que acontece.
  *
  * Só aceites: um pedido recusado não gera aviso (como em `fetchRecentActivity`, que também filtra
- * por `accepted`) — a decisão é do outro, e a app não persegue ninguém com ela.
+ * por `accepted`) - a decisão é do outro, e a app não persegue ninguém com ela.
  *
  * Ordenado e limitado no servidor, e a consulta precisa do índice composto declarado em
  * `firestore.indexes.json` (o mesmo que `fetchRecentActivity` já usava).
@@ -150,7 +150,7 @@ export function subscribeToAcceptedConnectionRequests(
 
 /** Aceita ou recusa um pedido de conexão. Ao aceitar, cria a conversa entre os dois participantes.
  * As duas escritas vão no mesmo batch: ou aceitam o pedido E criam a conversa, ou nenhuma das duas
- * acontece — nunca fica um pedido "accepted" sem conversa correspondente. */
+ * acontece - nunca fica um pedido "accepted" sem conversa correspondente. */
 export async function respondToConnectionRequest(
   requestId: string,
   fromUid: string,

@@ -5,7 +5,7 @@
  *
  * Antes da separação entre `users` (perfil visível a toda a comunidade autenticada) e
  * `userAccounts` (dados privados da conta), o documento do perfil guardava o `email`, a última
- * entrada (`lastLoginAt`) e o `rememberSession` — legíveis por qualquer utilizador autenticado.
+ * entrada (`lastLoginAt`) e o `rememberSession` - legíveis por qualquer utilizador autenticado.
  *
  * A app já se limpa sozinha no login seguinte (ver src/auth/actions.ts), mas quem nunca mais
  * entrar fica com esses dados expostos. Este script trata dessas contas de uma vez: copia para
@@ -24,7 +24,7 @@
  *   npx firebase-tools emulators:exec --only firestore "node scripts/cleanup-legacy-profiles.js --apply"
  *
  * Nota: se a chave não ficar no computador (boa prática), apaga-a no fim. O script usa o
- * firebase-admin, que passa por cima das regras de segurança — é por isso que só corre à mão.
+ * firebase-admin, que passa por cima das regras de segurança - é por isso que só corre à mão.
  *
  * O firebase-admin v14 já não expõe a API de namespace (`admin.firestore()`), daí os imports
  * por subpath (`firebase-admin/firestore`).
@@ -85,7 +85,7 @@ async function main() {
   );
   console.log(apply ? 'Modo: aplicar alterações.' : 'Modo: simulação (nada será escrito).');
 
-  // A coleção `users` é pequena (uma pessoa por conta) — uma leitura só é aceitável aqui.
+  // A coleção `users` é pequena (uma pessoa por conta) - uma leitura só é aceitável aqui.
   const snapshot = await db.collection('users').get();
 
   let encontrados = 0;
@@ -103,7 +103,7 @@ async function main() {
     const camposAMigrar = Object.keys(aMigrar);
 
     encontrados += 1;
-    console.log(`\n${docSnap.id} — ${data.email ?? 'sem email no perfil'}`);
+    console.log(`\n${docSnap.id} - ${data.email ?? 'sem email no perfil'}`);
     console.log(`  campos privados a remover do perfil: ${legado.join(', ')}`);
     if (!accountSnap.exists) {
       console.log(`  -> cria userAccounts (${camposAMigrar.join(', ') || 'sem campos a copiar'})`);
@@ -123,7 +123,7 @@ async function main() {
       batch.set(accountRef, aMigrar, { merge: true });
     }
     // Os campos só saem do perfil depois de garantidamente copiados acima (ou de já existirem
-    // no documento privado) — nenhum dado privado se perde nesta migração.
+    // no documento privado) - nenhum dado privado se perde nesta migração.
     batch.update(
       docSnap.ref,
       Object.fromEntries(legado.map((field) => [field, FieldValue.delete()])),
@@ -145,7 +145,7 @@ async function main() {
     console.log(
       `Perfis a limpar: ${encontrados} (contas a criar: ${contasCriadas}, a completar: ${contasCompletadas}).`,
     );
-    console.log('Nada foi escrito — corre outra vez com --apply.');
+    console.log('Nada foi escrito - corre outra vez com --apply.');
   }
 }
 

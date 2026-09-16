@@ -1,7 +1,7 @@
 /**
  * Testes de `roleLabel` (src/lib/roles.ts).
  *
- * O rótulo do papel é a única coisa que diz a alguém com quem está a falar — aparece por baixo do
+ * O rótulo do papel é a única coisa que diz a alguém com quem está a falar - aparece por baixo do
  * nome na Home e nos cartões de descoberta. Duas assimetrias perdem-se com facilidade: **um
  * professor nunca é "Mentor"** (é "Tutor"), e quem ensina *e* aprende diz os dois papéis em vez de
  * escolher um. Nenhuma das duas rebenta nada se for trocada: só diz a coisa errada à pessoa errada.
@@ -16,7 +16,7 @@ import { en } from '@/i18n/en';
 import { pt } from '@/i18n/pt';
 import { roleLabel } from '@/lib/roles';
 
-describe('roleLabel — estudantes', () => {
+describe('roleLabel - estudantes', () => {
   it('quem só aprende é Tutorando', () => {
     assert.equal(roleLabel('learn', 'student', pt), pt.roles.tutee);
   });
@@ -34,7 +34,7 @@ describe('roleLabel — estudantes', () => {
   });
 });
 
-describe('roleLabel — professores', () => {
+describe('roleLabel - professores', () => {
   it('um professor que ensina é Tutor, nunca Mentor', () => {
     assert.equal(roleLabel('teach', 'professor', pt), pt.roles.tutor);
     assert.notEqual(roleLabel('teach', 'professor', pt), pt.roles.mentor);
@@ -49,7 +49,7 @@ describe('roleLabel — professores', () => {
   });
 });
 
-describe('roleLabel — idioma', () => {
+describe('roleLabel - idioma', () => {
   it('usa o dicionário que recebe, não o que está no dispositivo', () => {
     // A comparação usa o rótulo de Tutorando: "Mentor" escreve-se igual nos dois idiomas, por
     // isso não serviria para distinguir de que dicionário veio o texto.

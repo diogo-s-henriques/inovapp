@@ -27,7 +27,7 @@ const HOUR_OPTIONS = Array.from({ length: 14 }, (_, index) => `${String(index + 
 const MODALITY_OPTIONS: SessionModality[] = ['Online', 'Presencial'];
 
 // Faixas horárias aproximadas de cada período de disponibilidade do perfil (ver
-// src/constants/profile.ts PERIOD_OPTIONS) — "Fins de semana" fica de fora por não ser sobre
+// src/constants/profile.ts PERIOD_OPTIONS) - "Fins de semana" fica de fora por não ser sobre
 // horas, mas sobre dias da semana, que este formulário não filtra.
 const PERIOD_HOUR_RANGES: Record<string, [number, number]> = {
   Manhãs: [8, 12],
@@ -43,7 +43,7 @@ function hourMatchesPeriods(hour: string, periods: string[]): boolean {
   });
 }
 
-/** Reordena as opções por relevância (mais pontos primeiro), sem excluir nenhuma — a ordem
+/** Reordena as opções por relevância (mais pontos primeiro), sem excluir nenhuma - a ordem
  * original mantém-se entre opções com a mesma pontuação. */
 function prioritizeBy<T>(options: T[], score: (option: T) => number): T[] {
   return options
@@ -82,7 +82,7 @@ export default function SessionRequestScreen() {
   }, [toUid]);
 
   // Só faz sentido pedir uma disciplina que o destinatário ensina; dentro dessas, dá prioridade
-  // às que também estão nos interesses de quem pede — mas sem excluir as restantes, porque o
+  // às que também estão nos interesses de quem pede - mas sem excluir as restantes, porque o
   // pedido de sessão pode partir de qualquer um dos dois lados (não só de quem está a aprender).
   const subjectOptions = useMemo(() => {
     const base = recipient?.subjects.length ? recipient.subjects : SUBJECT_OPTIONS;
@@ -142,7 +142,7 @@ export default function SessionRequestScreen() {
     try {
       const requestId = await sendSessionRequest(user.uid, toUid, { subject, date, time, modality, message: message.trim() });
       // Deixa também um cartão no chat (ChatSessionRequestCard), tal como acontece ao enviar um
-      // ficheiro — não crítico: o pedido de sessão já foi criado, por isso uma falha aqui não
+      // ficheiro - não crítico: o pedido de sessão já foi criado, por isso uma falha aqui não
       // deve bloquear o sucesso.
       try {
         await sendSessionRequestMessage(matchId(user.uid, toUid), user.uid, toUid, {
@@ -155,7 +155,7 @@ export default function SessionRequestScreen() {
           toFirstName: firstName ?? '',
         });
       } catch {
-        // ignorado de propósito — ver comentário acima
+        // ignorado de propósito - ver comentário acima
       }
       setSent(true);
     } catch {

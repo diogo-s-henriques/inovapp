@@ -20,13 +20,13 @@ import { ThemedText } from '@/components/ui/ThemedText';
  * Pedidos de conexão por decidir, num ecrã só para eles.
  *
  * Existe por causa de um gesto que faltava: a linha "N pedidos de conexão" da Home e o aviso das
- * Notificações levavam à **aba** dos Matches, e mudar de separador não empilha ecrã nenhum — não
+ * Notificações levavam à **aba** dos Matches, e mudar de separador não empilha ecrã nenhum - não
  * havia nada por baixo para o deslize de voltar do iOS desempilhar. Este ecrã é um ecrã a sério:
  * entra-se nele por cima de onde se estava e sai-se com o gesto (ou com a seta).
  *
  * Mostra o mesmo que a secção dos Matches, e mostra-o com o mesmo componente
- * (`ConnectionRequestsSection`): aceitar/recusar tem um comportamento só — criar a conversa,
- * fechar o pedido — e não pode passar a haver duas versões dele. O que a lista **não** tem aqui é
+ * (`ConnectionRequestsSection`): aceitar/recusar tem um comportamento só - criar a conversa,
+ * fechar o pedido - e não pode passar a haver duas versões dele. O que a lista **não** tem aqui é
  * a sua etiqueta própria (`showHeader={false}`): o título do ecrã já diz o que ela é.
  *
  * O que se perde ao tirar a decisão da aba Matches? Nada, porque ela continua lá: esta é uma
@@ -48,7 +48,7 @@ export default function ConnectionRequestsScreen() {
     setError(null);
     try {
       // Aceitar cria também a conversa (ver src/lib/requests.ts) e o pedido deixa de estar
-      // pendente, por isso ele desaparece desta lista sozinho — e a lista vazia mostra o vazio.
+      // pendente, por isso ele desaparece desta lista sozinho - e a lista vazia mostra o vazio.
       await respondToConnectionRequest(request.id, request.fromUid, user.uid, accept);
     } catch {
       setError(i18n.requests.respondError);

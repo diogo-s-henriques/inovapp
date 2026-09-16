@@ -5,7 +5,7 @@
 - Node.js e npm
 - Uma conta/projeto [Firebase](https://console.firebase.google.com/) com **Authentication**
   (método Email/Password) e **Firestore Database** ativados
-- Para publicar regras e índices: `npx firebase-tools` (não é preciso instalação global — ver
+- Para publicar regras e índices: `npx firebase-tools` (não é preciso instalação global - ver
   [Firestore rules](#firestore-rules-e-segurança))
 - **Java**, só para correr os testes das regras: o emulador do Firestore é um processo Java
 
@@ -42,7 +42,7 @@ ficheiro vem corrigir: passa a haver um sítio onde estão declarados.
 
 Antes do primeiro `deploy --only firestore:indexes`, corre `npx firebase-tools firestore:indexes`
 para ver o que já está publicado no projeto. O deploy compara o ficheiro com o que existe e
-**propõe apagar** os índices que não estejam no ficheiro — confirma antes de aceitar. Como
+**propõe apagar** os índices que não estejam no ficheiro - confirma antes de aceitar. Como
 alternativa, cria só os que faltam no link que o erro da consola apresenta.
 
 > **O emulador não valida isto.** Os testes de `tests/data` correm contra o emulador, que executa
@@ -74,22 +74,22 @@ Antes de dar como terminado qualquer trabalho: `npx tsc --noEmit`, `npm run lint
 `npm run test:lib` e `npm run test:components` devem correr sem erros (nenhum dos dois últimos
 precisa de emuladores). Se mexeste em `firestore.rules`, acrescenta `npm run test:rules`; se
 mexeste na camada de dados, `npm run test:data`. O que continuar por cobrir são os ecrãs
-inteiros e a navegação — para isso, testa no dispositivo.
+inteiros e a navegação - para isso, testa no dispositivo.
 
 **E o `.github/workflows/test.yml` corre tudo isso sozinho** em cada push para `main` e em cada
 pull request: lint e tipos primeiro (é o que falha depressa), depois as quatro suites. Duas delas
-precisam do emulador, que é um processo Java — daí o `setup-java` no workflow. Se uma suite passar
+precisam do emulador, que é um processo Java - daí o `setup-java` no workflow. Se uma suite passar
 na tua máquina e falhar aqui, o mais provável é uma diferença de ambiente (versão do Node ou do
 Java) e não o código; o workflow fixa as duas (Node 24, Java 21, as versões em que o projeto é
 desenvolvido).
 
-> **Porque é que o `test:data` corre um ficheiro de cada vez** — os ficheiros de `tests/data/`
+> **Porque é que o `test:data` corre um ficheiro de cada vez** - os ficheiros de `tests/data/`
 > partilham o mesmo par de emuladores e cada um chama `limparEmulador()` no início. Se corressem em
 > paralelo, apagariam as contas uns dos outros a meio: o sintoma aparece longe da causa, como um
 > `auth/email-already-in-use` a criar uma conta, ou um documento que desaparece debaixo de um
 > teste. O `--test-concurrency=1` do script força a ordem.
 
-> **Se a suite das regras falhar logo no início, com um único teste** — `test:data` e `test:rules`
+> **Se a suite das regras falhar logo no início, com um único teste** - `test:data` e `test:rules`
 > arrancam emuladores na mesma porta (8080) e, se o primeiro ainda estiver a desligar quando o
 > segundo arranca, o `initializeTestEnvironment` do `before` não chega a ligar-se. O sintoma é
 > "1 test, 1 fail" em vez de 69, sem nada de errado no `firestore.rules`. Corre outra vez; se
@@ -104,7 +104,7 @@ desenvolvido).
 > Nada disto substitui uma build própria: o Expo Go só corre o SDK que traz, o que chega para
 > desenvolvimento, mas não para publicar.
 
-> **`npm audit` — não corras `npm audit fix --force`.** Reporta 25 avisos, todos em ferramentas de
+> **`npm audit` - não corras `npm audit fix --force`.** Reporta 25 avisos, todos em ferramentas de
 > build (Metro, Babel, eslint, `@expo/config-plugins`) e nenhum enviado para o telemóvel. O
 > `--force` propõe descer o `expo-splash-screen` para 55.x, o que desfaz o alinhamento com o SDK 57
 > e traz de volta o fecho do Expo Go descrito acima. O `npm audit fix` normal também não é inócuo:
@@ -121,23 +121,23 @@ node scripts/png-transparent-background.js "assets/Parceiros/entrada.png" "asset
 
 O que ele faz, e porque não é só "apagar o branco": começa nas **bordas** da imagem e alarga-se
 apenas aos pixéis claros **ligados à borda**. É isso que distingue o fundo do branco *de dentro* do
-logótipo — um "P" branco num quadrado azul é branco, mas não está ligado à borda, e fica onde está.
+logótipo - um "P" branco num quadrado azul é branco, mas não está ligado à borda, e fica onde está.
 Apagar todos os pixéis brancos, em vez disto, abria buracos em todo o texto branco dos logótipos.
 Nas bordas suavizadas o pixel sai com **alpha parcial**, o que evita o contorno duro à volta das
 letras. Os limites são afinaláveis (`--floor=210`, `--white=245`) e o script diz o que fez, para se
 poder ver se apanhou um logótipo claro por engano.
 
 A faixa dos parceiros (`assets/Parceiros/parceiros.png`, 1093x131, mostrada a 42 px de altura no
-`PartnersMarquee`) foi feita assim. O ficheiro que lá estava era um WebP **VP8 sem canal alfa** —
+`PartnersMarquee`) foi feita assim. O ficheiro que lá estava era um WebP **VP8 sem canal alfa** -
 tinha o mesmo problema do fundo branco e ainda a perda de qualidade da compressão.
 
 ### Depurar um crash no telemóvel (Android)
 
 Quando o Expo Go **fecha** em vez de mostrar o ecrã vermelho, não há erro de JavaScript nenhum: o
 processo morreu. A causa está no `logcat` do Android, e é isso que o `npm run logcat` lê. Ele
-limpa o buffer, dá-te 30 segundos para reproduzir o crash, e depois destaca o que interessa — o
+limpa o buffer, dá-te 30 segundos para reproduzir o crash, e depois destaca o que interessa - o
 stack trace de Java **inteiro** (não só a linha `FATAL EXCEPTION`), o tombstone de um crash nativo,
-e o que o Hermes imprimiu — guardando sempre o dump completo em ficheiro, porque o contexto à volta
+e o que o Hermes imprimiu - guardando sempre o dump completo em ficheiro, porque o contexto à volta
 da linha que mata vale tanto como a linha.
 
 ```bash
@@ -163,11 +163,11 @@ eas build --profile preview --platform android       # para partilhar, sem loja
 `expo-dev-client` são módulos nativos: no Expo Go o primeiro rebenta ao ser importado. O caminho a
 partir de agora é instalar a **development build** uma vez e, depois, `npx expo start` liga-se-lhe
 em vez de ao Expo Go (o QR que aparece é o dela). Comandos que continuam a funcionar no Expo Go:
-não há — para testar no telemóvel é preciso a build.
+não há - para testar no telemóvel é preciso a build.
 
 - **Android**: nada de contas. A `development` sai como APK (distribuição interna), com a keystore
   gerada e guardada pelo EAS; instala-se pelo QR/link que a build devolve.
-- **iOS**: precisa de conta Apple Developer e do **dispositivo registado** (`eas device:create`) —
+- **iOS**: precisa de conta Apple Developer e do **dispositivo registado** (`eas device:create`) -
   em distribuição interna a build só corre nos aparelhos cujo UDID está no perfil de
   aprovisionamento. O login na Apple é interativo (pede Apple ID e, normalmente, 2FA), por isso
   tem de ser a pessoa a correr `eas build --profile development --platform ios` no seu terminal.
@@ -177,7 +177,7 @@ não há — para testar no telemóvel é preciso a build.
   mudar **até à primeira publicação numa loja**; se a app for publicada em nome do ISEC, o que faz
   sentido é `pt.iseclisboa.inovapp`.
 - **`expo-notifications` é um módulo nativo**: uma build feita antes de ele entrar no `app.json`
-  **não** tem avisos (o `ErrorScreen` continua a aparecer num aviso tocado, mas nada é registado) —
+  **não** tem avisos (o `ErrorScreen` continua a aparecer num aviso tocado, mas nada é registado) -
   é preciso uma build nova a partir deste commit, além das credenciais FCM (ver **Avisos no
   telemóvel**, acima).
 
@@ -185,7 +185,7 @@ não há — para testar no telemóvel é preciso a build.
 
 **O identificador é `com.diyogo.inovapp`** (Android `package` e iOS `bundleIdentifier`) e fica
 assim: o primeiro envio grava-o e mudá-lo depois obriga a criar uma app nova nas duas lojas. Com
-esta escolha, a app é publicada através da equipa Apple `UNIVERSITAS … (64ZH528SHV)` — a do ISEC —
+esta escolha, a app é publicada através da equipa Apple `UNIVERSITAS … (64ZH528SHV)` - a do ISEC -
 com o registo a apontar para o nome que já lá está.
 
 ```bash
@@ -195,10 +195,10 @@ npx eas-cli build --profile production --platform ios       # .ipa, para o TestF
 
 O Android sai **sem interação** (a keystore já existe, da build de desenvolvimento). O iOS **exige
 modo interativo na primeira vez**: o perfil de aprovisionamento de **distribuição** (App Store) para
-`com.diyogo.inovapp` ainda não existe na conta Apple, e criá-lo precisa de autenticação — daí
+`com.diyogo.inovapp` ainda não existe na conta Apple, e criá-lo precisa de autenticação - daí
 `--non-interactive` falhar com `Credentials are not set up`. Respostas: reutilizar o certificado de
 distribuição (**sim**, é da equipa e é o mesmo tipo de certificado que assina o `.ipa`), criar o
-perfil novo (**sim**) e configurar as notificações (**sim** — é o que cria a chave APNs que falta
+perfil novo (**sim**) e configurar as notificações (**sim** - é o que cria a chave APNs que falta
 para o iPhone receber avisos).
 
 ```bash
@@ -214,11 +214,11 @@ o Play Console à mão, e deixar o `submit` para as seguintes.
 
 | | o que é |
 |---|---|
-| Política de privacidade **num URL público** | usa-se o PDF que a Universitas publica (`https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf`) — decisão tomada com os olhos abertos: é o TC de **outra** aplicação («Buddy App»), e o que isso implica está escrito em `STORE.md` e no topo do `PRIVACY.md` |
+| Política de privacidade **num URL público** | usa-se o PDF que a Universitas publica (`https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf`) - decisão tomada com os olhos abertos: é o TC de **outra** aplicação («Buddy App»), e o que isso implica está escrito em `STORE.md` e no topo do `PRIVACY.md` |
 | URL de suporte | `https://happycampus.pt` |
 | Capturas de ecrã | Apple: iPhone 6,7"; Play: 2 a 8 capturas **e** uma imagem de destaque 1024x500 |
-| Segurança de dados (Play) e App Privacy (Apple) | o que é recolhido, para que serve e se é ligado à identidade — o `PRIVACY.md` é a fonte para responder a isto |
-| Conta de demonstração | a app só aceita email institucional, por isso a **revisão não consegue entrar**. Feito: `npm run create:demo-account` cria `aluno.demo@alunos.iseclisboa.pt` (vê o deck inteiro) e `demo@iseclisboa.pt` (o lado do Tutor), com o email confirmado e o perfil completo — falta escrever as credenciais nas duas fichas |
+| Segurança de dados (Play) e App Privacy (Apple) | o que é recolhido, para que serve e se é ligado à identidade - o `PRIVACY.md` é a fonte para responder a isto |
+| Conta de demonstração | a app só aceita email institucional, por isso a **revisão não consegue entrar**. Feito: `npm run create:demo-account` cria `aluno.demo@alunos.iseclisboa.pt` (vê o deck inteiro) e `demo@iseclisboa.pt` (o lado do Tutor), com o email confirmado e o perfil completo - falta escrever as credenciais nas duas fichas |
 
 Texto de partida para a ficha (nome, subtítulo e descrição), para não se escrever do zero:
 
@@ -239,24 +239,24 @@ Só entra quem tem email institucional (@alunos.iseclisboa.pt ou @iseclisboa.pt)
 
 > **Não prometer avisos no telemóvel nesta descrição** enquanto não existirem as Cloud Functions
 > que os enviam: a app já os sabe receber, mas ninguém os envia. É o primeiro sítio onde a revisão
-> da Apple tropeça — uma função anunciada que não acontece.
+> da Apple tropeça - uma função anunciada que não acontece.
 
 #### O texto das lojas
 
 Está escrito e pronto a colar em **`STORE.md`** (nome, subtítulo, descrições, palavras-chave, notas
 para a revisão e o formulário de segurança de dados da Play), em português e em inglês. Os limites
-de caracteres de cada campo são conferidos por `npm run store:check`, que lê o próprio ficheiro —
+de caracteres de cada campo são conferidos por `npm run store:check`, que lê o próprio ficheiro -
 um subtítulo de 31 caracteres recusa o texto todo na loja e não se vê a olho.
 
 #### Duas coisas a tratar antes de submeter
 
 - **Eliminação de conta: feita dentro da app** (Definições → *Apagar conta*, ver "Apagar a conta"
-  abaixo). Era o requisito da Apple que faltava — a diretriz 5.1.1(v) exige que quem pode criar
+  abaixo). Era o requisito da Apple que faltava - a diretriz 5.1.1(v) exige que quem pode criar
   uma conta a possa apagar no app. Do lado do Play, o formulário de *segurança de dados* pede
   também um **URL** para pedir a eliminação (além do caminho na app); o URL de suporte já escolhido
   serve para isso.
 - **Contas no Play criadas como pessoais** só ganham acesso à produção depois de um teste fechado
-  com **12 testadores durante 14 dias**. Contas de **organização** (ISEC) estão fora desta regra —
+  com **12 testadores durante 14 dias**. Contas de **organização** (ISEC) estão fora desta regra -
   vale a pena confirmar qual é a tua antes de contar com uma data.
 
 ### Erros em produção (EAS Observe)
@@ -280,7 +280,7 @@ Tirar antes de publicar: as medições de uma build de debug estão distorcidas.
 `expo.dev` → projeto → **Observe** (página *Errors* para erros, *Navigation* para tempos por ecrã),
 ou pela linha de comandos (`npx eas-cli observe:versions`, `observe:errors`…).
 
-**Nada de dados pessoais no que é reportado** — o que entra num erro sai do dispositivo e fica
+**Nada de dados pessoais no que é reportado** - o que entra num erro sai do dispositivo e fica
 visível nesse painel. Um nome de utilizador ou um email no texto de um erro é uma fuga: o contexto
 (`[chat]`) é o sítio, e o id não é preciso.
 
@@ -288,12 +288,12 @@ visível nesse painel. Um nome de utilizador ou um email no texto de um erro é 
 
 **A metade feita é a de receber.** O telemóvel regista-se em `users/{uid}/devices/{id}` com o token
 que a Expo emite (o `projectId` vem do `extra.eas.projectId` do `app.json`, escrito pelo `eas init`)
-e o toque num aviso abre o ecrã que ele traz em `data.url` — ou as Notificações, quando não traz
+e o toque num aviso abre o ecrã que ele traz em `data.url` - ou as Notificações, quando não traz
 nenhum. Vive em três peças:
 
 | | onde | o que faz |
 |---|---|---|
-| Decisão e dados | `src/lib/push.ts` | registar / apagar / não fazer nada, e as escritas no Firestore — **sem** tocar no `expo-notifications`, o que a torna testável sem telemóvel (`tests/lib/push.test.mts`) |
+| Decisão e dados | `src/lib/push.ts` | registar / apagar / não fazer nada, e as escritas no Firestore - **sem** tocar no `expo-notifications`, o que a torna testável sem telemóvel (`tests/lib/push.test.mts`) |
 | Lado nativo | `src/push/actions.ts` | permissões, canal Android, token da Expo |
 | Arranque e toque | `src/push/listener.ts` | regista no arranque (com o perfil já completo) e trata do toque |
 
@@ -301,7 +301,7 @@ Três decisões que valem a pena saber:
 
 - **O token nunca entra no perfil.** `users/{uid}` é legível por qualquer utilizador autenticado: um
   token lá dentro era uma forma de qualquer conta enviar avisos em nome da app a qualquer pessoa.
-- **A permissão só é pedida depois do perfil completo**, e não no arranque — um pedido recusado não
+- **A permissão só é pedida depois do perfil completo**, e não no arranque - um pedido recusado não
   se repete, e vale a pena a pessoa já saber para que serve a app. O estado e o interruptor estão
   nas **Definições** (com um caminho para as definições do sistema quando a permissão foi recusada,
   que é o único caminho que resta nesse caso).
@@ -312,20 +312,20 @@ Três decisões que valem a pena saber:
 fechada**, e a decisão é **Cloud Functions a disparar no Firestore** (ao criar um `connectionRequest`
 ou um `sessionRequest`) a chamar a Expo Push API com os tokens da subcoleção `devices`. Exige o plano
 **Blaze** (basta associar um cartão; dentro dos limites gratuitos continua a não se pagar nada).
-A alternativa — a app enviar diretamente — foi rejeitada de propósito: a API de envio da Expo **não
+A alternativa - a app enviar diretamente - foi rejeitada de propósito: a API de envio da Expo **não
 pede autenticação**, por isso quem envia tem de poder ler o token de quem recebe, e isso é dar a
 qualquer conta autenticada o poder de enviar avisos a quem quiser.
 
 Passos que dependem das contas (por fazer):
 
 ```bash
-npx eas-cli credentials --platform android   # credenciais FCM V1 (conta Google) — sem elas não há token em Android
+npx eas-cli credentials --platform android   # credenciais FCM V1 (conta Google) - sem elas não há token em Android
 npx firebase-tools deploy --only firestore:rules   # as regras de users/{uid}/devices
 ```
 
 O registo falhado **não rebenta a app**: sem token (credenciais em falta, por exemplo) fica só um
 aviso na consola em desenvolvimento, a app continua a funcionar e as **Definições dizem que este
-telemóvel não ficou registado** — a permissão dada não é mostrada como registo feito.
+telemóvel não ficou registado** - a permissão dada não é mostrada como registo feito.
 
 ## Estrutura do projeto
 
@@ -356,7 +356,7 @@ Resto do código-fonte:
 
 ```
 src/auth/          estado de sessão (store Zustand, listener do Firebase Auth, ações)
-src/lib/            acesso a dados — um ficheiro por domínio (chat.ts, sessions.ts,
+src/lib/            acesso a dados - um ficheiro por domínio (chat.ts, sessions.ts,
                      requests.ts, matching.ts, materials.ts, ratings.ts, activity.ts),
                      mais firebase.ts (inicialização), storage.ts (fotos em base64),
                      initials.ts, time.ts, url.ts (validação de links), navigation.ts,
@@ -366,9 +366,9 @@ src/lib/            acesso a dados — um ficheiro por domínio (chat.ts, sessio
 src/components/
   ui/                componentes genéricos reutilizáveis (Button, Checkbox, Pill, StarRating…)
   domain/            componentes específicos do domínio da app (NavBar, CalendarMonth,
-                     EvaluationModal, RequestCard, ProfileSetup/, ScreenHero — o bloco de
-                     cabeçalho comum aos cinco separadores —, StackHeader — o dos ecrãs
-                     empilhados, com o BackButton —, ErrorScreen…)
+                     EvaluationModal, RequestCard, ProfileSetup/, ScreenHero - o bloco de
+                     cabeçalho comum aos cinco separadores -, StackHeader - o dos ecrãs
+                     empilhados, com o BackButton -, ErrorScreen…)
 src/constants/       valores fixos (disciplinas, cursos, regras de email institucional, tema)
 src/i18n/            traduções (pt, en), contrato `Translations` e store do idioma
 src/types/           tipos TypeScript partilhados
@@ -394,7 +394,7 @@ institucional**, nunca de uma escolha manual (`src/constants/auth.ts`):
 - `@iseclisboa.pt` → `professor` (Mentor)
 
 Um utilizador pode ainda escolher o seu `participationMode` no onboarding (`learn` / `teach` /
-`both`) — é isto que decide se aparece como Tutorando, Mentor, ou ambos, dentro da app; ser
+`both`) - é isto que decide se aparece como Tutorando, Mentor, ou ambos, dentro da app; ser
 elegível a ensinar exige estar a partir do 2º ano (`isEligibleToTeach`).
 
 O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no dispositivo
@@ -402,43 +402,43 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
 
 ## Funcionalidades
 
-- **Home: um bloco de identidade e o que é acionável** — abre com um cabeçalho em gradiente
+- **Home: um bloco de identidade e o que é acionável** - abre com um cabeçalho em gradiente
   claro (`HomeHeader`, o `heroTop`/`heroBottom` da paleta), mais claro que o fundo do ecrã: a fotografia (quadrada de cantos arredondados, 80 px), a identidade em três
-  linhas — a saudação (bom dia / boa tarde / boa noite, `greetingPeriod` em `src/lib/home.ts`), o
-  **nome completo** e o **papel** (`roleLabel`, em `src/lib/roles.ts`) — e o sino no canto
+  linhas - a saudação (bom dia / boa tarde / boa noite, `greetingPeriod` em `src/lib/home.ts`), o
+  **nome completo** e o **papel** (`roleLabel`, em `src/lib/roles.ts`) - e o sino no canto
   superior direito, alinhado com as três. Os **números da agenda saíram daqui**: são do Perfil, e
   repetir "agendadas / dadas / recebidas" a dois centímetros dos mesmos números não era
   informação; o que sobra no cabeçalho é quem és, e o `summarizeSessions` continua a contar para
   quem o mostra (o Perfil, por `subscribeToSessionStats`). O gradiente chega ao topo do ecrã, por
-  isso o `SafeAreaView` do ecrã **não** trata da barra de estado nas bordas de cima — o espaço é
-  dado ao cabeçalho, que sabe quanto é — e os ícones da barra passam a **escuros** enquanto este
+  isso o `SafeAreaView` do ecrã **não** trata da barra de estado nas bordas de cima - o espaço é
+  dado ao cabeçalho, que sabe quanto é - e os ícones da barra passam a **escuros** enquanto este
   ecrã está à frente (por foco: aplicado uma vez, ficava a valer nos outros separadores).
-- **Puxar a Home para baixo** relê **se há** ligações aceites (`hasConnections`) — é essa pergunta
+- **Puxar a Home para baixo** relê **se há** ligações aceites (`hasConnections`) - é essa pergunta
   de sim/não que decide se a Home ainda está vazia, porque as listas saíram daqui. Chegou a ser
   respondida lendo as duas listas completas (duas consultas, um perfil por linha e os dois pares
-  de bloqueios); agora são dois documentos (`limit(1)` de cada lado) — e, no caso raro de o único
+  de bloqueios); agora são dois documentos (`limit(1)` de cada lado) - e, no caso raro de o único
   documento encontrado ser de alguém bloqueado, recua para a leitura completa em vez de responder
   "não tens ligações" ao lado de outra que existe. O indicador aparece sobre a cor do
   cabeçalho, e não sobre branco: a cor da própria lista é a do topo do gradiente (`styles.scroll`)
   e o conteúdo dela é claro (`styles.content`), que é o que faz a faixa revelada ao puxar ter a cor
   do cabeçalho. O resto do ecrã não é relido ao puxar porque não precisa: as sessões, os pedidos e as
   conversas são subscrições ao vivo.
-- **Home: as secções** — por baixo do cabeçalho, por ordem: a secção **"Novidades"** com o que
+- **Home: as secções** - por baixo do cabeçalho, por ordem: a secção **"Novidades"** com o que
   espera resposta (pedidos de conexão, pedidos de sessão, mensagens por ler) e a contagem no
   título, o **calendário da agenda** (o mês com um ponto nos dias que têm sessão; tocar num dia
-  empilha a Agenda já nesse dia — ver `AgendaCard`) e o atalho dos **Materiais**. Uma regra decidiu
+  empilha a Agenda já nesse dia - ver `AgendaCard`) e o atalho dos **Materiais**. Uma regra decidiu
   o que está aqui: **cabe no ecrã sem rolar**. Foi por isso que quatro coisas saíram, cada uma com
-  a sua razão — a **próxima sessão** em destaque (o *quando* das sessões passou a ser o calendário,
+  a sua razão - a **próxima sessão** em destaque (o *quando* das sessões passou a ser o calendário,
   que o diz sem uma linha de texto, e a lista do dia é a Agenda), as **listas
   de ligações** (quem está ligado a quem está no Chat, onde as conversas são exactamente essas
-  pessoas, e é lá que se pede uma sessão a quem já se conhece — `ChatSessionRequestCard`), os
+  pessoas, e é lá que se pede uma sessão a quem já se conhece - `ChatSessionRequestCard`), os
   atalhos das **Mensagens** e da **Pesquisa** (são dois dos cinco separadores da barra de baixo, e
   um segundo caminho para eles no meio da Home era espaço gasto onde ele é mais curto) e os
   **números da agenda** ("0 agendadas", que são do Perfil). O que fica é o que a Home faz melhor do
   que qualquer outro ecrã: quem és, o que espera por ti e quando tens sessões. A **descoberta** de
   quem ainda não conheces vive nos Matches e na pesquisa e o **histórico** nas Notificações:
   chegaram a estar também aqui, em resumo, e eram duas cópias do mesmo em três ecrãs.
-- **A conta de «cabe num ecrã»** — para um telemóvel de 844 pt de altura (iPhone 14) com a barra de
+- **A conta de «cabe num ecrã»** - para um telemóvel de 844 pt de altura (iPhone 14) com a barra de
   baixo a 80 pt do fundo, sobram **764 pt** de área visível, contra **183** do cabeçalho (barra de
   estado, 32 de folga, fotografia de 80 e 24 em baixo), **24** de intervalo, **126** da secção
   "Novidades" com uma pendência, **24**, **282** do calendário (cabeçalho do mês, dias da semana,
@@ -448,70 +448,70 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
   **`AgendaCard`** de 20 para 16 e as linhas da secção "Novidades" de 56 para 48 px (176 em vez de
   216 quando os três tipos estão à espera ao mesmo tempo). **A conta muda com o que está no ecrã, e
   isso é o que se sabe e não se esconde:** com duas ou mais pendências, num mês de seis semanas
-  (agosto de 2026, por exemplo) ou num ecrã pequeno — um iPhone SE tem 587 pt visíveis — continua a
+  (agosto de 2026, por exemplo) ou num ecrã pequeno - um iPhone SE tem 587 pt visíveis - continua a
   haver deslize. É por isso que a Home continua a ser uma `ScrollView`: a conta diz o que se espera,
   e a lista garante que nada fica cortado quando a conta não bate certo. O guia de primeiros passos
   é a peça que mais pesa nessa margem (≈200 px), por ser texto.
-- **A Home quando não há nada** — **cada bloco só se desenha quando tem conteúdo**: uma lista vazia
+- **A Home quando não há nada** - **cada bloco só se desenha quando tem conteúdo**: uma lista vazia
   é indistinguível de uma leitura que falhou, e era isso que fazia a Home parecer um ecrã em branco
-  para quem ainda não tinha nada. Quando não há mesmo nada — sem sessões, sem ligações e sem
-  pendências (`isHomeEmpty`, em `src/lib/home.ts`) — aparece um guia de primeiros passos; para quem
+  para quem ainda não tinha nada. Quando não há mesmo nada - sem sessões, sem ligações e sem
+  pendências (`isHomeEmpty`, em `src/lib/home.ts`) - aparece um guia de primeiros passos; para quem
   só ensina, o guia diz que são os tutorandos que o vêm procurar a ele, em vez de apontar para os
   Matches (fechados nesse caso). O guia **não aparece quando a leitura das ligações falhou**: das
   duas, "não tenho ligações" e "não sei as minhas ligações", só a primeira é que se pode dizer.
-- **As duas listas de ligações aceites** — "Tutores para ti" para quem aprende (os mentores com
+- **As duas listas de ligações aceites** - "Tutores para ti" para quem aprende (os mentores com
   quem já tem conexão aceite) e "Os teus tutorandos" para quem ensina (os alunos que aceitou).
   Viveram na Home e **saíram dela** (ver a conta de "cabe num ecrã"); o que ficou é a leitura que as
   alimentava, usada agora para decidir se a Home está vazia. São simétricas e vêm do mesmo
   `connectionRequests`: como um pedido vai sempre do Tutorando (`from`) para o Mentor (`to`), a
-  lista de tutorandos de um mentor são os `from` dos pedidos de que ele é `to` — ver
+  lista de tutorandos de um mentor são os `from` dos pedidos de que ele é `to` - ver
   `fetchConnectedMentors`/`fetchConnectedTutees` em `src/lib/matching.ts`. O sítio onde o mentor
   revê o aluno que aceitou passou a ser o **Chat**, que tem uma conversa por cada ligação aceite
   (ver `connections` na entrada das secções da Home).
-- **Pesquisa de mentores/tutorandos** — por disciplina, com filtros; sem leitura ao Firestore ao
+- **Pesquisa de mentores/tutorandos** - por disciplina, com filtros; sem leitura ao Firestore ao
   abrir o ecrã, só disparada por query de texto ou filtro ativo. Mostra "Pesquisas recentes"
   (guardadas em AsyncStorage) quando não há pesquisa ativa.
-- **Matches / pedidos de conexão** — uma **lista** de candidatos (o mesmo cartão dos resultados da
+- **Matches / pedidos de conexão** - uma **lista** de candidatos (o mesmo cartão dos resultados da
   pesquisa, com as duas decisões dentro de cada linha: "Passar" e "Conectar"); "Conectar" envia um
   **pedido de conexão** ao Mentor (não é match automático por like mútuo). Só o Tutorando inicia; o
   Mentor nunca envia pedido a um Tutorando. Os pedidos recebidos **decidem-se no topo deste ecrã**,
   com Aceitar/Recusar: quem só ensina não tem lista de candidatos (não procura mentor, é
   encontrado), mas continua a ter aqui o que tem para decidir. Chegou a ser um cartão de ecrã
-  inteiro que se vira, com uma bandeja de botões fixa em baixo — nenhum outro ecrã da app se parecia
+  inteiro que se vira, com uma bandeja de botões fixa em baixo - nenhum outro ecrã da app se parecia
   com aquilo, e o que esse cartão mostrava a mais (descrição e disponibilidade) vive no perfil de
   cada candidato, a um toque de distância.
-- **Notificações in-app** — o sino da Home conta os pedidos de sessão e as conversas por ler, e
+- **Notificações in-app** - o sino da Home conta os pedidos de sessão e as conversas por ler, e
   cada separador com algo à espera tem a sua bolinha (Matches para pedidos de conexão, Chat para
-  conversas por ler — ver `NavBar`). O ecrã dedicado (`notifications.tsx`) tem os pedidos de sessão
+  conversas por ler - ver `NavBar`). O ecrã dedicado (`notifications.tsx`) tem os pedidos de sessão
   com Aceitar/Recusar, **avisa** de cada pedido de conexão recebido (e abre o ecrã dos pedidos, onde
   a decisão se toma), um
-  histórico "Recentes" derivado de pedidos já aceites e sessões de amanhã, e — no fim, porque é o
-  menos urgente — até três **sugestões** do mesmo conjunto da descoberta
+  histórico "Recentes" derivado de pedidos já aceites e sessões de amanhã, e - no fim, porque é o
+  menos urgente - até três **sugestões** do mesmo conjunto da descoberta
   (`fetchExcludedCandidateIds` + `fetchMentorCandidates`), com "Ver todos" para os Matches. É o
   único ecrã que faz a leitura do conjunto de candidatos por si (tecto de `CANDIDATE_POOL_LIMIT`
   perfis), e uma falha ali só faz desaparecer o bloco.
-- **Chat em tempo real** — só desbloqueado depois de um pedido de conexão aceite; mensagens via
+- **Chat em tempo real** - só desbloqueado depois de um pedido de conexão aceite; mensagens via
   Firestore `onSnapshot` (`conversations/{id}/messages`). Abre com as últimas 50 mensagens e um
   botão para carregar as anteriores.
-- **Agenda / sessões** — calendário mensal + lista do dia; pedido de sessão
+- **Agenda / sessões** - calendário mensal + lista do dia; pedido de sessão
   (disciplina/data/hora/modalidade/mensagem) a partir do perfil do outro utilizador ou do chat.
   Ao contrário do pedido de conexão, o pedido de sessão pode partir de qualquer um dos dois lados
-  de uma ligação já aceite — e **quem aceita fica como Mentor dessa sessão**, sendo a única parte
+  de uma ligação já aceite - e **quem aceita fica como Mentor dessa sessão**, sendo a única parte
   que a pode terminar (ver [Decisões tomadas](#decisões-tomadas)).
-- **Materiais** — um material é um **link http/https partilhado dentro de uma conversa** (não há
+- **Materiais** - um material é um **link http/https partilhado dentro de uma conversa** (não há
   coleção `materials` nem upload de ficheiros). O ecrã de Materiais agrega, em tempo real, os
   anexos das conversas do utilizador, filtráveis por enviados/recebidos. O link é validado ao ser
   escrito e outra vez ao ser aberto (`src/lib/url.ts`), porque vem de outro utilizador.
-- **Avaliação por estrelas pós-sessão** — anónima, aparece automaticamente ao Tutorando quando
+- **Avaliação por estrelas pós-sessão** - anónima, aparece automaticamente ao Tutorando quando
   uma sessão passada ainda não foi avaliada nem dispensada; 1 avaliação por sessão.
-- **Bloquear utilizadores** — a partir do perfil de outra pessoa, com confirmação. Um bloqueio
+- **Bloquear utilizadores** - a partir do perfil de outra pessoa, com confirmação. Um bloqueio
   corta a ligação nos dois sentidos: os dois deixam de se encontrar na descoberta, de se poder
   ligar ou pedir sessões, e a conversa que tivessem fica inacessível para ambos (o histórico não
   é apagado). Gerem-se em **Definições**, um ecrã sem separador próprio que se alcança por uma
   linha discreta no fim do Perfil, e que também tem o idioma, os **avisos no telemóvel** (estado,
   ligar/desligar e, quando a permissão foi recusada, o atalho para as definições do sistema), um
   contacto de ajuda e o **apagar a conta** (ver [Apagar a conta](#apagar-a-conta)).
-- **Recuperação de palavra-passe** — botão nos ecrãs de autenticação; o Firebase envia o email
+- **Recuperação de palavra-passe** - botão nos ecrãs de autenticação; o Firebase envia o email
   com o link. A reposição acontece na página web do Firebase e a pessoa volta à app para entrar
   com a palavra-passe nova (não há deep link de regresso). A confirmação mostrada é sempre a
   mesma, exista ou não conta, para não permitir descobrir que emails estão registados.
@@ -536,10 +536,10 @@ Não existe coleção de notificações: o ecrã de Notificações deriva tudo d
 
 ## Firestore rules e segurança
 
-`firestore.rules` é a fonte de verdade da autorização — **nenhuma regra de negócio de segurança
+`firestore.rules` é a fonte de verdade da autorização - **nenhuma regra de negócio de segurança
 depende só da UI**. Pontos a destacar:
 
-- `isVerified()` — a política transversal: sem o email institucional confirmado (`email_verified`
+- `isVerified()` - a política transversal: sem o email institucional confirmado (`email_verified`
   no token) não se lê nem se escreve nada, com as duas exceções contadas descritas em
   [Confirmação de email](#confirmação-de-email). É esta a peça que o domínio do email não dá.
 - `users`: `create` valida que o `role` gravado bate com o domínio do email do token autenticado
@@ -554,9 +554,9 @@ depende só da UI**. Pontos a destacar:
   convenções de ID diferentes).
 - `sessions`: `create` exige um `sessionRequests` aceite por trás (via `sessionRequestId`
   gravado na sessão) e que só o mentor que aceitou o pedido a possa criar. `update` só permite
-  passar de `scheduled` para `completed`, e só pelo mentor — nenhum outro campo pode mudar.
+  passar de `scheduled` para `completed`, e só pelo mentor - nenhum outro campo pode mudar.
 - `ratings`: `create` confirma via `get()` que quem escreve é o `studentUid` da sessão, sem
-  persistir essa relação no documento — garante o anonimato mesmo para quem lê a coleção depois.
+  persistir essa relação no documento - garante o anonimato mesmo para quem lê a coleção depois.
 - `users/{uid}/devices`: `read`/`delete` só pelo próprio e `create`/`update` com validação mínima
   (token não vazio, plataforma conhecida, `userId` igual ao do caminho). É a única razão de o token
   dos avisos não viver no documento do perfil: `users/{uid}` é legível por toda a comunidade
@@ -566,7 +566,7 @@ depende só da UI**. Pontos a destacar:
   escreveu) e **apagar a conta**, onde quem participa de um pedido, de uma sessão ou de uma conversa
   a leva consigo. É o que a diretriz 5.1.1(v) da Apple obriga a existir dentro da app, e está
   fechado por identidade em todos os casos: ninguém apaga o perfil, os dados privados, o bloqueio ou
-  a mensagem de outra pessoa. As **avaliações** continuam sem `delete` — se um mentor as pudesse
+  a mensagem de outra pessoa. As **avaliações** continuam sem `delete` - se um mentor as pudesse
   apagar, o anonimato não valia nada (ver "Apagar a conta").
 
 Há testes destas invariantes em `tests/firestore-rules.test.mts`, que correm contra o emulador
@@ -581,7 +581,7 @@ npm run test:rules        # arranca o emulador, corre os testes e desliga-o (pre
 O papel de cada pessoa (Tutorando/Tutor) deriva do **domínio** do email institucional, e isso não
 prova que o email seja de quem o escreveu: qualquer pessoa podia criar conta com
 `professor.x@iseclisboa.pt` e ficar com um perfil em nome dela. O que fecha isso é o link que o
-Firebase manda para a caixa de correio — que só quem a lê pode abrir.
+Firebase manda para a caixa de correio - que só quem a lê pode abrir.
 
 Está em **três sítios**, e os três são precisos:
 
@@ -589,7 +589,7 @@ Está em **três sítios**, e os três são precisos:
 |---|---|---|
 | Ecrã | `src/app/verify-email.tsx` | explica o que falta, reenvia o email e pergunta ao Firebase se já foi confirmado |
 | Decisão | `src/lib/auth-gate.ts` | quem não confirmou fica nesse ecrã, **antes** do perfil e antes de qualquer escrita |
-| Garantia | `firestore.rules` (`isVerified()`) | o servidor recusa quem não confirmou — um cliente feito à mão não passa por aqui |
+| Garantia | `firestore.rules` (`isVerified()`) | o servidor recusa quem não confirmou - um cliente feito à mão não passa por aqui |
 
 Só a terceira é segurança; as duas primeiras são o que faz a coisa ser usável. E é o mesmo
 princípio escrito em [Firestore rules e segurança](#firestore-rules-e-segurança): nenhuma regra de
@@ -598,23 +598,54 @@ negócio depende só do que o ecrã mostra.
 **Duas exceções contadas**, ambas desenhadas para a app conseguir arrancar:
 
 - o **próprio documento** (`users/{uid}` e `userAccounts/{uid}`) continua legível por quem não
-  confirmou — é essa leitura que diz à app que o perfil ainda não está feito, e sem ela ficava
+  confirmou - é essa leitura que diz à app que o perfil ainda não está feito, e sem ela ficava
   presa num carregamento infinito, sem nunca chegar ao ecrã que explica o que falta;
 - o `create` de `users/{uid}` no registo (que acontece antes de haver confirmação nenhuma) está
   aberto **só à forma exata que o registo escreve** (`role`, `profileCompleted: false`, `createdAt`).
   Sem essa restrição, quem se registasse com o email de outra pessoa escrevia logo um perfil
-  completo com o nome dela — o caso que isto existe para travar.
+  completo com o nome dela - o caso que isto existe para travar.
 
 O link abre no **browser**, e o token que está no telemóvel continua a dizer
 `email_verified: false` durante até uma hora: são as regras que leem o token, não o objeto local.
 Por isso o ecrã força um token novo (`getIdToken(true)`) quando a confirmação se dá, e verifica
-sozinho de cada vez que a app volta a ficar à frente — sair do browser do email e voltar é
+sozinho de cada vez que a app volta a ficar à frente - sair do browser do email e voltar é
 exatamente esse momento.
+
+### O envio dos emails
+
+O email não é escrito pela app: quem o escreve é o Firebase, a partir de um **modelo do projeto**.
+A app só escolhe duas coisas - o idioma (`auth.languageCode`, com o idioma da app: `pt-PT` ou `en`,
+ver `src/auth/actions.ts`) e o nome que aparece como `%APP_NAME%` (o campo *Public-facing name* do
+projeto, hoje `INOVAPP`).
+
+O que está medido no projeto (`inovapp-68021`), para não se adivinhar:
+
+| | estado |
+|---|---|
+| Serviço de envio | `DEFAULT` (o do Firebase) - remetente `noreply@inovapp-68021.firebaseapp.com`, sem SMTP próprio |
+| Idioma por omissão | `en` - verificado no próprio link que o Firebase gera (`lang=en`); sem a linha da app, um aluno do ISEC recebia um email em inglês de uma app que fala português |
+| Política de palavras-passe | `ENFORCE`: 8+, maiúscula, minúscula, número e símbolo - `auth/password-does-not-meet-requirements` é o erro que daí vem, e está traduzido |
+| Privacidade do email | `enableImprovedEmailPrivacy`: os erros deixam de distinguir "não existe" de "palavra-passe errada", e o ecrã de reposição não serve para descobrir quem tem conta |
+| Limites diários (plano Spark) | 1000 emails de confirmação/dia e **150 de reposição/dia** - o segundo é o que aperta numa escola inteira |
+
+**Três coisas que continuam por configurar**, por ordem de quanto se nota:
+
+- **Entregabilidade.** Correio vindo de `firebaseapp.com` cai frequentemente em spam nas caixas
+  institucionais. É a causa provável de um "não recebi o email" e resolve-se com SMTP próprio e um
+  domínio verificado - configuração de infraestrutura, não código.
+- **O link não volta à app.** Sem `ActionCodeSettings` (`continueUrl`/`handleCodeInApp`), quem abre
+  o link aterra na página do Firebase, em inglês, e tem de voltar ao telemóvel à mão. O ecrã já
+  cobre isso (verifica sozinho quando a app volta à frente), mas o caminho tem uma página morta no
+  meio; ligá-lo à app pede domínios associados (iOS) e App Links com as impressões digitais do
+  certificado (Android) - não é uma linha, é uma volta.
+- **O idioma é pedido, não imposto.** Há relatos de o `languageCode` do cliente não vencer sempre o
+  idioma escolhido no modelo (firebase-js-sdk#5846). Quem decide de facto é o idioma do modelo em
+  *Authentication → Templates*, e é lá - com um email real, nos dois idiomas - que se confirma.
 
 ### Contas anteriores à confirmação
 
 Quem já tinha conta e nunca confirmou deixa de poder ler ou escrever quando estas regras forem
-publicadas. O caminho normal é abrir o link (o ecrã reenvia-o) — e o email de reposição de
+publicadas. O caminho normal é abrir o link (o ecrã reenvia-o) - e o email de reposição de
 palavra-passe continua a funcionar, o que também resolve o caso de alguém ter criado conta com o
 email de outra pessoa: o dono verdadeiro pede uma palavra-passe nova, entra e confirma.
 
@@ -629,7 +660,7 @@ npm run verify:legacy-accounts -- --apply                        # todas de uma 
 
 **Ordem de publicação:** primeiro a app (com o ecrã da confirmação a correr), só depois o
 `npx firebase-tools deploy --only firestore:rules`. Ao contrário, quem estivesse com a app antiga
-perdia acesso sem perceber porquê. E vale a pena confirmar a própria conta antes disso — a conta de
+perdia acesso sem perceber porquê. E vale a pena confirmar a própria conta antes disso - a conta de
 quem publica é a primeira que corre o risco de ficar de fora.
 
 ## Apagar a conta
@@ -645,12 +676,12 @@ ninguém cumpre sozinho às 3 da manhã. São três peças:
 | Conta | `src/auth/actions.ts` | reautentica, apaga os dados e só no fim apaga a conta do Auth |
 
 **A ordem é a parte que importa**, e não é indiferente: apagada primeiro a conta do Firebase Auth, o
-token desaparece e o cliente perde o direito de apagar o resto — o que sobrasse ficava órfão e sem
+token desaparece e o cliente perde o direito de apagar o resto - o que sobrasse ficava órfão e sem
 ninguém que o pudesse remover (as regras decidem pelo token). Ao contrário, apagados os dados e
 falhando a conta, repetir a operação acaba o trabalho: todos os passos são idempotentes.
 
 **A palavra-passe é pedida sempre, e verificada antes de se apagar seja o que for.** O Firebase só
-se queixa de uma sessão antiga (`auth/requires-recent-login`) no momento de apagar a conta — ou
+se queixa de uma sessão antiga (`auth/requires-recent-login`) no momento de apagar a conta - ou
 seja, depois de os dados já terem ido. Reautenticar primeiro faz com que uma palavra-passe errada
 não deixe nada a meio, e há um teste que o fixa (`tests/data/account.test.mts`).
 
@@ -658,21 +689,21 @@ O que **sai** com a conta: o perfil, os dados privados da conta, os registos dos
 bloqueios que ela fez, os pedidos de conexão e de sessão, as sessões, as conversas e as mensagens que
 escreveu. O que **fica**: o bloqueio que outra pessoa lhe fez (é dela, e uma referência a um UID não
 é dado pessoal), as mensagens que a outra pessoa escreveu (não são dela, e ficam inalcançáveis assim
-que a conversa desaparece — as regras exigem a conversa para se ler lá dentro) e as **avaliações**,
+que a conversa desaparece - as regras exigem a conversa para se ler lá dentro) e as **avaliações**,
 que continuam sem `delete` de propósito: abertas, davam a um mentor a forma de deitar fora as notas
 más que recebeu. Sem a sessão nenhuma para as mostrar, ficam inertes.
 
-O `delete` continua fechado por identidade em todo o lado — ninguém apaga o perfil, os dados, o
+O `delete` continua fechado por identidade em todo o lado - ninguém apaga o perfil, os dados, o
 bloqueio ou a mensagem de outra pessoa (ver [Firestore rules e segurança](#firestore-rules-e-segurança)).
 
 Uma consequência assumida: apagar a conta leva a conversa **para os dois lados**. Não há forma de
-partir um `delete` ao meio por regra — o documento da conversa tem os dois participantes — e a
+partir um `delete` ao meio por regra - o documento da conversa tem os dois participantes - e a
 alternativa (deixá-lo) era a lista de quem fica a mostrar uma conversa com alguém que já não existe.
 
 ## Migração dos perfis antigos
 
 Antes da separação `users`/`userAccounts`, o perfil guardava `email`, `lastLoginAt` e
-`rememberSession` — legíveis por qualquer utilizador autenticado. Duas coisas tratam disto:
+`rememberSession` - legíveis por qualquer utilizador autenticado. Duas coisas tratam disto:
 
 - **No login seguinte**, a app limpa o próprio perfil e garante o documento em `userAccounts`
   (`signIn`, em `src/auth/actions.ts`). As regras toleram a presença desses campos antigos
@@ -686,194 +717,194 @@ npm run cleanup:legacy-profiles              # só mostra o que faria
 npm run cleanup:legacy-profiles -- --apply   # aplica (cria userAccounts e limpa o perfil)
 ```
 
-Usa o `firebase-admin`, que passa por cima das regras — por isso é um script manual e não faz
+Usa o `firebase-admin`, que passa por cima das regras - por isso é um script manual e não faz
 parte da app.
 
 ## Decisões tomadas
 
-- **Um só cabeçalho para os cinco separadores** (`ScreenHero`) — o bloco em gradiente que abre a
+- **Um só cabeçalho para os cinco separadores** (`ScreenHero`) - o bloco em gradiente que abre a
   Home, o Matches, o Chat, o Pesquisar e o Perfil. Antes havia cinco cabeçalhos diferentes: a Home
   com identidade e sino, o Chat e o Pesquisar com o título e o campo de pesquisa, o Matches com um
   título só, o Perfil com o título e a roda dentada do lado oposto. O bloco rola com a lista (é o
-  primeiro elemento dela) — um cabeçalho preso ao topo é o que fica a comer o ecrã enquanto o
+  primeiro elemento dela) - um cabeçalho preso ao topo é o que fica a comer o ecrã enquanto o
   conteúdo anda. Cada separador põe o tom do bloco por trás da lista (`style` com `heroTop`) e o claro
   por cima (`contentContainerStyle` com `background`): é o que faz a faixa revelada ao puxar para
   baixo ter a cor do bloco em vez de branco.
-- **Cada separador leva no bloco só o que é dele** — a Home leva a **identidade** (saudação, nome,
+- **Cada separador leva no bloco só o que é dele** - a Home leva a **identidade** (saudação, nome,
   papel) e o sino; o Perfil leva **a mesma identidade** (nome, curso, e o botão de editar por baixo
   das linhas) e a roda dentada; o **Matches, o Chat e o Pesquisar levam só o título**. Chegaram a
   levar também a identidade (e o sino) de quem já está a ver a app, e não ficou: o mesmo nome
   repetido em três separadores não diz nada de novo, e um bloco de 150 px só para dizer "Chat" é
-  altura que sai da lista. O sino leva ponto de notificações **só na Home** — o número vem de
+  altura que sai da lista. O sino leva ponto de notificações **só na Home** - o número vem de
   subscrições (pedidos de sessão, conversas por ler) que só a Home tem, e repeti-las em quatro
   ecrãs era pagar leituras a mais por um ponto.
-- **A identidade do Perfil é a da Home** — e não uma parecida. O Perfil chegou a trazer o seu
+- **A identidade do Perfil é a da Home** - e não uma parecida. O Perfil chegou a trazer o seu
   próprio bloco de identidade (`ProfileHeader`, apagado) com a fotografia de 96, o nome de 20 e o
   curso em cinzento, ao lado dos 80, 22 e quase-preto da Home: duas cópias da mesma peça, que
   divergiram por si (foram desenhadas em voltas diferentes). O que sobrou foi **a única coisa que
-  era mesmo diferente** — o que fica por baixo das linhas, que no Perfil é o botão de editar
-  (`identityExtra`, ver `Profile/EditButton`) —, e o resto é o mesmo código e os mesmos números
+  era mesmo diferente** - o que fica por baixo das linhas, que no Perfil é o botão de editar
+  (`identityExtra`, ver `Profile/EditButton`) -, e o resto é o mesmo código e os mesmos números
   (`HERO_AVATAR_SIZE`, 80). O **título "Perfil" também saiu** do bloco: o nome do ecrã repetido por
   baixo do nome de quem lá está não diz nada de novo, e o separador da barra de baixo já se chama
   Perfil. A segunda linha distingue os dois: na Home é o **papel** (o que se pode fazer), no Perfil
-  é o **curso com o ano** (o que se estuda) — e é por isso que lá cabe em duas linhas
+  é o **curso com o ano** (o que se estuda) - e é por isso que lá cabe em duas linhas
   (`subtitleLines`) e na Home numa só.
-- **Um só cabeçalho para os ecrãs empilhados** (`StackHeader`, com o `BackButton` dentro) — os seis
+- **Um só cabeçalho para os ecrãs empilhados** (`StackHeader`, com o `BackButton` dentro) - os seis
   ecrãs que abrem por cima dos separadores (Notificações, Sessões, Materiais, Definições, pedidos
   de conexão, pedido de sessão) tinham a mesma linha copiada com uma diferença aqui e outra ali: o
   `gap` era 12 num e 16 no outro, o título tinha `flex: 1` em dois e não nos restantes, e o botão
-  de voltar aparecia em **três** tamanhos — um chevron nu de 22 px, um círculo de 36 com contorno
+  de voltar aparecia em **três** tamanhos - um chevron nu de 22 px, um círculo de 36 com contorno
   (Definições) e um círculo de 36 sobre a fotografia (perfil de outra pessoa). Nada disso era
   intenção; era terem sido escritos em alturas diferentes. Ficou um só, com o botão num tamanho só
-  (`BackButton`, 36 px — e `variant="surface"` para quando assenta sobre uma fotografia), e o
+  (`BackButton`, 36 px - e `variant="surface"` para quando assenta sobre uma fotografia), e o
   teste mede-o, porque um botão estreito continua a voltar para trás. Uma mudança que veio atrás:
   o título do Definições deixou de ser exceção (`textTransform: 'none'`) e passa a maiúsculas como
   todos os outros. **Não é o `ScreenHero`**: esse vive *dentro* da lista, rola com ela e leva a
   identidade; este fica preso ao topo e é só a seta e o nome do ecrã.
-- **O que rebenta a desenhar tem um ecrã** (`ErrorBoundary` + `ErrorScreen`) — sem isto, uma
+- **O que rebenta a desenhar tem um ecrã** (`ErrorBoundary` + `ErrorScreen`) - sem isto, uma
   exceção num render, em produção, **fecha a app**: a pessoa fica sem o ecrã e sem aviso nenhum.
   Há dois limites em `src/app/_layout.tsx`: um na **raiz** (para o que falha no próprio layout) e
-  um por **ecrã** (`unstable_settings.screenErrorBoundary`), que mantém a navegação montada — um
+  um por **ecrã** (`unstable_settings.screenErrorBoundary`), que mantém a navegação montada - um
   erro dentro do Definições desenha o aviso no lugar do ecrã e deixa o gesto de voltar funcionar,
   em vez de fechar tudo. A mensagem técnica do erro aparece só em desenvolvimento; em produção não
   serve a quem usa a app e pode conter dados internos. **O que ainda não existe é o serviço de
-  erros em produção** — há um só sítio por onde passam (`src/lib/error-reporting.ts`), hoje a
+  erros em produção** - há um só sítio por onde passam (`src/lib/error-reporting.ts`), hoje a
   escrever na consola em desenvolvimento e a não fazer nada em produção, à espera da decisão (ver
   "Limitações conhecidas").
-- **A app não faz chamadas** — a linha de sessão da Agenda tinha um botão "Entrar" que abria um
+- **A app não faz chamadas** - a linha de sessão da Agenda tinha um botão "Entrar" que abria um
   aviso a dizer que a funcionalidade não existia: uma promessa que se desmentia a si mesma. O
   botão saiu (com ele, as chaves `common.callUnavailable*` e `sessions.join`). A modalidade
-  **"Online" continua a existir** — é como a sessão é combinada — e o sítio onde se combina é o
+  **"Online" continua a existir** - é como a sessão é combinada - e o sítio onde se combina é o
   chat, que é onde a conversa já está.
 
-- **Base cinzenta, um acento só como sinal** — o fundo dos ecrãs é um cinzento muito claro
+- **Base cinzenta, um acento só como sinal** - o fundo dos ecrãs é um cinzento muito claro
   (`background`, #F4F5F7) e as superfícies são brancas. Chegou a ser ao contrário (fundo azulado
   com cartões brancos) e a cor do fundo pintava o ecrã todo, tirando força à cor onde ela significa
   alguma coisa: a **ação principal** (botão primário), o **estado escolhido** (chip selecionado,
   dia do calendário, separador ativo da barra de baixo), **números que contam**, os **títulos de
   secção** e a **caixa dos ícones**. Estes dois últimos são a parte que foi espalhada numa volta
   seguinte, a pedido de quem desenha o produto: os títulos de secção são **nomes** (não corpo de
-  texto) e as caixas de ícone são os sítios onde se toca — a cor é o que diz "isto é um sítio" antes
+  texto) e as caixas de ícone são os sítios onde se toca - a cor é o que diz "isto é um sítio" antes
   de o dedo chegar lá. O que continua sem acento nenhum: o fundo dos ecrãs, os cartões e o corpo do
   texto. O bloco que abre os separadores é o
   **único fundo com cor** que existe (`heroTop`/`heroBottom`, um quase-branco com um resto de
   ameixa a descer para o tom dos chips). Os cartões de pedido de conexão/sessão eram coloridos e
-  são agora **brancos como todos os outros** — eram os únicos cartões com cor, e num ecrã feito
+  são agora **brancos como todos os outros** - eram os únicos cartões com cor, e num ecrã feito
   sobretudo deles (as Notificações) dava a impressão de que aquele ecrã tinha outro fundo. Quem
   marca um pedido como "algo a decidir" é a pastilha de estado e o botão de aceitar, não a cor do
   cartão.
-- **O acento é uma ameixa (roxo), e o azul da marca foi eliminado** — a app nasceu com o azul do
+- **O acento é uma ameixa (roxo), e o azul da marca foi eliminado** - a app nasceu com o azul do
   `colors.txt` dos mockups (`#0085CA`) e a troca foi decidida por quem desenha o produto. A razão
   técnica para ter parado no **roxo**, e não noutra cor: as cores de **estado** já ocupam o verde
   (sucesso), o vermelho (erro) e o âmbar (aviso), e o acento tem de ser reconhecível ao lado delas
-  — um laranja confundia-se com o aviso, um vinho com o erro, um verde com o sucesso. O roxo é a
+  - um laranja confundia-se com o aviso, um vinho com o erro, um verde com o sucesso. O roxo é a
   única família que sobra. O acento (`primary`) passa 6,9:1 de contraste com o branco (chega para
   texto branco por cima) e a sua tinta (`primaryDark`, 11:1) faz os dois papéis que pareciam
   opostos: fundo para texto branco e texto sobre branco.
-- **Os botões são pretos na decisão, com o acento na promoção** — "Aceitar"/"Recusar" de um pedido
+- **Os botões são pretos na decisão, com o acento na promoção** - "Aceitar"/"Recusar" de um pedido
   levam o **tom neutro** do `Button` (`tone="neutral"`: contorno e cheio a quase-preto), porque as
   duas decisões são simétricas e nenhuma delas é "a ação da app"; os botões que a app promove
   (entrar, concluir, marcar sessão) levam o acento. Os quadrados dos ícones **não** são pretos:
-  chegaram a ser (preto cheio com o ícone a branco) e não ficou — o que diz que uma coisa se toca
+  chegaram a ser (preto cheio com o ícone a branco) e não ficou - o que diz que uma coisa se toca
   não é uma mancha preta no meio de um cartão claro.
-- **Um só tamanho de ícone na interface** (`IconSize.ui`, 22) — os ícones eram desenhados a 14, 16,
+- **Um só tamanho de ícone na interface** (`IconSize.ui`, 22) - os ícones eram desenhados a 14, 16,
   18, 20, 22 e 24 conforme quem os escreveu, e via-se nas páginas com mais do que um: o sino de 22
   ao lado de um chevron de 16, o lápis de 14 ao lado da roda dentada de 20. Duas exceções: o ícone
-  grande sozinho dentro de um círculo de estado (`IconSize.state`, 28 — é a ilustração daquele
+  grande sozinho dentro de um círculo de estado (`IconSize.state`, 28 - é a ilustração daquele
   estado) e os sinais **dentro** de um controlo pequeno (o visto da caixa de seleção, de 18 px e
   com um visto de 14: a 22 não cabia, e isso é um controlo partido, não um estilo).
-- **Ícones de contorno** — todos os ícones da app são lineares (`-outline` do Ionicons, que é o que
+- **Ícones de contorno** - todos os ícones da app são lineares (`-outline` do Ionicons, que é o que
   há instalado: o conjunto de ícones é uma decisão de dependência e não foi trocado). O sinal vive
   na **caixa**: um quadrado de ameixa suave (`primarySoft`) com o ícone na cor do acento
-  (`primary`, 4,9:1 sobre a caixa — acima dos 3:1 que um símbolo precisa). É o mesmo em todo o
+  (`primary`, 4,9:1 sobre a caixa - acima dos 3:1 que um símbolo precisa). É o mesmo em todo o
   lado: atalhos, linhas "Novidades", os materiais, o histórico das notificações e o sino do
   cabeçalho. Três exceções, cada uma com a sua razão: ícones sobre um **cheio colorido** (botão
   primário, pastilha sobre fotografia, badge da câmara) vão a branco, senão desapareciam; os de
   **estado** mantêm a cor que é o estado (estrelas da avaliação, visto verde, ponto vermelho de
-  aviso — e as duas entradas do histórico que são "aconteceu", a conexão e a sessão aceites); e os
+  aviso - e as duas entradas do histórico que são "aconteceu", a conexão e a sessão aceites); e os
   que vivem **dentro de uma ação colorida** seguem a cor dessa ação.
 - **A fotografia de perfil tem contorno** (`photoBorder`, um preto quase transparente) nas duas
-  que são grandes — a do cabeçalho da Home e a do Perfil. Sobre o tom claro do bloco e sobre o
+  que são grandes - a do cabeçalho da Home e a do Perfil. Sobre o tom claro do bloco e sobre o
   cinzento do ecrã, uma cara sem contorno não tinha onde acabar. As fotografias pequenas das
   listas **não** o levam: a 32 px um aro ocupa mais do que a cara que emoldura.
-- **Um só tamanho de quadrado para os ícones** (`IconBoxSize`, 40, com o ícone de 22 lá dentro) — os
+- **Um só tamanho de quadrado para os ícones** (`IconBoxSize`, 40, com o ícone de 22 lá dentro) - os
   cartões com ícone (`IconTextCard`/`ExtraCard`) e as linhas "Novidades" da Home (`AttentionCard`)
   andaram a 34 e a 40 px no mesmo ecrã, a duas secções de distância, e o ícone dos pedidos de
-  conexão lia-se como um ícone mal desenhado. O sino do cabeçalho assenta no mesmo quadrado — de
+  conexão lia-se como um ícone mal desenhado. O sino do cabeçalho assenta no mesmo quadrado - de
   ameixa suave, como os outros, e não mais uma bola branca só dele. O ponto das notificações por ler
   é da **cor do cabeçalho** (`heroBottom`) e não vermelho: é uma escolha de quem desenha o ecrã, e
-  vale a pena saber o que custa — um ponto claro sobre um quadrado claro quase não se vê (1,19:1),
+  vale a pena saber o que custa - um ponto claro sobre um quadrado claro quase não se vê (1,19:1),
   por isso ele informa muito menos do que informava a vermelho. O quadrado, esse, ganhou com a
   troca: sobre o cabeçalho, a ameixa suave separa-se mais (1,19:1) do que o cinzento que lá estava
   (1,05:1).
-- **Materiais por link, não por upload de ficheiro** — o projeto não usa Firebase Storage
+- **Materiais por link, não por upload de ficheiro** - o projeto não usa Firebase Storage
   (exige plano Blaze/pago); um material é um link externo (Google Drive, YouTube…) partilhado
   numa conversa. Pela mesma razão, fotos de perfil são guardadas em base64 diretamente no
   Firestore, redimensionadas no dispositivo para 400px (`src/lib/storage.ts`).
-- **Só links http/https** — `Linking.openURL` abre o que lhe derem, e o URL vem de outro
+- **Só links http/https** - `Linking.openURL` abre o que lhe derem, e o URL vem de outro
   utilizador; esquemas arbitrários (`intent://`, `file://`) seriam um caminho para lançar outra
   app. A validação está na escrita e na abertura.
-- **Rating não está ligado aos perfis** — a avaliação por estrelas fica isolada em
+- **Rating não está ligado aos perfis** - a avaliação por estrelas fica isolada em
   `ratings/{sessionId}` e não alimenta uma média visível no perfil do mentor. Ligar isto exigiria
   abrir uma exceção na regra de `users/{userId}` para deixar outra pessoa (o aluno) escrever no
-  perfil do mentor — decisão de segurança deixada de fora, propositadamente.
-- **Um pedido de conexão decide-se num sítio só** — aceitar/recusar vive numa lista, e as
+  perfil do mentor - decisão de segurança deixada de fora, propositadamente.
+- **Um pedido de conexão decide-se num sítio só** - aceitar/recusar vive numa lista, e as
   Notificações limitam-se a avisar que chegou um pedido (o mesmo raciocínio aplicado ao sino da
   Home, que deixou de contar pedidos de conexão para não apontar para um sítio onde já não se
   decide nada). Essa lista tem dois anfitriões e um comportamento só: a secção dos Matches e o
-  ecrã `connection-requests`, que renderizam o **mesmo componente** — não há duas versões de
+  ecrã `connection-requests`, que renderizam o **mesmo componente** - não há duas versões de
   aceitar um pedido, só duas portas para a mesma sala.
-- **O ecrã `connection-requests` existe por causa de um gesto** — a linha "N pedidos de conexão"
+- **O ecrã `connection-requests` existe por causa de um gesto** - a linha "N pedidos de conexão"
   da Home e o aviso das Notificações levavam à **aba** dos Matches, e mudar de separador não
   empilha ecrã nenhum: não havia nada por baixo para o deslize de voltar do iOS desempilhar, e o
-  pedido ficava num beco sem saída. Empilhado, volta-se dele como de qualquer outro ecrã — pelo
+  pedido ficava num beco sem saída. Empilhado, volta-se dele como de qualquer outro ecrã - pelo
   gesto ou pela seta do cabeçalho.
 - **Quem já tem um pedido de conexão connosco desaparece da descoberta** (lista dos Matches e
-  pesquisa) — em
+  pesquisa) - em
   qualquer sentido e em qualquer estado: pendente, aceite ou recusado. Excluir apenas o sentido
   "eu pedi" deixava o mesmo par em cima do Matches (o pedido) e em baixo (o candidato), com o
   "Conectar" a criar um segundo pedido entre as mesmas duas pessoas.
-- **Quem aceita o pedido de sessão fica como Mentor dessa sessão** — o pedido pode partir de
+- **Quem aceita o pedido de sessão fica como Mentor dessa sessão** - o pedido pode partir de
   qualquer lado, mas só quem o aceita pode terminar a sessão e é essa parte que o ecrã de agenda
   apresenta como Mentor. Consequência a rever: se um professor pedir a sessão a um aluno, é o
   professor que aparece como "Tutorando" nessa sessão.
-- **Limites nas leituras** — nenhuma lista da app lê uma coleção inteira: o chat abre com 50
+- **Limites nas leituras** - nenhuma lista da app lê uma coleção inteira: o chat abre com 50
   mensagens (com "carregar anteriores"), os Materiais leem as últimas 50 mensagens de cada
   conversa, o feed de notificações está limitado e ordenado no servidor, e o conjunto de
   candidatos de pesquisa/matches tem um tecto (`CANDIDATE_POOL_LIMIT`, em `src/lib/matching.ts`).
-- **Uma leitura que falha diz que falhou** — a Home, os Matches e a pesquisa liam os dados com
+- **Uma leitura que falha diz que falhou** - a Home, os Matches e a pesquisa liam os dados com
   `.then` e **sem `.catch`**, e o desfecho era o pior de todos: a lista ficava vazia, ou o
   indicador rodava para sempre, e nenhum dos dois casos se distingue de "não há mesmo nada". Foi
   assim que um deploy de regras em atraso se apresentou como "a app não tem dados" em vez de se
   ver na consola. Os três ecrãs têm agora um estado de erro explícito com "Tentar novamente"
-  (`loadError`), e as chaves `search.error`/`search.retry` — que estavam escritas e nunca eram
-  usadas — passaram a servir para isso.
-- **As subscrições ao vivo também têm erro (e uma só por pergunta)** — o mesmo problema, no canal
+  (`loadError`), e as chaves `search.error`/`search.retry` - que estavam escritas e nunca eram
+  usadas - passaram a servir para isso.
+- **As subscrições ao vivo também têm erro (e uma só por pergunta)** - o mesmo problema, no canal
   que faltava. Um `onSnapshot(query, onNext)` sem terceiro argumento não tem onde pôr um erro: uma
-  leitura negada pelas regras não era um estado, era uma lista que ficava como estava — e uma
+  leitura negada pelas regras não era um estado, era uma lista que ficava como estava - e uma
   lista vazia é indistinguível de "não há pedidos". Os **pedidos de conexão** (a bolinha da barra
   de baixo, a contagem da Home, a lista dos Matches, as Notificações e o ecrã próprio) e os
   **pedidos de sessão** (Home e Notificações)  passaram a correr sobre uma **leitura viva
   partilhada** (`src/lib/live-query.ts`): a pergunta é feita **uma vez** à base de dados, quem
   chega depois recebe o que já se sabe, o último a sair fecha-a, e o erro é um campo do estado.
   As **conversas** juntaram-se a esta lista na volta seguinte (a bolinha do separador do Chat, a
-  contagem da Home, a lista do Chat e as Notificações eram quatro subscrições à mesma pergunta —
+  contagem da Home, a lista do Chat e as Notificações eram quatro subscrições à mesma pergunta -
   ver `useConversations`).
-  Cada ecrã mostra-o com o mesmo aviso (`RetryNotice`, com "Tentar outra vez" — um `onSnapshot`
+  Cada ecrã mostra-o com o mesmo aviso (`RetryNotice`, com "Tentar outra vez" - um `onSnapshot`
   que falha não volta sozinho, por isso a segunda tentativa fecha e abre outra). Antes da
   partilha, três separadores abertos ao mesmo tempo faziam a mesma pergunta três vezes, e cada
   alteração era contada (e paga) três vezes.
-- **Quem envia um pedido vê a resposta ao vivo** — a app só ouvia o que **chega** (`to == eu`), por
+- **Quem envia um pedido vê a resposta ao vivo** - a app só ouvia o que **chega** (`to == eu`), por
   isso quem pedia só sabia da resposta quando algum ecrã voltasse a ler (o puxar da Home, o abrir
   da Agenda). O histórico "Recentes" das Notificações passou a ter também uma subscrição dos
   pedidos **aceites que eu enviei** (`subscribeToAcceptedConnectionRequests`), e a mesma entrada
   pode vir das duas leituras com o mesmo id (`connection-{id}`), por isso o ecrã junta-as por id e
   fica com uma só. Os dois contratos ficam escritos: **só os aceites** geram aviso (um recusado é
   uma decisão do outro, e a app não persegue ninguém com ela) e **só para quem pediu** (quem
-  aceitou já sabe o que fez) — os dois fixados em `tests/data/activity.test.mts` e
+  aceitou já sabe o que fez) - os dois fixados em `tests/data/activity.test.mts` e
   `tests/data/flows.test.mts`.
   Nota que já era ao vivo e não mudou: a conversa criada ao aceitar aparece na hora no Chat e na
-  bolinha do separador — o que mudou foi onde essa leitura vive (uma só, partilhada), não o facto
+  bolinha do separador - o que mudou foi onde essa leitura vive (uma só, partilhada), não o facto
   de ser ao vivo. A troca fica escrita: os perfis de quem participa numa conversa são resolvidos
   com uma cache que dura o que durar a subscrição, e como ela agora pode viver a sessão inteira
   (a barra de baixo está sempre montada), um nome ou uma fotografia editados por outra pessoa
@@ -882,58 +913,58 @@ parte da app.
   no cliente. Passar a pesquisa para o servidor ficou por fazer de propósito (setembro de 2026), e
   há dois caminhos com custos muito diferentes: **só o filtro por disciplina** no servidor não
   precisa de nada novo (um índice, e o tecto desaparece para quem filtra), enquanto uma **pesquisa
-  por nome a sério** obriga a guardar um campo com o nome normalizado no perfil — muda a escrita,
+  por nome a sério** obriga a guardar um campo com o nome normalizado no perfil - muda a escrita,
   as regras, e precisa de migrar os perfis que já existem.
-- **Sem Cloud Functions / cron** — "sessão já terminou" (para disparar o pedido de avaliação) é
+- **Sem Cloud Functions / cron** - "sessão já terminou" (para disparar o pedido de avaliação) é
   calculado no cliente, comparando data+hora da sessão com a hora atual. A expiração da sessão
   (30 dias com "Lembrar", 1 dia sem) também: é uma decisão de UX, não uma fronteira de segurança
-  — o refresh token do Firebase continua válido para um cliente modificado. Depende, no entanto,
+  - o refresh token do Firebase continua válido para um cliente modificado. Depende, no entanto,
   de a sessão estar mesmo guardada no dispositivo: no React Native o `getAuth()` do Firebase fica
   **só com persistência em memória** (o SDK avisa disso no terminal) e é preciso
-  `initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })` — ver
+  `initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })` - ver
   `src/lib/firebase.ts`. Sem isso o `lastLoginAt` desaparecia com o processo, a app pedia
   credenciais a cada arranque e estas expirações nunca chegavam a ser avaliadas.
-- **"Lembrar-me" decide duas coisas diferentes** — quanto tempo a sessão dura (30 dias com,
+- **"Lembrar-me" decide duas coisas diferentes** - quanto tempo a sessão dura (30 dias com,
   1 dia sem) e se o **email** fica guardado no dispositivo para o ecrã de entrada o voltar a
   preencher (`src/lib/remembered-email.ts`). Não significa "não me peças credenciais outra vez":
-  o "Sair" apaga a sessão sempre — é uma decisão explícita da pessoa e nenhum flag a sobrepõe.
-- **Bloqueio é simétrico, e só as regras o garantem** — o documento é criado num sentido só
+  o "Sair" apaga a sessão sempre - é uma decisão explícita da pessoa e nenhum flag a sobrepõe.
+- **Bloqueio é simétrico, e só as regras o garantem** - o documento é criado num sentido só
   (`blocks/{blocker}_{blocked}`), mas basta existir um para o par deixar de poder ligar-se, falar
   ou pedir sessões. As regras avaliam-no com `exists()` (que corre com acesso total, não com as
-  permissões de quem fez o pedido), por isso bloquear funciona sem revelar o bloqueio — quem foi
+  permissões de quem fez o pedido), por isso bloquear funciona sem revelar o bloqueio - quem foi
   bloqueado não consegue ler o documento. Consequência assumida: a coleção é legível **pelos dois
   lados** (é o que permite a cada um excluir o outro da descoberta sem falar com o servidor), o que
   quer dizer que um cliente modificado consegue descobrir quem o bloqueou; e a lista de
   *bloqueados* mostra só quem eu bloqueei, nunca quem me bloqueou.
-- **A lista de conversas esconde o que as regras não podem filtrar** — *rules are not filters*: uma
+- **A lista de conversas esconde o que as regras não podem filtrar** - *rules are not filters*: uma
   regra não consegue tirar linhas de uma query, por isso um bloqueio é aplicado nas regras
   (mensagens ilegíveis e impossíveis de escrever) **e** filtrado no cliente (a conversa sai da
-  lista). O documento da conversa em si continua legível — só os participantes e datas, sem
+  lista). O documento da conversa em si continua legível - só os participantes e datas, sem
   conteúdo.
-- **O histórico não se apaga a não ser com a conta** — o `delete` existe para a eliminação da
+- **O histórico não se apaga a não ser com a conta** - o `delete` existe para a eliminação da
   conta e para o que é estritamente do próprio (desbloquear, esquecer um registo de avisos, apagar
   uma mensagem que ele escreveu). Passada a conta, não há forma de apagar uma sessão, um pedido ou
   uma conversa avulso: registos de teste ou dados obsoletos removem-se pela consola do Firebase.
-- **Sem modo escuro** — `useTheme()` devolve sempre a paleta clara e o `app.json` está em
+- **Sem modo escuro** - `useTheme()` devolve sempre a paleta clara e o `app.json` está em
   `userInterfaceStyle: light`. É intencional, não é esquecimento.
-- **Falta o push (avisos fora da app)** — hoje um pedido de conexão ou de sessão só se vê quando
+- **Falta o push (avisos fora da app)** - hoje um pedido de conexão ou de sessão só se vê quando
   alguém abre a app e olha para a bolinha: toda a mecânica da app depende de o outro lado abrir a
-  app por acaso. É o maior buraco de produto que resta. A decisão está tomada quanto ao serviço —
+  app por acaso. É o maior buraco de produto que resta. A decisão está tomada quanto ao serviço -
   **`expo-notifications` + Expo Push Service** (do próprio Expo, sem plano pago: é o push que
-  dispensa as Cloud Functions, que exigiriam o plano Blaze) — e já não depende de nada que falte:
+  dispensa as Cloud Functions, que exigiriam o plano Blaze) - e já não depende de nada que falte:
   a development build existe (ver "Builds e o fim do Expo Go"), e o EAS Observe já usa a mesma
   camada nativa. O que falta é o trabalho: guardar o token do dispositivo no Firestore (campo novo,
   com regras novas) e chamar a API do Expo Push quando o pedido nasce.
   Detalhe que decide a arquitetura: **sem servidor, quem envia é o cliente**. O emissor chama a API
-  do Expo Push diretamente — é o caminho que não exige plano pago, com a consequência de a
+  do Expo Push diretamente - é o caminho que não exige plano pago, com a consequência de a
   credencial viver no cliente; a alternativa (uma função de servidor, ou um serviço de orquestração
   como o Knock) resolve isso e traz uma conta e um preço a mais para gerir.
-- **O microfone não é pedido** — o plugin do `expo-image-picker` liga
+- **O microfone não é pedido** - o plugin do `expo-image-picker` liga
   `android.permission.RECORD_AUDIO` por omissão (o seletor de imagens também sabe captar vídeo),
   e a app só escolhe uma fotografia da galeria. Ficou `microphonePermission: false` no `app.json`,
-  que a bloqueia no Android e tira a descrição de uso no iOS — uma permissão a mais na ficha da
+  que a bloqueia no Android e tira a descrição de uso no iOS - uma permissão a mais na ficha da
   loja é uma pergunta a mais a quem instala.
-- **Limitações conhecidas** — no **teu** perfil, as sessões dadas/recebidas/agendadas são contadas
+- **Limitações conhecidas** - no **teu** perfil, as sessões dadas/recebidas/agendadas são contadas
   a partir de `sessions` (ver `subscribeToSessionStats`), mas no perfil de **outra pessoa** a linha
   das sessões continua a ser um placeholder (`sessionsGiven` em `matching.ts`): contá-la exigiria
   ler as sessões de quem não é parte delas, e a regra só as deixa ler a quem participou. Fazer isto
@@ -942,12 +973,12 @@ parte da app.
   modalidade "Online" é só como a sessão é combinada, e o chat é onde se combina); disciplinas,
   modalidades e períodos de disponibilidade são guardados no Firestore como texto em português,
   por isso não acompanham a mudança de idioma.
-- **A disponibilidade saiu do perfil próprio** — continua a ser recolhida e continua a aparecer ao
+- **A disponibilidade saiu do perfil próprio** - continua a ser recolhida e continua a aparecer ao
   escolher a hora de uma sessão e no perfil de outra pessoa; saiu do ecrã do perfil para ele caber
   sem deslizar.
 
 ## Contas de teste
 
 Duas contas de teste existem no projeto Firebase real (não incluídas aqui por serem específicas
-do ambiente de desenvolvimento) — perguntar a quem geriu o setup se forem necessárias para
+do ambiente de desenvolvimento) - perguntar a quem geriu o setup se forem necessárias para
 validar fluxos ponta-a-ponta.

@@ -20,19 +20,19 @@ import { usePushStore } from '@/push/store';
  * de registar ou apagar vive no `src/lib/push.ts`, que é o que permite testá-la sem telemóvel.
  *
  * **Porque é que aqui não se fala com o servidor de envio:** enviar um aviso a outra pessoa exige
- * um sítio que corra sem app aberta (Cloud Functions) — e o token de quem recebe não pode ser
+ * um sítio que corra sem app aberta (Cloud Functions) - e o token de quem recebe não pode ser
  * legível por quem envia, senão qualquer conta podia mandar avisos a qualquer pessoa. Fica por
  * fazer; o que existe aqui é a metade que faz a app *receber*: registar o dispositivo e tratar do
  * toque no aviso.
  */
 
-/** Canal Android — sem um canal criado, o sistema (13+) não mostra o pedido de permissão. */
+/** Canal Android - sem um canal criado, o sistema (13+) não mostra o pedido de permissão. */
 const ANDROID_CHANNEL_ID = 'default';
 
 /**
  * Com a app aberta, o sistema não mostra nada por omissão: o aviso chegava e não se via. Este
  * handler põe o aviso a aparecer por cima da app, que é o que faz sentido para um pedido de
- * conexão a chegar — a app já o vai mostrar na lista, mas quem está a olhar para outro ecrã tem de
+ * conexão a chegar - a app já o vai mostrar na lista, mas quem está a olhar para outro ecrã tem de
  * dar por isso. `shouldSetBadge: false` porque a contagem já existe na bolinha dos separadores, e
  * duas contagens diferentes do mesmo número era pior do que nenhuma.
  *
@@ -73,7 +73,7 @@ async function ensureAndroidChannel(): Promise<void> {
 
 /**
  * O `projectId` do EAS (onde a Expo vai buscar as credenciais do projeto para emitir o token). Vem
- * do `app.json` — `extra.eas.projectId`, escrito pelo `eas init` — e não de uma constante escrita à
+ * do `app.json` - `extra.eas.projectId`, escrito pelo `eas init` - e não de uma constante escrita à
  * mão: um projeto que mude de conta ou de slug não devia obrigar a mexer em código.
  */
 function easProjectId(): string | undefined {
@@ -91,7 +91,7 @@ async function getExpoPushToken(): Promise<string | null> {
  * Lê o estado atual (permissão do sistema + escolha guardada) para o ecrã das Definições.
  *
  * **Não lança de propósito.** Numa build anterior a este módulo existir (o `expo-notifications` é
- * nativo, por isso o que está instalado no telemóvel manda) esta chamada rebenta — e um erro numa
+ * nativo, por isso o que está instalado no telemóvel manda) esta chamada rebenta - e um erro numa
  * leitura de estado não pode deitar abaixo o Definições. Sem resposta, o estado fica em `null` e a
  * secção dos avisos simplesmente não aparece (ver src/app/settings.tsx).
  */
@@ -110,7 +110,7 @@ export async function refreshPushState(): Promise<void> {
 /**
  * Alinha o registo deste dispositivo com o que o sistema e a pessoa dizem.
  *
- * `ask` existe para o pedido de permissão acontecer **uma vez, depois de a conta estar pronta** —
+ * `ask` existe para o pedido de permissão acontecer **uma vez, depois de a conta estar pronta** -
  * e não no arranque da app, onde um pedido de avisos aparece antes de a pessoa perceber para que
  * serve a app. Depois de haver uma decisão, o sistema responde sem mostrar nada, por isso voltar a
  * chamar com `ask` não incomoda ninguém.
@@ -142,7 +142,7 @@ export async function syncPushRegistration(uid: string, { ask = false } = {}): P
       try {
         token = await getExpoPushToken();
       } catch (error) {
-        // Sem token não há registo — e o resto da sincronização continua na mesma, para não deixar
+        // Sem token não há registo - e o resto da sincronização continua na mesma, para não deixar
         // um registo antigo por apagar só porque esta parte falhou. O erro real disto, hoje: em
         // Android sem as credenciais FCM configuradas, o `getExpoPushTokenAsync` não devolve nada.
         if (__DEV__) console.warn('[push] este dispositivo não recebeu token da Expo', error);
@@ -159,7 +159,7 @@ export async function syncPushRegistration(uid: string, { ask = false } = {}): P
 
     // `idle` tanto quer dizer "já lá está o token certo" como "não há nada para fazer": quem
     // distingue os dois é o `storedToken`. Sem isto, a permissão dada era mostrada como registo
-    // feito — e quem não recebesse avisos não tinha como saber porquê.
+    // feito - e quem não recebesse avisos não tinha como saber porquê.
     setPushState({
       permission,
       optedOut,

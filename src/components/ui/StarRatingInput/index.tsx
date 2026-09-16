@@ -5,7 +5,7 @@ import { Spacing } from '@/constants/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 
-/** Input interativo de avaliação por estrelas — para exibição só leitura ver StarRating. */
+/** Input interativo de avaliação por estrelas - para exibição só leitura ver StarRating. */
 export interface StarRatingInputProps extends ViewProps {
   value: number;
   onChange: (value: number) => void;

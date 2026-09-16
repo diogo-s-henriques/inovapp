@@ -10,13 +10,13 @@ import { ThemedText } from '@/components/ui/ThemedText';
 
 export interface ConnectionRequestsSectionProps extends ViewProps {
   requests: ConnectionRequest[];
-  /** ID do pedido em processamento — desativa os botões só desse cartão. */
+  /** ID do pedido em processamento - desativa os botões só desse cartão. */
   busyId?: string | null;
   /** Mensagem mostrada quando responder falhou (ver src/lib/requests.ts). */
   errorMessage?: string | null;
   /**
    * Esconde a etiqueta própria (e o número) quando o ecrã que a usa já tem um título que diz o
-   * mesmo — é o caso de `connection-requests`, onde a lista **é** o ecrã.
+   * mesmo - é o caso de `connection-requests`, onde a lista **é** o ecrã.
    */
   showHeader?: boolean;
   onAccept: (request: ConnectionRequest) => void;
@@ -28,7 +28,7 @@ export interface ConnectionRequestsSectionProps extends ViewProps {
  *
  * Tem dois anfitriões, e é uma decisão consciente: a aba dos Matches (onde a decisão sempre
  * viveu) e o ecrã `connection-requests`, que existe porque a linha "N pedidos de conexão" da Home
- * e o aviso das Notificações levavam a um **separador** — e mudar de separador não empilha ecrã
+ * e o aviso das Notificações levavam a um **separador** - e mudar de separador não empilha ecrã
  * nenhum, por isso não havia como voltar atrás com o gesto de deslizar do iOS. O ecrã novo é um
  * ecrã a sério, empilhado, e volta-se dele como de qualquer outro.
  *

@@ -11,7 +11,7 @@ const EMPTY: ConnectionRequestsState = { requests: [], error: false };
  *
  * Existe para os ecrãs não repetirem o mesmo par `useState` + `useEffect`: eram três ecrãs a
  * escrever o mesmo efeito (a barra de baixo, a Home, os Matches) e cada um a abrir a sua subscrição.
- * A leitura é partilhada (ver `src/lib/live-query.ts`) — este hook só diz quem está a ver.
+ * A leitura é partilhada (ver `src/lib/live-query.ts`) - este hook só diz quem está a ver.
  *
  * O `error` não é decoração: sem ele, uma leitura negada deixava a lista vazia, e uma lista vazia é
  * indistinguível de "não há pedidos". Quem o usa tem de o mostrar (ver `RetryNotice`).

@@ -2,10 +2,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps } from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
+import { ThemedText } from '@/components/ui/ThemedText';
 import { IconSize, Spacing, type ColorToken } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { ActivityKind } from '@/types/activity';
-import { ThemedText } from '@/components/ui/ThemedText';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
@@ -17,8 +17,8 @@ type IoniconsName = ComponentProps<typeof Ionicons>['name'];
  * espera de acontecer.
  *
  * Verde nas duas entradas que **aconteceram** (uma conexão ou uma sessão aceites) e ameixa nas duas
- * que apenas **se aproximam** (a sessão de amanhã, o material recebido): o verde é um estado — o
- * visto continua a dizer "correu bem" mesmo a preto — e o acento é a cor de tudo o que é neutro na
+ * que apenas **se aproximam** (a sessão de amanhã, o material recebido): o verde é um estado - o
+ * visto continua a dizer "correu bem" mesmo a preto - e o acento é a cor de tudo o que é neutro na
  * app. Foi por isso que o material deixou o cinzento: era a única caixa das quatro sem nada a dizer.
  */
 export const ACTIVITY_ITEM_ICON: Record<
@@ -40,7 +40,7 @@ export interface ActivityListItemProps extends ViewProps {
   timeAgo: string;
 }
 
-/** Linha do histórico "Recentes" nas notificações — só de leitura, sem ação. */
+/** Linha do histórico "Recentes" nas notificações - só de leitura, sem ação. */
 export function ActivityListItem({
   icon,
   iconColor,

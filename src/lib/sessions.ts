@@ -72,7 +72,7 @@ export async function sendSessionRequest(fromUid: string, toUid: string, data: N
   return ref.id;
 }
 
-/** Ouve, em tempo real, o estado de um pedido de sessão específico — usado pelo cartão de
+/** Ouve, em tempo real, o estado de um pedido de sessão específico - usado pelo cartão de
  * pedido de sessão no chat (SessionRequestCard), para refletir Aceite/Recusada sem recarregar. */
 export function subscribeToSessionRequestStatus(
   requestId: string,
@@ -91,7 +91,7 @@ export interface SessionRequestsState {
 }
 
 /**
- * Os pedidos de sessão pendentes, ao vivo e partilhados — ver `createLiveQuery` para a razão de ser
+ * Os pedidos de sessão pendentes, ao vivo e partilhados - ver `createLiveQuery` para a razão de ser
  * (a Home conta-os e as Notificações mostram-nos: era a mesma pergunta feita duas vezes) e para o
  * que o estado de erro resolve.
  */
@@ -158,7 +158,7 @@ export function retryPendingSessionRequests(): void {
 
 /** Aceita ou recusa um pedido de sessão. Ao aceitar, cria a sessão confirmada que alimenta a
  * agenda de ambos os participantes. As duas escritas vão no mesmo batch: ou aceitam o pedido E
- * criam a sessão, ou nenhuma das duas acontece — nunca fica um pedido "accepted" sem sessão. */
+ * criam a sessão, ou nenhuma das duas acontece - nunca fica um pedido "accepted" sem sessão. */
 export async function respondToSessionRequest(request: SessionRequest, toUid: string, accept: boolean): Promise<void> {
   const batch = writeBatch(db);
 
@@ -185,7 +185,7 @@ export async function respondToSessionRequest(request: SessionRequest, toUid: st
   await batch.commit();
 }
 
-/** Só o mentor pode terminar a sessão (ver firestore.rules) — marca-a como concluída, o que
+/** Só o mentor pode terminar a sessão (ver firestore.rules) - marca-a como concluída, o que
  * também dispara de imediato o pedido de avaliação ao Tutorando, sem esperar pela hora agendada. */
 export async function completeSession(sessionId: string): Promise<void> {
   await updateDoc(doc(db, 'sessions', sessionId), {
@@ -239,7 +239,7 @@ export function subscribeToSessions(uid: string, onChange: (sessions: AgendaSess
  * Conta as sessões de um utilizador a partir dos documentos crus.
  *
  * O que vale a pena fixar aqui: "dada" é uma sessão **concluída** em que eu era o mentor. Uma
- * sessão marcada e ainda por acontecer não é uma sessão dada — é uma sessão por vir, e tem o seu
+ * sessão marcada e ainda por acontecer não é uma sessão dada - é uma sessão por vir, e tem o seu
  * próprio número. Sem esta distinção, o número de cima mentiria sempre que alguém marcasse uma
  * aula. Sessões antigas, sem o campo `status`, contam como marcadas, tal como em
  * `subscribeToSessions`.

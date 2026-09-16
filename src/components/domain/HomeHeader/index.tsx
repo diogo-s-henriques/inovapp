@@ -1,25 +1,25 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 
+import { ScreenHero } from '@/components/domain/ScreenHero';
+import { HeroActionButton } from '@/components/ui/HeroActionButton';
 import { useI18n } from '@/hooks/use-i18n';
 import type { GreetingPeriod } from '@/lib/home';
-import { HeroActionButton } from '@/components/ui/HeroActionButton';
-import { ScreenHero } from '@/components/domain/ScreenHero';
 
 /**
  * Cabeçalho do ecrã inicial: a identidade, a saudação e o sino.
  *
- * **O desenho vive no `ScreenHero`** — o mesmo bloco que abre o Matches, o Chat, o Pesquisar e o
+ * **O desenho vive no `ScreenHero`** - o mesmo bloco que abre o Matches, o Chat, o Pesquisar e o
  * Perfil. Este componente só diz o que a Home lhe põe dentro: a saudação (que mais nenhum ecrã
  * tem), o nome completo, o papel (Tutor, Mentor ou Tutorando; ver `roleLabel` em
  * src/lib/roles.ts) e o sino. O curso e o ano nunca estiveram aqui: é informação do perfil, e o
  * cabeçalho diz quem és, não o que estudas.
  *
- * Uma coisa é só da Home e fica escrita aqui: **o sino leva o ponto das notificações por ler** — é a
+ * Uma coisa é só da Home e fica escrita aqui: **o sino leva o ponto das notificações por ler** - é a
  * contagem que a Home já tem em memória (pedidos de sessão e conversas por ler). No Perfil, o canto
  * é a roda dentada e não há contagem nenhuma para mostrar.
  *
  * A fotografia não é decidida aqui: são os 80 px do bloco (`HERO_AVATAR_SIZE`), os mesmos do Perfil.
- * Foi 48, 64 e 80 numa série de voltas — é a cara do ecrã inicial —, e chegou a haver um 56 só para
+ * Foi 48, 64 e 80 numa série de voltas - é a cara do ecrã inicial -, e chegou a haver um 56 só para
  * os separadores sem identidade, que já não existem.
  */
 export interface HomeHeaderProps {

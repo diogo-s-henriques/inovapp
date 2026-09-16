@@ -1,13 +1,13 @@
 /**
- * Testes do `EditButton` — o botão de editar dentro do bloco da identidade do Perfil.
+ * Testes do `EditButton` - o botão de editar dentro do bloco da identidade do Perfil.
  *
  * Duas coisas que se perdem sem se ver: o **rótulo do botão** ("Editar") não diz o que vai ser
- * editado, e o que o diz é a descrição para leitores de ecrã — que é também o que os testes usam
+ * editado, e o que o diz é a descrição para leitores de ecrã - que é também o que os testes usam
  * para o encontrar, porque no ecrã há mais do que um sítio onde se toca. E o **destino**: um botão
  * que não faz nada é indistinguível de um botão que abre o ecrã errado.
  *
  * Estes testes eram do `ProfileHeader`, que deixou de existir: o Perfil passou a usar o mesmo bloco
- * de identidade da Home (`ScreenHero`), e o que ele traz de diferente — este botão — ficou sozinho.
+ * de identidade da Home (`ScreenHero`), e o que ele traz de diferente - este botão - ficou sozinho.
  *
  * Nota: a partir do `@testing-library/react-native` v14, `render` e `fireEvent` são assíncronos.
  */
