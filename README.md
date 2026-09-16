@@ -220,6 +220,32 @@ No iOS o `submit` pede a chave da App Store Connect API (Users and Access → In
 credenciais Apple; no Android, para a **primeira** versão o caminho simples é arrastar o `.aab` para
 o Play Console à mão, e deixar o `submit` para as seguintes.
 
+**O `submit` precisa de um perfil, e o `eas.json` é público.** O que ficou lá não tem segredo nenhum
+dentro:
+
+```json
+"submit": {
+  "production": {
+    "ios": { "appleId": "info@iseclisboa.pt", "appleTeamId": "64ZH528SHV" }
+  }
+}
+```
+
+Com o `appleId`, o EAS autentica e **cria a app na App Store Connect se ela ainda não existir** -
+`ascAppId` é opcional em modo interativo (só é obrigatório sem interação, onde não há quem responda
+à pergunta). E o que **não** pode entrar no `eas.json` é a credencial de upload:
+
+```
+EXPO_APPLE_APP_SPECIFIC_PASSWORD                              # account.apple.com > Sign-In and Security
+EXPO_ASC_API_KEY_PATH / EXPO_ASC_KEY_ID / EXPO_ASC_ISSUER_ID  # appstoreconnect.apple.com > Users and Access > Integrations
+```
+
+A chave da API é a melhor das duas - não depende da password da conta, não expira com ela e serve
+para o CI; a app-specific password é mais rápida de criar e chega para uma submissão à mão. Em vez de
+variáveis, o schema também aceita a sintaxe `$NOME` (ex.: `"ascApiKeyPath": "$ASC_API_KEY_PATH"`),
+que lê o valor do ambiente no momento em que corre. O que não se faz é pôr qualquer delas no
+repositório, que é público.
+
 #### O primeiro envio no Play Console (e a chave de assinatura)
 
 **A app já está criada na Play Console** (`INOVAPP`, gratuita, tipo *app*). O primeiro `.aab` sobe-se

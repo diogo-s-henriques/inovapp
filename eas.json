@@ -15,5 +15,13 @@
       "uploadSourceMaps": true,
       "autoIncrement": true
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "info@iseclisboa.pt",
+        "appleTeamId": "64ZH528SHV"
+      }
+    }
   }
 }
