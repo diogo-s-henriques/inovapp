@@ -67,20 +67,53 @@ type AppModule = typeof NativeApp;
 const ASSUMED_TOKEN_LIFETIME_MS = 5 * 60 * 1000;
 
 /**
- * O módulo nativo, ou `null` quando esta build não o traz.
+ * O aviso de um módulo em falta, e `null` - que é o que quem chama espera.
+ *
+ * `isDev()` e não `__DEV__`: este ramo é o que corre quando o módulo **não** existe, e num processo
+ * de Node (os testes carregam este ficheiro) `__DEV__` não existe - o aviso rebentava antes de poder
+ * avisar seja do que fosse. Ver `src/lib/dev.ts`.
+ */
+function warnMissing<T>(name: string, error: unknown): T | null {
+  if (isDev()) {
+    console.warn(`[app-check] ${name} não está nesta build: os pedidos seguem sem atestação`, error);
+  }
+  return null;
+}
+
+/**
+ * Os dois módulos nativos, ou `null` quando esta build não os traz.
  *
  * `require` e não `import` pela mesma razão do `observe.ts`: é a única forma de apanhar a falha no
- * momento em que o módulo é avaliado.
+ * momento em que o módulo é avaliado. Mas, ao contrário do `observe.ts`, isto **não** pode ser uma
+ * função que recebe o nome do módulo: o Metro recolhe as dependências a ler o ficheiro, e um
+ * `require(variável)` não lhe diz o que empacotar. Em desenvolvimento limita-se a avisar e a app
+ * corre; no bundle de produção (`--dev false`) recusa o ficheiro inteiro, e foi assim que a primeira
+ * AAB de produção falhou:
+ *
+ * ```
+ * SyntaxError: src/lib/app-check.ts: Invalid call at line 78: require(name)
+ * ```
+ *
+ * O erro só apareceu na fase `EAGER_BUNDLE` do EAS, porque o Metro de desenvolvimento aceita o que o
+ * de produção recusa. Por isso cada `require` tem o nome escrito aqui, e essas poucas linhas
+ * repetidas são o preço de a app conseguir arrancar. Há um teste em `tests/lib/bundle-requires` que
+ * faz a pergunta de outra maneira: há algum `require` que o Metro não possa resolver sozinho?
  */
-function load<T>(name: string): T | null {
+function loadNativeAppCheck(): NativeModule | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- é o que permite apanhar a falha
-    return require(name) as T;
+    return require('@react-native-firebase/app-check') as NativeModule;
   } catch (error) {
-    if (isDev()) {
-      console.warn(`[app-check] ${name} não está nesta build: os pedidos seguem sem atestação`, error);
-    }
-    return null;
+    return warnMissing<NativeModule>('@react-native-firebase/app-check', error);
+  }
+}
+
+function loadNativeApp(): AppModule | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- é o que permite apanhar a falha
+    return require('@react-native-firebase/app') as AppModule;
+  } catch (error) {
+    return warnMissing<AppModule>('@react-native-firebase/app', error);
   }
 }
 
@@ -98,8 +131,8 @@ function load<T>(name: string): T | null {
  * é esse que se regista no console, e não um que ande no repositório.
  */
 export function activateAppCheck(app: FirebaseApp): AppCheck | null {
-  const native = load<NativeModule>('@react-native-firebase/app-check');
-  const nativeApp = load<AppModule>('@react-native-firebase/app');
+  const native = loadNativeAppCheck();
+  const nativeApp = loadNativeApp();
   if (!native || !nativeApp) return null;
 
   try {

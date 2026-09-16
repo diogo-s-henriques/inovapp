@@ -974,6 +974,16 @@ parte da app.
 
 ## Decisões tomadas
 
+- **`require` com o nome escrito no ficheiro, ou o bundle de produção não passa** - o `observe.ts` e o
+  `app-check.ts` carregam módulos nativos à mão (dentro de um `try`) para que a falta deles não deite a
+  app abaixo. No `observe.ts` o `require` tem o nome literal; no `app-check.ts` chegou a ser uma função
+  que recebia o nome - e o Metro **não resolve** isso: recolhe as dependências a ler o código, e um
+  `require(variável)` não lhe diz o que empacotar. Em desenvolvimento limita-se a avisar e tudo passa
+  (app, testes, typecheck); no bundle de produção recusa o ficheiro inteiro, com
+  `Invalid call at line 78: require(name)`. O erro só apareceu na fase `EAGER_BUNDLE` da primeira AAB
+  de produção, porque o Metro de desenvolvimento aceita o que o de produção recusa. Ficaram os dois
+  `require` literais e um teste que faz a pergunta que faltava - `tests/lib/bundle-requires.test.mts`
+  varre o `src` à procura de `require` que o Metro não possa resolver sozinho.
 - **Um só cabeçalho para os cinco separadores** (`ScreenHero`) - o bloco em gradiente que abre a
   Home, o Matches, o Chat, o Pesquisar e o Perfil. Antes havia cinco cabeçalhos diferentes: a Home
   com identidade e sino, o Chat e o Pesquisar com o título e o campo de pesquisa, o Matches com um
