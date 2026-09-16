@@ -14,12 +14,17 @@
  * `--apply` explícito, como o `verify:legacy-accounts`. O script é idempotente: corrido duas vezes,
  * confirma a conta outra vez, repõe a palavra-passe e volta a escrever o perfil.
  *
- * Uso:
+ * Uso (a chave aceita-se de duas maneiras, porque quem corre isto tanto está em bash como em
+ * PowerShell — e em PowerShell um `export` do bash simplesmente não existe):
  *   # 1. Consola Firebase > Definições do projeto > Contas de serviço > Gerar nova chave privada
- *   export GOOGLE_APPLICATION_CREDENTIALS=/caminho/para/chave.json
- *   # 2. Ver o que faria (não escreve nada):
+ *   # 2a. Pelo ambiente:
+ *   export GOOGLE_APPLICATION_CREDENTIALS=/caminho/para/chave.json        (bash)
+ *   $env:GOOGLE_APPLICATION_CREDENTIALS="C:\caminho\para\chave.json"     (PowerShell)
+ *   # 2b. Ou sem mexer no ambiente:
+ *   npm run create:demo-account -- --apply --key=C:\caminho\para\chave.json
+ *   # 3. Ver o que faria (não escreve nada, e nem precisa da chave):
  *   npm run create:demo-account
- *   # 3. Criar mesmo (o email é o pedido; a palavra-passe é a que o revisor vai escrever):
+ *   # 4. Criar mesmo (a palavra-passe é a que o revisor vai escrever):
  *   npm run create:demo-account -- --apply --password=Inovapp-Demo-2026!
  *
  * O `--email` só é preciso para fazer uma segunda conta (ex.: uma de aluno, que vê o deck de
@@ -31,7 +36,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { initializeApp } = require('firebase-admin/app');
+const { cert, initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { FieldValue, getFirestore } = require('firebase-admin/firestore');
 
@@ -53,6 +58,31 @@ function papelDoEmail(email) {
 function argumento(nome) {
   const encontrado = process.argv.find((candidate) => candidate.startsWith(`--${nome}=`));
   return encontrado ? encontrado.slice(nome.length + 3) : null;
+}
+
+/**
+ * O caminho da chave de serviço, ou `null`.
+ *
+ * Sem chave, o Admin SDK cai nas credenciais por omissão do Google — que num computador de
+ * desenvolvimento não existem, e o erro que ele dá nesse caso («Could not load the default
+ * credentials») fala de um ficheiro que ninguém sabe onde pôr. Daí este caminho ser lido **aqui**,
+ * para o script poder dizer o que falta e como se resolve.
+ */
+function caminhoDaChave() {
+  const caminho = argumento('key') ?? process.env.GOOGLE_APPLICATION_CREDENTIALS ?? null;
+  return caminho && caminho.trim().length > 0 ? caminho.trim() : null;
+}
+
+function ensinarCredenciais() {
+  return [
+    'Não encontrei credenciais de administrador, e esta operação escreve em produção por cima das regras.',
+    'A chave de serviço tira-se da consola: Definições do projeto > Contas de serviço > Gerar nova chave privada.',
+    'Depois, uma destas:',
+    '',
+    '  bash        export GOOGLE_APPLICATION_CREDENTIALS=/caminho/para/chave.json',
+    '  PowerShell  $env:GOOGLE_APPLICATION_CREDENTIALS="C:\\caminho\\para\\chave.json"',
+    '  ou aqui     npm run create:demo-account -- --apply --key=C:\\caminho\\para\\chave.json',
+  ].join('\n');
 }
 
 /** Uma palavra-passe que passa nas políticas do projeto sem ninguém ter de a inventar. */
@@ -103,7 +133,10 @@ async function main() {
   const passouAPalavraPasse = argumento('password') !== null;
 
   const projectId = getProjectId();
-  initializeApp({ projectId });
+  const chave = caminhoDaChave();
+  const temChave = chave !== null && fs.existsSync(chave);
+
+  initializeApp(temChave ? { projectId, credential: cert(require(path.resolve(chave))) } : { projectId });
   const auth = getAuth();
   const db = getFirestore();
 
@@ -129,6 +162,12 @@ async function main() {
     console.log('\nNada foi escrito. Corre outra vez com --apply (e com a palavra-passe que quiseres).');
     if (!passouAPalavraPasse) console.log(`Palavra-passe sugerida: ${palavraPasse}`);
     return;
+  }
+
+  // Antes de escrever, e não a meio: o erro do SDK para uma chave em falta não diz o que fazer.
+  if (!temChave) {
+    console.error(`\n${ensinarCredenciais()}`);
+    process.exit(1);
   }
 
   if (conta) {

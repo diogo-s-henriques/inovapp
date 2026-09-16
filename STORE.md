@@ -213,21 +213,27 @@ You can delete your account inside the app, in Profile → Settings → Delete a
 
 ```
 A app é para a comunidade do ISEC Lisboa e o registo exige um email institucional, que é confirmado
-por link. Não é possível criar conta em revisão, por isso deixamos uma conta de demonstração já
-confirmada e com perfil completo:
+por link. Não é possível criar conta em revisão, por isso deixamos duas contas já confirmadas e com
+perfil completo — uma de cada lado da app:
 
-  email:    demo@iseclisboa.pt
-  palavra-passe: a que estiver nas credenciais da loja (não fica neste repositório)
+  Aluno   aluno.demo@alunos.iseclisboa.pt
+  Tutor   demo@iseclisboa.pt
+  palavra-passe (as duas): a que estiver nas credenciais da loja (não fica neste repositório)
 
-Como chegar a tudo o que a app faz, a partir dessa conta:
+Comece pela conta de **Aluno**, que é a que mostra a app inteira:
 
-1. Início — o resumo da atividade e os atalhos.
-2. Match — a lista de pessoas compatíveis; tocar num perfil mostra os detalhes e o botão de bloquear.
+1. Início — o resumo da atividade e os atalhos (sessões, materiais, pedidos).
+2. Match — a lista de pessoas que ensinam o que esta conta quer aprender; tocar num perfil mostra
+   os detalhes e o botão de bloquear. É aqui que se pede conexão.
 3. Chat — as conversas com quem está ligado, com os materiais partilhados.
 4. Perfil — os dados da conta e as estatísticas de sessões; a roda dentada abre as Definições.
 5. Perfil → Definições → Apagar conta — o caminho de eliminação de conta (diretriz 5.1.1(v)).
-   Pede a palavra-passe antes de apagar, ou seja, a conta de demonstração pode ser usada para o
-   fluxo todo sem ficar inutilizável (basta não confirmar o último passo).
+   Pede a palavra-passe antes de apagar, ou seja, as contas de demonstração podem ser usadas para o
+   fluxo todo sem ficarem inutilizadas (basta não confirmar o último passo).
+
+E com a conta de **Tutor** vê-se o outro lado: no Match não há lista de mentores — quem ensina
+recebe pedidos, e são os Tutorandos que o encontram (é a app a funcionar como foi desenhada, não
+uma limitação da conta).
 
 Não há compras dentro da app e não há recolha de localização, contactos, câmara ou microfone.
 ```
