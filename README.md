@@ -679,19 +679,19 @@ tudo o resto certo. Quem o põe no perfil de provisionamento é a build — mais
 nova. **Antes da build de produção passa a `production`** (o ambiente de desenvolvimento só serve
 enquanto se desenvolve; esquecido lá dentro, o App Attest falha na app da loja).
 
-**O registo no console tentou-se pela API, e ficou a meio:** a conta de serviço consegue registar a
-atestação, mas **não consegue ativar a API do App Check** (`PERMISSION_DENIED` — ativar serviços é
-do utilizador, não do papel de Editor). É 30 segundos, e é o bloqueio atual:
-https://console.developers.google.com/apis/api/firebaseappcheck.googleapis.com/overview?project=inovapp-68021
-→ **Ativar**. Feito isso, o registo é um clique na Consola (App Check > Apps) ou repetir o pedido
-REST — os dois atestadores ficam registados com o TTL de 7 dias.
+**O registo no console:** a conta de serviço não conseguia ativar a API do App Check (só o
+utilizador o pode fazer — feito na consola), mas com a API ativa regista sozinha o que não depende
+de impressões digitais: o **App Attest do iOS ficou registado por REST** (TTL de 7 dias). O **Play
+Integrity do Android** pede a impressão digital SHA-256 da **chave de assinatura da Play** (com a
+Play App Signing, é ela quem assina o que as pessoas instalam — não a keystore do EAS): copia-se em
+*Play Console > Teste e lançamento > Configuração > Chave de assinatura de app*.
 
 **O que falta, e não é código:**
 
 | passo | onde | porquê |
 |---|---|---|
-| 1. **ativar a API do App Check** | [consola Google Cloud](https://console.developers.google.com/apis/api/firebaseappcheck.googleapis.com/overview?project=inovapp-68021) → Ativar | tentado pela API com a conta de serviço: não pode ativar serviços (só o utilizador) — **é o bloqueio atual** |
-| 2. registar o atestador por plataforma no App Check | Consola Firebase > App Check > Apps | Play Integrity (para emitir tokens, o projeto tem de estar ligado à Play Console) e App Attest |
+| 1. ~~ativar a API do App Check~~ **feito** | — | a conta de serviço não podia ativar serviços; ficou ativa na consola |
+| 2. registar o atestador por plataforma | Consola Firebase > App Check > Apps | **App Attest (iOS): feito** por REST, TTL 7 dias. **Play Integrity (Android): falta a impressão digital SHA-256 da chave de assinatura da Play** (Play Console > Teste e lançamento > Configuração); para emitir tokens, o projeto tem de estar ligado à Play Console |
 | 3. iOS: o direito de App Attest **já está no `app.json`** (com a build nova entra no perfil); alternativa é uma **chave de DeviceCheck** no Firebase (como a de APNs) | — | sem uma das duas o iOS fica sem atestação: o código pede `appAttestWithDeviceCheckFallback`, e sem direito nem chave falham os dois |
 | 4. build nova, de desenvolvimento e de produção | `npx eas-cli build` | **módulo nativo novo = build nova** (a lição do EAS Observe) |
 | 5. confirmar que os pedidos chegam atestados | App Check > Firestore | antes de fechar a porta, ver quem lá entra: o painel mostra a percentagem de pedidos verificados |
