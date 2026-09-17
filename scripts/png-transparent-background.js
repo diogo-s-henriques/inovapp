@@ -159,20 +159,40 @@ function decodePng(buffer) {
   return { width, height, pixels };
 }
 
-function encodePng({ width, height, pixels }) {
-  const stride = width * 4;
+/**
+ * Escreve um PNG a partir de pixels RGBA.
+ *
+ * Com `alpha: false` sai **RGB, sem canal alfa** - e o alfa do buffer é simplesmente ignorado, por
+ * isso quem chama tem de ter composto a imagem sobre um fundo opaco. Existe por causa do ícone da
+ * App Store, que é o único sítio onde o alfa não é um detalhe: a Apple recusa o ficheiro e a recusa
+ * só aparece na submissão.
+ */
+function encodePng({ width, height, pixels }, { alpha = true } = {}) {
+  const channels = alpha ? 4 : 3;
+  const stride = width * channels;
   const raw = Buffer.alloc(height * (stride + 1));
 
   for (let y = 0; y < height; y += 1) {
     raw[y * (stride + 1)] = 0; // sem filtro: o `zlib` faz o trabalho de compressão
-    pixels.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride);
+    const origem = y * width * 4;
+    const destino = y * (stride + 1) + 1;
+
+    if (alpha) {
+      pixels.copy(raw, destino, origem, origem + stride);
+    } else {
+      for (let x = 0; x < width; x += 1) {
+        raw[destino + x * 3] = pixels[origem + x * 4];
+        raw[destino + x * 3 + 1] = pixels[origem + x * 4 + 1];
+        raw[destino + x * 3 + 2] = pixels[origem + x * 4 + 2];
+      }
+    }
   }
 
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8; // 8 bits por canal
-  ihdr[9] = 6; // RGBA
+  ihdr[9] = alpha ? 6 : 2; // 6 = RGBA, 2 = RGB
   ihdr[10] = 0;
   ihdr[11] = 0;
   ihdr[12] = 0;

@@ -66,6 +66,7 @@ alternativa, cria só os que faltam no link que o erro da consola apresenta.
 | `npm run test:rules` | testes das regras do Firestore no emulador (precisa de Java) |
 | `npm run logcat` | lê o logcat de um Android ligado por USB à procura da causa de um crash |
 | `node scripts/png-transparent-background.js <entrada> <saída>` | tira o fundo branco de um logótipo PNG (ver [Imagens com fundo branco](#imagens-com-fundo-branco)) |
+| `npm run icons:build` | gera os ícones da app (iOS, Android, favicon) a partir do logótipo da marca (`scripts/build-app-icons.js`) |
 | `npm run cleanup:legacy-profiles` | migração pontual dos perfis antigos (ver [Migração](#migração)) |
 | `npm run verify:legacy-accounts` | confirma à mão as contas anteriores à confirmação de email (ver [Confirmação de email](#confirmação-de-email)) |
 | `npm run reset-project` | utilitário do template `create-expo-app`, não usado neste projeto |
@@ -292,6 +293,7 @@ código atual - e não o que diz o commit etiquetado, que ficou para trás do tr
 |---|---|
 | Política de privacidade **num URL público** | usa-se o PDF que a Universitas publica (`https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf`) - decisão tomada com os olhos abertos: é o TC de **outra** aplicação («Buddy App»), e o que isso implica está escrito em `STORE.md` e no topo do `PRIVACY.md` |
 | URL de suporte | `https://happycampus.pt` |
+| Ícone da app | 1024x1024 **sem canal alfa** - a Apple recusa o ficheiro de marketing com transparência. É o `assets/images/icon.png`, gerado por `npm run icons:build` a partir do logótipo da marca |
 | Capturas de ecrã | Apple: iPhone 6,7"; Play: 2 a 8 capturas **e** uma imagem de destaque 1024x500 |
 | Segurança de dados (Play) e App Privacy (Apple) | o que é recolhido, para que serve e se é ligado à identidade - o `PRIVACY.md` é a fonte para responder a isto |
 | Conta de demonstração | a app só aceita email institucional, por isso a **revisão não consegue entrar**. Feito: `npm run create:demo-account` cria `aluno.demo@alunos.iseclisboa.pt` (vê o deck inteiro) e `demo@iseclisboa.pt` (o lado do Tutor), com o email confirmado e o perfil completo - falta escrever as credenciais nas duas fichas |
@@ -464,7 +466,7 @@ tests/               testes automáticos, um diretório por suite (ver "Scripts"
                      substitutos para o AsyncStorage e para a inicialização do Firebase
 firestore.rules      regras de segurança do Firestore (fonte de verdade de autorização)
 firestore.indexes.json   índices compostos exigidos pelas consultas
-scripts/             utilitários (limpeza de perfis antigos, gerador de componentes)
+scripts/             utilitários (limpeza de perfis antigos, gerador de componentes, gerador dos ícones)
 .github/workflows/test.yml   lint, tipos e as quatro suites, em cada push e em cada pull request
 ```
 
@@ -1442,6 +1444,49 @@ parte da app.
   do momento em que o `src/lib/firebase.ts` passou a importar o serviço de erros, o `observe.ts`
   entrou no grafo dos testes da camada de dados - e o aviso "sem módulo nativo" rebentava
   precisamente quando o módulo nativo não existia, que em Node é sempre.
+- **O ícone da app era o do template do Expo, em quatro sítios ao mesmo tempo** - o chevron branco
+  sobre azul estava no `assets/expo.icon` (o iOS), no `icon.png` (o ícone da loja), nos dois
+  ficheiros do *adaptive icon* do Android, no `splash-icon.png` e no favicon - e foi assim para as
+  duas lojas, onde a App Store Connect o mostra em "Recursos incluídos". São ficheiros, não código:
+  nada falha quando estão errados, e só se descobre a olhar para as lojas. Ficou **um** ficheiro de
+  marca (o logótipo-palavra `assets/resized-512x512.png`) e um gerador que produz os quatro a partir
+  dele (`npm run icons:build`), com as contas todas no mesmo sítio. O `.icon` do iOS (o formato do
+  *Icon Composer*, para o ícone em camadas do iOS 26) saiu: era o pacote de exemplo do Expo, e
+  escrever um `icon.json` à mão sem o Icon Composer era risco na submissão sem ganho à vista - o
+  `app.json` volta a apontar para o PNG, que é o que a Apple aceita. Foram com ele os outros restos
+  do template que ninguém usava: `assets/images/tabIcons/` (a barra de baixo desenha-se com o
+  Ionicons) e o `android-icon-background.png` (o gradiente azul do Expo, que o `backgroundColor`
+  branco substitui). Os ícones passaram a ter testes (`tests/lib/app-icon.test.mts`), porque este
+  erro não é de lógica: é um ficheiro trocado.
+- **A palavra muda de tamanho conforme a plataforma, e não é gosto** - no iOS o quadrado é o desenho
+  todo (80% da largura, com a margem que a Apple pede); no Android o *adaptive icon* mostra só o
+  miolo de um quadrado maior, e o que decide ali **não é a largura, são os cantos**: a zona segura é
+  um **círculo** de 66dp dentro dos 108dp, e a palavra é larga e baixa, por isso são os cantos do
+  retângulo que a trespassam. Com 80% eram cortados; com 60% ficavam 0,3 px dentro do círculo (dentro,
+  mas sem folga nenhuma); ficou em 58%, com ~5 px para a antialiasing das letras.
+- **O ícone do iOS não leva canal alfa** - a Apple recusa o ícone de marketing com transparência e a
+  recusa só aparece na submissão. Sai em RGB de propósito (o `encodePng` de
+  `scripts/png-transparent-background.js` passou a saber escrever as duas coisas), e é o que o teste
+  confirma no ficheiro, não no código que o gerou. O ecrã de arranque seguiu o mesmo passo: era azul
+  do Expo (`#208AEF`) com o chevron, passou a ser o fundo da app (`#F4F5F7`, o mesmo do
+  `theme.background`) com o logótipo que os ecrãs de entrada já usavam (`logo_dark.png`) - e o
+  `imageWidth` de 76 para 220, porque 76 px era o tamanho certo para um ícone quadrado, não para uma
+  palavra.
+- **O ícone pequeno das notificações é uma letra, e a letra é do logótipo** - a palavra a 24dp (a
+  barra de estado do Android) é uma nódoa cinzenta: não há tamanho de letra que a salve, é
+  fisiologia do ecrã. Ali vai o **A**, recortado do próprio `resized-512x512.png` pelo próprio
+  gerador (o `separarLetras` encontra as sete letras de "INOVAPP" pelas colunas sem tinta e o script
+  **pára** se deixar de encontrar sete - o índice da letra não pode passar a apontar para outra
+  coisa em silêncio). Ficou um ficheiro por função:
+  `android-icon-notification.png` é a letra (notificações), `android-icon-monochrome.png` continua a
+  ser a palavra (os ícones temáticos do lançador, que se lêem ao lado do ícone normal e devem dizer
+  o mesmo) e o **favicon** é a primeira letra (visto sobretudo a 16 px, o tamanho do separador do
+  navegador, onde o que se lê é a forma) - cada um com a letra e o tamanho escritos no topo do
+  gerador (`LETRA_DAS_NOTIFICACOES`, `LETRA_DO_FAVICON`). E é aqui que a ideia de "preto e branco como o ícone da app" precisa de um senão: **o
+  Android lê o alfa, não a cor** - um quadrado branco com um A preto desenhava-se como um quadrado
+  branco cheio, porque o fundo opaco é que fica. O ficheiro vai com o A **branco sobre transparente**
+  e é o sistema que o pinta (branco na barra escura, escuro na clara); o mesmo vale para os ícones
+  temáticos. Se um dia a marca tiver um símbolo próprio, é este o lugar dele.
 
 ## Contas de teste
 
