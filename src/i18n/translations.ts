@@ -279,8 +279,12 @@ export interface Translations {
     teachesLabel: string;
     learningLabel: string;
     availabilityLabel: string;
-    confirmTitle: string;
-    confirmDescription: string;
+    /**
+     * O botão de **guardar** não tem confirmação, e não é esquecimento: ele só está ativo quando
+     * algo mudou (`saveDisabled`, em `profile-edit.tsx`), o que já é a pergunta "tens a certeza?" -
+     * e uma caixa a repeti-la é um toque a mais entre quem muda o nome e o nome mudado. As chaves
+     * `confirmTitle`/`confirmDescription` viveram aqui e saíram com a caixa.
+     */
   };
   otherProfile: {
     photoPlaceholder: string;
@@ -393,7 +397,6 @@ export interface Translations {
   myProfile: {
     /** Entrada discreta para as Definições; o ecrã não tem um separador próprio. */
     settings: string;
-    professorCourse: string;
     /** Os três números do perfil, contados a partir das sessões. */
     sessionsGiven: string;
     sessionsReceived: string;
@@ -406,9 +409,15 @@ export interface Translations {
     /** Descrição do mesmo botão para leitores de ecrã. */
     editProfile: string;
     signOut: string;
-    /** Confirmação antes de terminar a sessão (o botão sozinho era um toque sem rede). */
+    /**
+     * Confirmação antes de terminar a sessão (o botão sozinho era um toque sem rede).
+     *
+     * Não há descrição: a caixa dizia "Vais precisar de entrar outra vez com o teu email
+     * institucional." a quem já entrou com ele uma vez, e uma linha a explicar o óbvio só faz a
+     * caixa parecer maior do que a decisão. O botão diz o que faz ("Sair") em vez de "Sim" - a
+     * pergunta está por cima dele, e um "Sim" solto não se lê sozinho.
+     */
     signOutConfirmTitle: string;
-    signOutConfirmDescription: string;
     signOutConfirm: string;
   };
   materials: {

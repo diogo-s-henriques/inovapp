@@ -238,6 +238,8 @@ export default function SettingsScreen() {
         tone="danger"
         title={i18n.settings.deleteAccountConfirmTitle}
         description={i18n.settings.deleteAccountConfirmDescription}
+        // O mesmo ícone do botão que abre esta confirmação (ver o cartão da conta, em baixo).
+        icon="trash-outline"
         confirmLabel={i18n.settings.deleteAccountConfirm}
         cancelLabel={i18n.common.cancel}
         onConfirm={() => {

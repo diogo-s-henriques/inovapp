@@ -20,7 +20,7 @@ export const pt: Translations = {
     new: 'Novo',
     user: 'Utilizador',
     addPhoto: 'Adicionar fotografia',
-    loadingPhoto: 'A carregar a fotografia...',
+    loadingPhoto: 'A carregar...',
     starRating: (count) => `${count} estrela${count === 1 ? '' : 's'}`,
   },
   roles: {
@@ -275,8 +275,6 @@ export const pt: Translations = {
     teachesLabel: 'ENSINA',
     learningLabel: 'ESTÁ A APRENDER',
     availabilityLabel: 'DISPONIBILIDADE',
-    confirmTitle: 'Guardar alterações?',
-    confirmDescription: 'Tens a certeza que queres guardar as alterações feitas ao teu perfil?',
   },
   otherProfile: {
     photoPlaceholder: 'foto de perfil',
@@ -401,7 +399,6 @@ export const pt: Translations = {
   },
   myProfile: {
     settings: 'Definições',
-    professorCourse: 'Docente ISEC Lisboa',
     sessionsGiven: 'Sessões dadas',
     sessionsReceived: 'Sessões recebidas',
     // Mesma palavra que a Home usa para o mesmo conjunto (`home.sessionsCount`): o que está
@@ -414,8 +411,7 @@ export const pt: Translations = {
     editProfile: 'Editar perfil',
     signOut: 'Sair',
     signOutConfirmTitle: 'Terminar sessão?',
-    signOutConfirmDescription: 'Vais precisar de entrar outra vez com o teu email institucional.',
-    signOutConfirm: 'Sim',
+    signOutConfirm: 'Sair',
   },
   materials: {
     title: 'Materiais',

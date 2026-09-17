@@ -9,7 +9,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { greetingPeriod, isHomeEmpty, toAttentionItems } from '@/lib/home';
+import { greetingLabel, greetingPeriod, isHomeEmpty, toAttentionItems } from '@/lib/home';
+import { en } from '@/i18n/en';
+import { pt } from '@/i18n/pt';
 
 /** Uma hora local do dia em teste. Construída com componentes locais para o teste não depender do
  * fuso horário da máquina que o corre. */
@@ -41,6 +43,29 @@ describe('greetingPeriod', () => {
 
   it('no último minuto da tarde ainda é tarde', () => {
     assert.equal(greetingPeriod(asHoras(19, 59)), 'afternoon');
+  });
+});
+
+/**
+ * A saudação escrita. São três linhas de código que dois ecrãs mostram (a Home e o Perfil) - e o
+ * erro possível não rebenta: uma troca entre "Bom dia" e "Boa noite" lê-se e passa.
+ */
+describe('greetingLabel', () => {
+  it('diz bom dia de manhã', () => {
+    assert.equal(greetingLabel('morning', pt), pt.home.greetingMorning);
+  });
+
+  it('diz boa tarde à tarde', () => {
+    assert.equal(greetingLabel('afternoon', pt), pt.home.greetingAfternoon);
+  });
+
+  it('diz boa noite à noite', () => {
+    assert.equal(greetingLabel('evening', pt), pt.home.greetingEvening);
+  });
+
+  it('segue o dicionário que lhe dão, e não uma língua fixa', () => {
+    assert.equal(greetingLabel('evening', en), en.home.greetingEvening);
+    assert.notEqual(greetingLabel('evening', en), pt.home.greetingEvening);
   });
 });
 

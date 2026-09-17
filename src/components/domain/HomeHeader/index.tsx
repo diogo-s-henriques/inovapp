@@ -3,7 +3,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { ScreenHero } from '@/components/domain/ScreenHero';
 import { HeroActionButton } from '@/components/ui/HeroActionButton';
 import { useI18n } from '@/hooks/use-i18n';
-import type { GreetingPeriod } from '@/lib/home';
+import { greetingLabel, type GreetingPeriod } from '@/lib/home';
 
 /**
  * Cabeçalho do ecrã inicial: a identidade, a saudação e o sino.
@@ -57,12 +57,9 @@ export function HomeHeader({
 }: HomeHeaderProps) {
   const i18n = useI18n();
 
-  const greeting =
-    period === 'morning'
-      ? i18n.home.greetingMorning
-      : period === 'afternoon'
-        ? i18n.home.greetingAfternoon
-        : i18n.home.greetingEvening;
+  // A saudação escrita vem de `greetingLabel` (src/lib/home.ts), que é a mesma função que o Perfil
+  // usa: os dois cabeçalhos têm de dizer a mesma coisa à mesma hora.
+  const greeting = greetingLabel(period, i18n);
 
   return (
     <ScreenHero

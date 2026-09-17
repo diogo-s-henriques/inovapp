@@ -6,10 +6,17 @@
  * 1. **A forma da fotografia** (quadrada de cantos arredondados, com o raio proporcional ao lado).
  *    Um raio fixo dava um círculo e um quadrado em tamanhos diferentes - o tipo de diferença que
  *    ninguém procura.
- * 2. **O que o ecrã põe por baixo das linhas** (`identityExtra`, o botão de editar do Perfil). É a
+ * 2. **O que o ecrã põe na linha do papel** (`subtitleAction`, o botão de editar do Perfil). É a
  *    única coisa que distingue o bloco do Perfil do bloco da Home, e é por isso que ela existe:
  *    o Perfil chegou a trazer uma identidade inteira desenhada à parte, e as duas cópias
  *    divergiram (fotografia de 96 contra 80, nome de 20 contra 22).
+ * 2b. **A linha do papel não impõe altura nenhuma** - quem a mede é o texto. É o que faz os dois
+ *    cabeçalhos - o da Home e o do Perfil - terem a mesma altura, e é a garantia que se perde sem
+ *    se ver: a fotografia e o ícone do canto estão centrados no bloco, por isso uma linha mais alta
+ *    num ecrã empurra-os para baixo só nesse ecrã. Já aconteceu duas vezes (o "Editar" viveu por
+ *    baixo das linhas, e depois numa pastilha mais alta do que a linha) e é o tipo de desalinhamento
+ *    que se procura sem se saber onde. A outra metade da garantia está no `profile-edit-button`:
+ *    o botão que lá pode sentar-se é do tamanho do texto.
  * 3. **O título do ecrã não é gritado** (`textTransform: 'none'`): o `ThemedText` põe tudo em
  *    maiúsculas por omissão, e "MATCHES" era um aviso a gritar por um nome de separador.
  * 4. **A linha de cima (a saudação) é opcional.** Só a Home a passa; se ela aparecesse em todos os
@@ -35,6 +42,10 @@ function estiloDe(element: { props: { style?: unknown } }) {
     borderRadius?: number;
     textTransform?: string;
     marginTop?: number;
+    minHeight?: number;
+    height?: number;
+    justifyContent?: string;
+    flexDirection?: string;
   };
 }
 
@@ -84,18 +95,79 @@ describe('<ScreenHero /> - a identidade', () => {
   });
 });
 
-describe('<ScreenHero /> - o que o ecrã põe por baixo das linhas', () => {
+describe('<ScreenHero /> - o ar entre as três linhas', () => {
+  it('a saudação, o nome e o papel não estão encostados uns aos outros', async () => {
+    const { getByText } = await render(<ScreenHero {...IDENTIDADE} eyebrow="Boa tarde," />);
+
+    expect(estiloDe(getByText('Ana Silva')).marginTop).toBeGreaterThan(0);
+    // O papel não traz margem própria: quem a tem é a linha que o segura.
+    expect(estiloDe(getByText('Tutorando').parent!).marginTop).toBeGreaterThan(0);
+  });
+
+  it('o papel leva mais ar do que o nome - é outra linha, e não a mesma frase', async () => {
+    const { getByText } = await render(<ScreenHero {...IDENTIDADE} eyebrow="Boa tarde," />);
+
+    const nome = estiloDe(getByText('Ana Silva')).marginTop ?? 0;
+    const papel = estiloDe(getByText('Tutorando').parent!).marginTop ?? 0;
+
+    expect(papel).toBeGreaterThan(nome);
+  });
+});
+
+describe('<ScreenHero /> - a ação do canto', () => {
+  it('é centrada na fotografia, e não na altura do bloco', async () => {
+    const { getByText } = await render(
+      <ScreenHero {...IDENTIDADE} rightAction={<Text>campainha</Text>} />,
+    );
+
+    // O bloco pode ser mais alto do que a cara (o curso de um aluno, em duas linhas): se a ação
+    // fosse centrada nele, o sino descia no Perfil e ficava no sítio na Home.
+    const coluna = getByText('campainha').parent;
+
+    expect(coluna).not.toBeNull();
+    expect(estiloDe(coluna!)).toMatchObject({ height: HERO_AVATAR_SIZE, justifyContent: 'center' });
+  });
+});
+
+describe('<ScreenHero /> - a ação da linha do papel', () => {
   it('aparece dentro da identidade', async () => {
     const { getByText } = await render(
-      <ScreenHero {...IDENTIDADE} identityExtra={<Text>botão de editar</Text>} />,
+      <ScreenHero {...IDENTIDADE} subtitleAction={<Text>botão de editar</Text>} />,
     );
 
     expect(getByText('botão de editar')).toBeTruthy();
   });
 
-  it('sem identidade, não é desenhado - não há coluna de texto onde caiba', async () => {
+  it('divide a linha com o papel, em vez de ficar por baixo dele', async () => {
+    const { getByText } = await render(
+      <ScreenHero {...IDENTIDADE} subtitleAction={<Text>botão de editar</Text>} />,
+    );
+
+    // O papel e a ação são os dois filhos da mesma linha, e é isso que os põe lado a lado
+    // ("Tutorando  Editar") sem acrescentar altura ao bloco.
+    const linha = getByText('Tutorando').parent;
+
+    expect(linha).not.toBeNull();
+    expect(estiloDe(linha!).flexDirection).toBe('row');
+    expect(getByText('botão de editar').parent).toBe(linha);
+  });
+
+  it('a linha do papel não impõe altura nenhuma - é o texto que a mede', async () => {
+    const comAcao = await render(
+      <ScreenHero {...IDENTIDADE} subtitleAction={<Text>botão de editar</Text>} />,
+    );
+    const semAcao = await render(<ScreenHero {...IDENTIDADE} />);
+
+    // Uma altura fixa aqui (mesmo a mesma nos dois casos) era uma linha mais alta do que o texto,
+    // e a altura do bloco passava a depender do que cada ecrã lá põe - é o que desalinha a
+    // fotografia e o ícone do canto entre a Home e o Perfil.
+    expect(estiloDe(comAcao.getByText('Tutorando').parent!).minHeight).toBeUndefined();
+    expect(estiloDe(semAcao.getByText('Tutorando').parent!).minHeight).toBeUndefined();
+  });
+
+  it('sem identidade, não é desenhada - não há linha do papel onde caiba', async () => {
     const { getByText, queryByText } = await render(
-      <ScreenHero title="Chat" identityExtra={<Text>botão de editar</Text>} />,
+      <ScreenHero title="Chat" subtitleAction={<Text>botão de editar</Text>} />,
     );
 
     expect(getByText('Chat')).toBeTruthy();

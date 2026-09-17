@@ -5,6 +5,7 @@
  * conta como "à espera de resposta", o que faz a Home estar vazia - e nenhuma delas precisa de
  * React para ser verificada.
  */
+import type { Translations } from '@/i18n/translations';
 
 /** Saudação por hora do dia. Fronteiras: manhã até às 12:00, tarde até às 20:00, noite depois. */
 export type GreetingPeriod = 'morning' | 'afternoon' | 'evening';
@@ -14,6 +15,24 @@ export function greetingPeriod(date: Date): GreetingPeriod {
   if (hour < 12) return 'morning';
   if (hour < 20) return 'afternoon';
   return 'evening';
+}
+
+/**
+ * A saudação escrita, a partir do período do dia.
+ *
+ * Vive aqui, e não dentro de um componente, porque **dois ecrãs a mostram**: a Home e o Perfil - o
+ * cabeçalho dos dois é o mesmo bloco, e a saudação é a linha de cima dele. Enquanto isto era um
+ * `if` dentro do `HomeHeader`, o Perfil (que não passa por ele) não a podia ter sem uma segunda
+ * cópia da escolha - e duas cópias da mesma escolha foi o que já se pagou uma vez com o curso do
+ * perfil.
+ *
+ * Recebe o dicionário em vez de o ir buscar, para poder ser testada com um dicionário fixo (é pura:
+ * sem React e sem base de dados).
+ */
+export function greetingLabel(period: GreetingPeriod, i18n: Translations): string {
+  if (period === 'morning') return i18n.home.greetingMorning;
+  if (period === 'afternoon') return i18n.home.greetingAfternoon;
+  return i18n.home.greetingEvening;
 }
 
 /**

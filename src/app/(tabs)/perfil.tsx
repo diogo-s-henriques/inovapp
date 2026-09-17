@@ -9,6 +9,8 @@ import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/auth/store';
 import { getInitials } from '@/lib/initials';
+import { greetingLabel, greetingPeriod } from '@/lib/home';
+import { roleLabel } from '@/lib/roles';
 import { subscribeToSessionStats } from '@/lib/sessions';
 import type { SessionStats } from '@/lib/sessions';
 import { Button } from '@/components/ui/Button';
@@ -61,6 +63,20 @@ export default function ProfileScreen() {
   // Um professor não tem este campo (não o edita - ver profile-edit.tsx), por isso a secção
   // desaparece em vez de ficar com uma etiqueta e nada por baixo.
   const interests = isProfessor ? [] : profile.learningSubjects;
+  // A saudação da Home, aqui também: o bloco é o mesmo e a linha de cima é a mesma - ver
+  // `greetingLabel` em src/lib/home.ts.
+  const greeting = greetingLabel(greetingPeriod(new Date()), i18n);
+  // A segunda linha do bloco: o **papel** para um professor ("Tutor" - em src/lib/roles.ts um
+  // professor nunca é "Mentor") e o **curso com o ano** para um aluno.
+  //
+  // Foi ao contrário - a linha era sempre o curso, e um professor lia "Docente ISEC Lisboa" -, e a
+  // troca não é só de palavras: o papel é uma palavra fixa (cabe numa linha, nunca trunca) e é o
+  // que a Home mostra por baixo do mesmo nome. Duas linhas diferentes para a mesma pessoa no mesmo
+  // cabeçalho é que não. O curso de um aluno fica, esse é escolhido por quem o tem e muda de pessoa
+  // para pessoa - e o "Editar" está ao lado dele para quem o quiser corrigir.
+  const subtitle = isProfessor
+    ? roleLabel(profile.participationMode, profile.role, i18n)
+    : formatCourseAndYear(profile.course, profile.year);
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={[styles.container, { backgroundColor: theme.background }]}>
@@ -78,22 +94,24 @@ export default function ProfileScreen() {
             ecrã, em vez de no fundo do perfil) e o botão de editar por baixo das linhas.
 
             O **título** ("PERFIL") saiu daqui: o nome do ecrã repetido por baixo do nome de quem
-            lá está não diz nada de novo - e o separador da barra de baixo já se chama Perfil. A
-            segunda linha é o curso com o ano (ou "Docente ISEC Lisboa"), e não o papel que a Home
-            mostra: o papel diz o que se pode fazer, o curso diz o que se estuda. */}
+            lá está não diz nada de novo - e o separador da barra de baixo já se chama Perfil.
+
+            O que este bloco tem a mais do que o da Home é **um** botão, e ele vive na linha do
+            papel (ver `subtitleAction`): por baixo das linhas, uma quarta linha tornava este
+            cabeçalho mais alto do que o da Home e desalinhava a fotografia e a roda dentada dos
+            dois. */}
         <ScreenHero
           style={styles.hero}
           topInset={insets.top}
           name={profile.fullName}
-          subtitle={
-            isProfessor ? i18n.myProfile.professorCourse : formatCourseAndYear(profile.course, profile.year)
-          }
-          // Duas linhas para o curso: é escolhido pela pessoa e há cursos compridos. O papel da Home
-          // fica numa só (ver `subtitleLines` no ScreenHero).
-          subtitleLines={2}
+          eyebrow={greeting}
+          subtitle={subtitle}
+          // Duas linhas para o curso de um aluno: é escolhido pela pessoa e há cursos compridos. O
+          // papel de um professor (e o da Home) fica numa só (ver `subtitleLines` no ScreenHero).
+          subtitleLines={isProfessor ? 1 : 2}
           initials={getInitials(profile.fullName)}
           photoUri={profile.photoUri}
-          identityExtra={
+          subtitleAction={
             <EditButton
               label={i18n.myProfile.edit}
               accessibilityLabel={i18n.myProfile.editProfile}
@@ -143,7 +161,9 @@ export default function ProfileScreen() {
         visible={confirmingSignOut}
         onRequestClose={() => setConfirmingSignOut(false)}
         title={i18n.myProfile.signOutConfirmTitle}
-        description={i18n.myProfile.signOutConfirmDescription}
+        // Sem descrição: a caixa é a pergunta e as duas saídas (ver `signOutConfirmTitle` no
+        // dicionário). O ícone diz de que se trata antes de alguém ler a pergunta.
+        icon="log-out-outline"
         confirmLabel={i18n.myProfile.signOutConfirm}
         cancelLabel={i18n.common.cancel}
         onConfirm={() => {

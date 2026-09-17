@@ -1094,9 +1094,9 @@ parte da app.
   por cima (`contentContainerStyle` com `background`): é o que faz a faixa revelada ao puxar para
   baixo ter a cor do bloco em vez de branco.
 - **Cada separador leva no bloco só o que é dele** - a Home leva a **identidade** (saudação, nome,
-  papel) e o sino; o Perfil leva **a mesma identidade** (nome, curso, e o botão de editar por baixo
-  das linhas) e a roda dentada; o **Matches, o Chat e o Pesquisar levam só o título**. Chegaram a
-  levar também a identidade (e o sino) de quem já está a ver a app, e não ficou: o mesmo nome
+  papel) e o sino; o Perfil leva **a mesma identidade** (saudação, nome, papel ou curso, e o botão de
+  editar na linha do papel) e a roda dentada; o **Matches, o Chat e o Pesquisar levam só o título**.
+  Chegaram a levar também a identidade (e o sino) de quem já está a ver a app, e não ficou: o mesmo nome
   repetido em três separadores não diz nada de novo, e um bloco de 150 px só para dizer "Chat" é
   altura que sai da lista. O sino leva ponto de notificações **só na Home** - o número vem de
   subscrições (pedidos de sessão, conversas por ler) que só a Home tem, e repeti-las em quatro
@@ -1105,13 +1105,11 @@ parte da app.
   próprio bloco de identidade (`ProfileHeader`, apagado) com a fotografia de 96, o nome de 20 e o
   curso em cinzento, ao lado dos 80, 22 e quase-preto da Home: duas cópias da mesma peça, que
   divergiram por si (foram desenhadas em voltas diferentes). O que sobrou foi **a única coisa que
-  era mesmo diferente** - o que fica por baixo das linhas, que no Perfil é o botão de editar
-  (`identityExtra`, ver `Profile/EditButton`) -, e o resto é o mesmo código e os mesmos números
-  (`HERO_AVATAR_SIZE`, 80). O **título "Perfil" também saiu** do bloco: o nome do ecrã repetido por
-  baixo do nome de quem lá está não diz nada de novo, e o separador da barra de baixo já se chama
-  Perfil. A segunda linha distingue os dois: na Home é o **papel** (o que se pode fazer), no Perfil
-  é o **curso com o ano** (o que se estuda) - e é por isso que lá cabe em duas linhas
-  (`subtitleLines`) e na Home numa só.
+  era mesmo diferente** - o botão de editar (`subtitleAction`, ver `Profile/EditButton`) -, e o
+  resto é o mesmo código e os mesmos números (`HERO_AVATAR_SIZE`, 80). O **título "Perfil" também
+  saiu** do bloco: o nome do ecrã repetido por baixo do nome de quem lá está não diz nada de novo, e
+  o separador da barra de baixo já se chama Perfil. A segunda linha, essa, distingue os dois - e é
+  sobre isso e sobre o alinhamento dos dois blocos que estão as duas entradas seguintes.
 - **Um só cabeçalho para os ecrãs empilhados** (`StackHeader`, com o `BackButton` dentro) - os seis
   ecrãs que abrem por cima dos separadores (Notificações, Sessões, Materiais, Definições, pedidos
   de conexão, pedido de sessão) tinham a mesma linha copiada com uma diferença aqui e outra ali: o
@@ -1124,6 +1122,72 @@ parte da app.
   o título do Definições deixou de ser exceção (`textTransform: 'none'`) e passa a maiúsculas como
   todos os outros. **Não é o `ScreenHero`**: esse vive *dentro* da lista, rola com ela e leva a
   identidade; este fica preso ao topo e é só a seta e o nome do ecrã.
+- **Os dois cabeçalhos que levam identidade põem as mesmas peças no mesmo sítio** - a Home e o
+  Perfil. A identidade é uma linha com a fotografia à esquerda, o texto ao meio e a ação no canto, e
+  o que a faz alinhar não é o desenho de cada ecrã: é ela estar **ancorada ao topo** em vez de
+  centrada, o que a torna **independente da altura do texto**. Enquanto era centrada, era o texto
+  que decidia onde ficavam a fotografia, a saudação, o nome e o ícone do canto (o sino, a roda
+  dentada): uma **linha a mais** num dos ecrãs tornava-o mais alto e empurrava-os para baixo só
+  nesse ecrã. Foi o que aconteceu quando o "Editar" vivia **por baixo** das linhas do Perfil -
+  quatro linhas de um lado, três do outro, e a mesma cara em dois sítios diferentes. Pela mesma
+  razão, a ação do canto é a única peça centrada e é centrada na **fotografia** (a altura dela é
+  `avatarSize`, não a do bloco): é o que a segura à altura do meio da cara mesmo quando o bloco é
+  mais alto do que ela. O que pode crescer, se crescer, é o fundo do bloco.
+- **As três linhas respiram** - a saudação e o nome levam 4 px entre si (lêem-se como uma frase:
+  "Boa tarde," e depois o nome) e o papel leva 12, que é a distância de uma linha de outra natureza
+  - e é a que pode levar o "Editar" ao lado. Estão nos dois ecrãs (`ScreenHero`) e não em cada um,
+  pela mesma razão que tudo o resto: uma linha com mais ar num sítio do que no outro é o mesmo
+  cabeçalho desenhado duas vezes; o teste mede as duas margens (e que a do papel é a maior).
+
+  Passou a viver **na linha do papel**, à direita dele (lê-se "Tutor  Editar"), **e do tamanho do
+  texto dessa linha**: um link na cor do acento, com a mesma letra do papel (13 px,
+  `HERO_SUBTITLE_FONT_SIZE` em `ScreenHero`) e o lápis a 15 - não nos 22 dos ícones de interface,
+  porque este ícone não é um símbolo ao lado de outros, é parte de uma linha de texto. As duas
+  metades contam, e a segunda é fácil de perder: uma ação **mais alta** do que a linha (uma pastilha
+  branca de contorno foi a primeira tentativa) passa a ser ela a mandar na altura dessa linha, e o
+  bloco do Perfil volta a ser mais alto do que o da Home. Sem caixa própria, é o texto que manda na
+  altura nos dois ecrãs. Os testes medem as duas coisas - `screen-hero` (a linha do papel não impõe
+  altura nenhuma) e `profile-edit-button` (o botão é do tamanho do texto e não tem fundo nem
+  contorno) -, porque um número destes muda-se sem se ver.
+- **A saudação é dos dois** - a Home e o Perfil abrem com "Bom dia, / Boa tarde, / Boa noite,". A
+  escolha vive em `greetingLabel` (`src/lib/home.ts`), que recebe o período do dia
+  (`greetingPeriod`) e o dicionário: enquanto isto era um `if` dentro do `HomeHeader`, o Perfil só a
+  podia ter copiando-o. Com a mesma linha de cima, a mesma linha do papel e a mesma ação no canto,
+  os dois blocos são o mesmo bloco - e é isso que faz o alinhamento não depender de ninguém reparar
+  nele.
+- **A segunda linha diz o papel - e o curso só a quem o tem** - um **professor** lê "Tutor" no
+  Perfil, como lê na Home (em `src/lib/roles.ts` um professor nunca é "Mentor"); um **aluno** lê o
+  curso com o ano, que é escolhido por si e muda de pessoa para pessoa (e que por isso cabe em duas
+  linhas, `subtitleLines`). Antes era o contrário - o Perfil mostrava sempre o curso, e um professor
+  lia "Docente ISEC Lisboa" enquanto a Home, com o mesmo nome por baixo da mesma fotografia, lhe
+  dizia "Tutor". Duas palavras diferentes para a mesma pessoa no mesmo cabeçalho é que não; o curso
+  continua a existir no Perfil, no ecrã de edição, ao lado do "Editar".
+- **A caixa de confirmação diz o que vai acontecer, e não o que já se sabe** (`ConfirmModal`) -
+  é a mesma nas três decisões com rede da app (terminar sessão, apagar a conta, bloquear alguém), e
+  duas coisas mudaram nela por isso mesmo. O **ícone passou a ser o da ação**
+  (`log-out-outline`, `save-outline`, `trash-outline`, `ban-outline`) e é **obrigatório** para quem
+  chama o modal: era um ponto de interrogação fixo, e o mesmo "?" anunciava "Terminar sessão?" e
+  "Apagar conta?" sem dizer nada de novo - a pergunta já está escrita por baixo dele. Obrigatório é
+  o que impede o "?" de voltar sem ninguém dar por isso. E a **descrição é opcional**: sem ela, o
+  cartão não guarda o lugar da linha. O "Terminar sessão?" explicava "Vais precisar de entrar outra
+  vez com o teu email institucional." a quem já entrou com ele, e o botão dizia "Sim", que só se lê
+  com a pergunta ao lado - agora ficou a pergunta, um ícone que se entende antes de se ler, e o
+  botão a dizer **"Sair"**.
+
+  A cor continua a ser do **peso** da decisão (`tone="danger"` no que não se desfaz) - e não do
+  ecrã -, porque é isso que faz o "Apagar conta?" não parecer o "Terminar sessão?". A caixa leva
+  ainda `accessibilityViewIsModal`, para o leitor de ecrã não continuar a percorrer o ecrã que está
+  por trás de uma decisão a meio. Os testes (`tests/components/confirm-modal.test.tsx`) comparam o
+  ícone desenhado com dois ícones diferentes - se o componente voltasse a ter um símbolo fixo, os
+  dois saíam iguais.
+- **Guardar o perfil não pede confirmação** - o botão de guardar só está ativo quando algo mudou
+  (`saveDisabled`, em `profile-edit.tsx`: compara campo a campo com o perfil que está em memória),
+  e isso já é a pergunta "tens a certeza?": o toque só chega lá depois de a pessoa mudar alguma
+  coisa de propósito. Uma caixa a repeti-la era um toque a mais entre quem muda o nome e o nome
+  mudado - e confirmar é para o que **não se desfaz** (apagar a conta) ou para o que **acontece fora
+  do ecrã** (bloquear alguém, terminar sessão). Viveu aqui um `ConfirmModal` com "Guardar
+  alterações?" e saiu com as duas chaves que só ele usava (`profileEdit.confirmTitle`,
+  `confirmDescription`).
 - **O que rebenta a desenhar tem um ecrã** (`ErrorBoundary` + `ErrorScreen`) - sem isto, uma
   exceção num render, em produção, **fecha a app**: a pessoa fica sem o ecrã e sem aviso nenhum.
   Há dois limites em `src/app/_layout.tsx`: um na **raiz** (para o que falha no próprio layout) e

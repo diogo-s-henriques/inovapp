@@ -259,6 +259,7 @@ export default function OtherUserProfileScreen() {
         onRequestClose={() => setConfirmingBlock(false)}
         title={i18n.otherProfile.blockConfirmTitle}
         description={i18n.otherProfile.blockConfirmDescription(candidate.firstName)}
+        icon="ban-outline"
         confirmLabel={i18n.otherProfile.blockConfirm}
         cancelLabel={i18n.common.cancel}
         onConfirm={handleBlock}

@@ -16,7 +16,6 @@ import { AvailabilityFields } from '@/components/domain/Profile/AvailabilityFiel
 import { CourseField } from '@/components/domain/Profile/CourseField';
 import { SubjectsField } from '@/components/domain/Profile/SubjectsField';
 import { ChipGroup } from '@/components/ui/ChipGroup';
-import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { PhotoPicker } from '@/components/ui/PhotoPicker';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { TextField } from '@/components/ui/TextField';
@@ -47,7 +46,6 @@ export default function ProfileEditScreen() {
   const [periods, setPeriods] = useState<string[]>(profile?.availabilityPeriods ?? []);
   const [modality, setModality] = useState<string[]>(profile?.availabilityModality ?? []);
   const [saving, setSaving] = useState(false);
-  const [confirmVisible, setConfirmVisible] = useState(false);
 
   if (!profile || !user) return null;
 
@@ -91,10 +89,13 @@ export default function ProfileEditScreen() {
     if (prepared) setPhotoUri(prepared);
   };
 
+  // Guardar não pergunta nada: o botão só está ativo quando algo mudou (`saveDisabled`), o que já
+  // é o "tens a certeza?" - e uma caixa a repetir a pergunta que o botão acabou de fazer é um
+  // toque a mais entre quem mudou o nome e o nome mudado. A confirmação fica para o que não se
+  // desfaz (apagar a conta) ou para o que acontece fora do ecrã (bloquear alguém, terminar sessão).
   const handleSave = async () => {
     if (fullName.trim().length === 0) return;
 
-    setConfirmVisible(false);
     setSaving(true);
     try {
       // Nada para preparar aqui: uma fotografia acabada de escolher já vem em data URI (é o que
@@ -127,7 +128,7 @@ export default function ProfileEditScreen() {
         </Pressable>
         <ThemedText type="bodyBold">{i18n.profileEdit.title}</ThemedText>
         <Pressable
-          onPress={() => setConfirmVisible(true)}
+          onPress={handleSave}
           disabled={saveDisabled}
           accessibilityRole="button"
           accessibilityLabel={i18n.profileEdit.save}
@@ -137,17 +138,6 @@ export default function ProfileEditScreen() {
           </ThemedText>
         </Pressable>
       </View>
-
-      <ConfirmModal
-        visible={confirmVisible}
-        onRequestClose={() => setConfirmVisible(false)}
-        title={i18n.profileEdit.confirmTitle}
-        description={i18n.profileEdit.confirmDescription}
-        cancelLabel={i18n.profileEdit.cancel}
-        confirmLabel={i18n.profileEdit.save}
-        onCancel={() => setConfirmVisible(false)}
-        onConfirm={handleSave}
-      />
 
       <ScrollView
         contentContainerStyle={styles.content}

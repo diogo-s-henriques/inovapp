@@ -275,8 +275,6 @@ export const en: Translations = {
     teachesLabel: 'TEACHES',
     learningLabel: 'LEARNING',
     availabilityLabel: 'AVAILABILITY',
-    confirmTitle: 'Save changes?',
-    confirmDescription: 'Are you sure you want to save the changes made to your profile?',
   },
   otherProfile: {
     photoPlaceholder: 'profile photo',
@@ -401,7 +399,6 @@ export const en: Translations = {
   },
   myProfile: {
     settings: 'Settings',
-    professorCourse: 'ISEC Lisboa faculty',
     sessionsGiven: 'Sessions given',
     sessionsReceived: 'Sessions received',
     sessionsUpcoming: 'Scheduled sessions',
@@ -412,8 +409,7 @@ export const en: Translations = {
     editProfile: 'Edit profile',
     signOut: 'Sign out',
     signOutConfirmTitle: 'Sign out?',
-    signOutConfirmDescription: 'You will need to sign in again with your institutional email.',
-    signOutConfirm: 'Yes',
+    signOutConfirm: 'Sign out',
   },
   materials: {
     title: 'Materials',

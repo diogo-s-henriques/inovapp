@@ -26,7 +26,17 @@ const AVATAR_RADIUS_RATIO = 0.275;
 
 const EYEBROW_FONT_SIZE = 16;
 const NAME_FONT_SIZE = 22;
-const SUBTITLE_FONT_SIZE = 13;
+
+/**
+ * O tamanho da segunda linha (o papel, o curso).
+ *
+ * É exportado porque a **ação** que a pode acompanhar tem de ser do mesmo tamanho (o "Editar" do
+ * Perfil, ver `Profile/EditButton`): é isso que faz o botão caber na linha em vez de a esticar, e
+ * portanto que faz a Home e o Perfil medirem o mesmo. Um número só, lido dos dois lados, é o que
+ * impede os dois de divergirem por serem escritos em sítios diferentes - foi assim que a fotografia
+ * de 96 chegou ao lado da de 80.
+ */
+export const HERO_SUBTITLE_FONT_SIZE = 13;
 
 export interface ScreenHeroProps extends ViewProps {
   name?: string;
@@ -37,12 +47,14 @@ export interface ScreenHeroProps extends ViewProps {
    *
    * Uma por omissão, e é a regra da Home: o papel é uma palavra fixa ("Tutorando", "Mentor e
    * Tutorando") e uma linha a mais era altura que saía de um ecrã desenhado para não rolar. O
-   * Perfil passa **2**, porque a linha de lá é um dado escolhido pela pessoa ("Engenharia
-   * Informática e Computadores, 3º ano") e não se pode truncar por causa de uma fotografia ao
-   * lado.
+   * Perfil passa **2** para o curso de um aluno, porque a linha de lá é um dado escolhido pela
+   * pessoa ("Engenharia Informática e Computadores, 3º ano") e não se pode truncar por causa de uma
+   * fotografia ao lado; para um professor passa **1**, porque a linha é o papel ("Tutor") - o mesmo
+   * que a Home mostra.
    */
   subtitleLines?: number;
-  /** A linha por cima do nome - a saudação da Home. Nenhum outro ecrã a usa. */
+  /** A linha por cima do nome - a saudação. A Home e o Perfil usam-na (ver `greetingLabel` em
+   * src/lib/home.ts). */
   eyebrow?: string;
   photoUri?: string;
   initials?: string;
@@ -56,16 +68,27 @@ export interface ScreenHeroProps extends ViewProps {
   /** Ação no canto direito, alinhada com a identidade (o sino, a roda dentada). */
   rightAction?: ReactNode;
   /**
-   * Conteúdo por baixo das linhas da identidade, na mesma coluna do nome (o botão de editar do
-   * Perfil).
+   * Uma ação na **linha do papel**, à direita dele (o "Editar" do Perfil).
    *
-   * Vive aqui, e não num componente de identidade próprio do ecrã, por uma razão que já se pagou
-   * uma vez: o Perfil chegou a trazer o seu bloco de identidade (`ProfileHeader`), com a fotografia,
-   * o nome e o curso desenhados à parte - e o resultado foi uma fotografia de 96, um nome de 20 e um
+   * Vive aqui, e não num bloco de identidade próprio do ecrã, por uma razão que já se pagou uma
+   * vez: o Perfil chegou a trazer o seu bloco de identidade (`ProfileHeader`), com a fotografia, o
+   * nome e o curso desenhados à parte - e o resultado foi uma fotografia de 96, um nome de 20 e um
    * curso cinzento ao lado dos 80, 22 e near-black da Home. Duas cópias da mesma identidade só
-   * divergem. O que o Perfil tem de diferente é **isto**: uma coisa a mais por baixo das linhas.
+   * divergem. O que o Perfil tem de diferente é **isto**: uma coisa a mais na linha de baixo.
+   *
+   * **Porque não por baixo das linhas**, que foi onde esteve: uma quarta linha no bloco torna-o
+   * mais alto, e como a identidade é centrada o bloco cresce para cima e para baixo - a fotografia,
+   * o nome, o papel e a ação do canto desciam uns pixels no Perfil e não na Home, e os dois
+   * cabeçalhos deixavam de estar alinhados (foi assim que ficaram com alturas diferentes).
+   *
+   * Na linha do papel não se acrescenta altura, **mas isso depende do que o ecrã lá põe**: a linha
+   * é medida pelo texto (13 px, `HERO_SUBTITLE_FONT_SIZE`) e a ação só lá cabe se não for mais alta
+   * do que ele. Uma pastilha de contorno com uma altura própria (um ícone de 22 dentro de uma caixa)
+   * é mais alta do que a linha e é ela que passa a mandar na altura - o bloco do Perfil cresce, o da
+   * Home não, e volta o desalinhamento que isto veio resolver. O "Editar" é um link do tamanho do
+   * texto por isso, e não por ser mais bonito.
    */
-  identityExtra?: ReactNode;
+  subtitleAction?: ReactNode;
   /**
    * O espaço por cima, que traz a barra de estado. Vem do ecrã porque é ele que sabe a altura da
    * barra (`insets.top`); sem isto, o gradiente fica debaixo dos ícones do sistema.
@@ -86,16 +109,28 @@ export interface ScreenHeroProps extends ViewProps {
  * mesmo que o ecrã põe por trás das listas: é o que aparece na faixa revelada ao puxar o conteúdo
  * para baixo.
  *
- * **A ordem**: a identidade (fotografia, nome, papel) com a ação do canto à direita e alinhadas
- * pelo centro, e o título do ecrã por baixo.
+ * **A ordem**: a identidade (fotografia, saudação, nome, papel) com a ação do canto à direita,
+ * alinhadas pelo **topo**, e o título do ecrã por baixo. A ação do canto é a única peça centrada - e
+ * centrada na **fotografia**, não no bloco (ver `styles.actionSlot`).
  *
  * **O que cada separador leva:**
  *
- * | | identidade | título | canto |
- * |---|---|---|---|
- * | Home | saudação + nome + papel (foto 80) | - | sino |
- * | Perfil | nome + curso + **Editar** (foto 80) | - | roda dentada |
- * | Matches, Chat, Pesquisar | - | o nome do ecrã | - |
+ * | | identidade | título | canto | linha do papel |
+ * |---|---|---|---|---|
+ * | Home | saudação + nome + papel (foto 80) | - | sino | - |
+ * | Perfil | saudação + nome + papel ou curso (foto 80) | - | roda dentada | **Editar** |
+ * | Matches, Chat, Pesquisar | - | o nome do ecrã | - | - |
+ *
+ * **Os dois ecrãs que levam identidade põem as mesmas peças no mesmo sítio.** Não é um detalhe de
+ * gosto: é a razão de a ação do Perfil viver **na linha do papel** em vez de por baixo das linhas,
+ * de ser do tamanho do texto em vez de uma caixa com altura própria, e de a identidade estar
+ * ancorada ao topo em vez de centrada.
+ *
+ * Enquanto era centrada, a altura do **texto** decidia onde ficavam a fotografia, a saudação, o nome
+ * e a ação do canto: um curso em duas linhas (o de um aluno) tornava o bloco do Perfil mais alto do
+ * que o da Home e empurrava-os todos uns pixels para baixo só ali. Com o topo, o que pode crescer é
+ * apenas o **fundo do bloco** - e é por isso que a ação do canto é centrada na fotografia e não no
+ * bloco: a altura dela é a da cara (`avatarSize`), não a do que o texto ocupa.
  *
  * A identidade é opcional: sem `name`, o bloco fica só com o título, que sobe para o lugar dela. É
  * o caso do Matches, do Chat e do Pesquisar - o nome de quem já está a ver a app, repetido em três
@@ -115,7 +150,7 @@ export function ScreenHero({
   avatarSize = HERO_AVATAR_SIZE,
   title,
   rightAction,
-  identityExtra,
+  subtitleAction,
   topInset = 0,
   style,
   ...rest
@@ -154,20 +189,30 @@ export function ScreenHero({
                     {eyebrow}
                   </ThemedText>
                 ) : null}
+                {/* As três linhas respiram: 4 px entre a saudação e o nome (que se lêem como uma
+                    frase) e 12 antes do papel, que é uma linha de outra natureza. */}
                 <ThemedText type="subtitle" style={styles.name} numberOfLines={1}>
                   {name}
                 </ThemedText>
-                {subtitle ? (
-                  <ThemedText type="small" style={styles.subtitle} numberOfLines={subtitleLines}>
-                    {subtitle}
-                  </ThemedText>
+                {subtitle || subtitleAction ? (
+                  <View style={styles.subtitleRow}>
+                    {subtitle ? (
+                      <ThemedText type="small" style={styles.subtitle} numberOfLines={subtitleLines}>
+                        {subtitle}
+                      </ThemedText>
+                    ) : null}
+                    {subtitleAction}
+                  </View>
                 ) : null}
-                {identityExtra ? <View style={styles.extra}>{identityExtra}</View> : null}
               </View>
             </View>
           </View>
 
-          {rightAction}
+          {/* A ação do canto é centrada na **fotografia**, e não no bloco todo: o bloco pode ser
+              mais alto do que ela (o curso de um aluno, em duas linhas) e, com a identidade
+              ancorada ao topo, centrar no bloco arrastava o sino e a roda dentada para baixo nesse
+              caso. Assim ficam à altura do meio da cara, sempre. */}
+          <View style={[styles.actionSlot, { height: avatarSize }]}>{rightAction}</View>
         </View>
       )}
 
@@ -190,9 +235,12 @@ const styles = StyleSheet.create({
   },
   identity: {
     flexDirection: 'row',
-    // Centrado nas peças: é isto que põe a ação do canto à altura da fotografia em vez de sozinha
-    // por cima dela.
-    alignItems: 'center',
+    // Ancorado ao **topo**, e não ao centro das peças: com o centro, a altura do texto decidia onde
+    // ficavam a fotografia, o nome e a saudação - e o curso de um aluno (duas linhas) empurrava-os
+    // para baixo só no Perfil, que é exatamente o desalinhamento que isto veio resolver. Com o topo,
+    // as três linhas e a fotografia começam no mesmo sítio em qualquer dos ecrãs; o que cresce, se
+    // crescer, é o fundo do bloco.
+    alignItems: 'flex-start',
     // 12 e não 16: numa linha com uma fotografia grande, a ação e os intervalos roubam largura ao
     // nome - e o nome é a única das peças que é informação variável (um nome comprido trunca-se,
     // uma fotografia não).
@@ -201,19 +249,28 @@ const styles = StyleSheet.create({
   identityContent: {
     flex: 1,
   },
+  // A coluna da ação do canto (o sino, a roda dentada): a altura da fotografia, com a ação centrada
+  // nela - é o que a põe à altura do meio da cara e não no sítio onde o texto a empurrasse.
+  actionSlot: {
+    justifyContent: 'center',
+  },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: Spacing.two,
   },
   intro: {
     flex: 1,
   },
-  // O que os ecrãs põem por baixo das linhas (o botão de editar do Perfil): o intervalo é daqui e
-  // não do `intro`, porque um `gap` na coluna mudava também a Home - que já está como deve estar.
-  extra: {
+  // A linha do papel - e, no Perfil, o "Editar" ao lado dele. **Não tem altura própria**: quem a
+  // mede é o texto, e a ação que a acompanha é do tamanho dele (ver `subtitleAction`). O intervalo
+  // lateral é curto (8) porque o texto e o link devem ler-se como uma linha só, e não como duas
+  // coisas afastadas na mesma linha.
+  subtitleRow: {
     marginTop: Spacing.two,
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
   },
   // As linhas vivem aqui, e não no JSX, para a escala do bloco estar num sítio só. O nome é preto
   // cheio; a saudação e o papel são o mesmo preto a 70% - sobre um tom tão claro, a hierarquia
@@ -223,12 +280,19 @@ const styles = StyleSheet.create({
     color: 'rgba(26, 26, 26, 0.7)',
   },
   name: {
+    // 4 px depois da saudação: "Boa tarde," e o nome lêem-se como uma frase, e é assim que se
+    // separam - por pouco. O papel, esse, leva 12 (ver `subtitleRow`): é outra linha, diz outra
+    // coisa e é a que pode levar uma ação ao lado.
+    marginTop: Spacing.half,
     fontSize: NAME_FONT_SIZE,
     color: '#1A1A1A',
   },
+  // `flexShrink` (e não `flex`) para o texto continuar colado ao botão quando é curto ("Tutor
+  // Editar") e para encolher - em duas linhas, se o ecrã as pedir - quando é comprido (o curso de
+  // um aluno), em vez de empurrar o botão para a outra ponta da coluna.
   subtitle: {
-    marginTop: 2,
-    fontSize: SUBTITLE_FONT_SIZE,
+    flexShrink: 1,
+    fontSize: HERO_SUBTITLE_FONT_SIZE,
     color: 'rgba(26, 26, 26, 0.7)',
   },
   // O título do ecrã não é gritado: "Matches" é um nome, não um aviso.
