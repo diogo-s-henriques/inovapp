@@ -268,6 +268,24 @@ O `versionCode` é do EAS (`cli.appVersionSource: remote` + `autoIncrement`), po
 novo entra com o seguinte e nunca há número repetido a resolver. E **um `.aab` que já existe na Play
 não se apaga**: o que se sobe a seguir tem de ter número maior - é o que acontece por construção.
 
+**É o ficheiro que diz o que lá está, e ele abre-se.** O EAS etiqueta cada build com o commit do
+`HEAD` (`vcs/clients/git.js` só copia os ficheiros alterados *por cima* do clone raso, a não ser que
+se ligue `requireCommit`), por isso a etiqueta **não** é o que a build levou - o que levou foi a
+árvore de trabalho no instante em que foi lançada. A verificação que interessa é abrir o
+artefacto:
+
+```bash
+unzip -q prod.ipa -d verif && ls verif/Payload/INOVAPP.app        # Info.plist, embedded.mobileprovision, main.jsbundle
+grep -a "A carregar a fotografia" verif/Payload/INOVAPP.app/main.jsbundle   # uma string do código mais recente
+unzip -q prod.aab -d verif-aab && grep -al "play.core.integrity" verif-aab/base/dex/*.dex
+```
+
+Foi assim que se confirmou que a `f3de75c0` (iOS, 1.0.0/4, perfil `*[expo] … AppStore` com
+`appattest` `development` **e** `production` e `aps-environment production`) e a `9561fc9a`
+(Android, `versionCode` 5, com as classes do Play Integrity e o `RNFBAppCheck` no dex) levam o
+código atual - e não o que diz o commit etiquetado, que ficou para trás do trabalho feito a seguir
+(são as últimas duas builds de produção e servem para o primeiro envio às duas lojas).
+
 #### O que a ficha das lojas pede
 
 | | o que é |
@@ -1312,9 +1330,13 @@ parte da app.
   pedido que ali estava custava duas coisas: um diálogo do sistema antes de a galeria abrir (o
   atraso que se sentia no toque) e, a quem já o tivesse recusado, um toque que não fazia nada - o
   seletor nunca abria e não havia mensagem nem caminho para as definições do telemóvel.
-- **A fotografia de perfil abre em grande** - o toque no avatar mostra-a do tamanho do cartão, com o
-  botão "Alterar" por baixo, e é de lá que se vai ao seletor. A 96 px não se via nada, e o ícone de
-  máquina fotográfica que estava dentro do avatar apontava para um botão que não existia.
+- **A fotografia de perfil não abre em grande** - o toque no avatar **é** o seletor. Chegou a haver
+  a vista da fotografia do tamanho do cartão com o botão "Alterar" por baixo (um ícone de máquina
+  fotográfica dentro do avatar apontava para um botão que não existia, e a fotografia a 96 px
+  mostrava pouco) e foi retirada: trocar de fotografia é o que se quer fazer quase sempre, e o
+  modal era um toque a mais **e** uma espera - o seletor do sistema apresenta-se por cima de tudo e
+  não arranca enquanto um modal nosso estiver a desaparecer, o que obrigava a adivinhar o instante
+  (a decisão que ficou está na entrada **Escolher fotografia é um toque, uma ação**, mais acima).
 - **O microfone não é pedido** - o plugin do `expo-image-picker` liga
   `android.permission.RECORD_AUDIO` por omissão (o seletor de imagens também sabe captar vídeo),
   e a app só escolhe uma fotografia da galeria. Ficou `microphonePermission: false` no `app.json`,
