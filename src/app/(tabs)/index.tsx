@@ -97,7 +97,12 @@ export default function HomeScreen() {
   const viewerRole = roleLabel(profile?.participationMode, profile?.role, i18n);
   const [sessions, setSessions] = useState<AgendaSession[]>([]);
   const [pendingRating, setPendingRating] = useState<AgendaSession | null>(null);
-  const [hasAnyConnection, setHasAnyConnection] = useState(false);
+  // `null` enquanto a leitura não respondeu - e é de propósito que não é `false`. Mostrar o guia de
+  // primeiros passos antes de saber é mostrá-lo a quem já tem ligações e tirá-lo um instante depois:
+  // um cartão grande a aparecer e a desaparecer logo a seguir à entrada, que foi o flicker que se
+  // via na transição do login (ver `showFirstSteps`). Só se afirma "não tens ninguém" quando a
+  // resposta chegou mesmo.
+  const [hasAnyConnection, setHasAnyConnection] = useState<boolean | null>(null);
   const [connectionsError, setConnectionsError] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -244,15 +249,16 @@ export default function HomeScreen() {
   };
 
   const handleAttention = (kind: AttentionKind) => {
-    // Cada tipo leva ao ecrã onde essa decisão se toma mesmo: os pedidos de conexão à lista dos
-    // pedidos, o resto (sessões por confirmar, mensagens por ler) às Notificações.
+    // Cada tipo leva onde essa decisão se toma mesmo: os pedidos de conexão aos Matches, o resto
+    // (sessões por confirmar, mensagens por ler) às Notificações.
     //
-    // Os pedidos de conexão vão para `/connection-requests` e **não** para a aba dos Matches, onde
-    // a mesma lista também está: mudar de separador não empilha ecrã nenhum, por isso não havia
-    // como voltar atrás com o gesto de deslizar do iOS. A decisão é a mesma (é o mesmo componente),
-    // só deixou de ser um beco sem saída.
+    // Os pedidos de conexão vão para a **aba dos Matches**, e não para o ecrã dos pedidos: é o mesmo
+    // componente nos dois sítios, mas só nos Matches a decisão aparece com o que a rodeia - o
+    // cabeçalho do ecrã e, por baixo dos pedidos, quem mais se pode encontrar. Quem vem de um aviso
+    // da Home vem decidir, e aí é onde se decide; o ecrã empilhado continua a servir quem chega por
+    // um link, e por isso não saiu da app.
     if (kind === 'connections') {
-      router.push('/connection-requests');
+      router.push('/matches');
       return;
     }
     router.push('/notifications');
@@ -294,6 +300,7 @@ export default function HomeScreen() {
   // leitura negada via o guia de quem ainda não tem nada, a dizer-lhe para encontrar um mentor que
   // já tem. É a diferença entre "não tenho ligações" e "não sei as minhas ligações".
   const showFirstSteps =
+    hasAnyConnection === false &&
     !connectionsError &&
     !attentionError &&
     isHomeEmpty({

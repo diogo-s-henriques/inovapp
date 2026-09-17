@@ -21,10 +21,11 @@ export interface Translations {
     new: string;
     user: string;
     addPhoto: string;
-    /** Abrir a fotografia de perfil em grande (o toque no avatar, quem já tem uma). */
-    viewPhoto: string;
-    /** Trocar a fotografia, a partir da vista de perto. */
-    change: string;
+    /**
+     * A fotografia está a caminho: o seletor do sistema a abrir (ele demora o que demora, e é do
+     * sistema) e depois o redimensionamento. É o que o avatar mostra enquanto isso.
+     */
+    loadingPhoto: string;
     starRating: (count: number) => string;
   };
   roles: {

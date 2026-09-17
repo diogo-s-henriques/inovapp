@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Keyboard, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
@@ -57,6 +57,11 @@ export default function LoginScreen() {
   }, []);
 
   const handleSubmit = async () => {
+    // O teclado fecha aqui, e não quando o ecrã muda. Quem acabou de carregar em "Entrar" já não
+    // tem nada para escrever, e deixá-lo a fechar-se no instante em que a Home começa a aparecer
+    // punha a janela a redimensionar por baixo de uma transição - um tremor no ecrã que não tem
+    // nada a ver com a transição em si. Aqui tem a espera do "A entrar" para acabar em paz.
+    Keyboard.dismiss();
     setError(null);
     setSubmitting(true);
     try {

@@ -1013,16 +1013,50 @@ parte da app.
   entrada (com o botão em "A entrar…"), e é ele que se dissolve quando a Home chega. A espera do
   arranque continua a ser `loading`, atrás do splash - a diferença entre as duas está no
   `bootstrapped` da loja de autenticação, escrito pelo `useAuthSync` quando a primeira resposta
-  chega.
+  chega. E o clarão que se seguiu a isto: com o `fade` a correr, os dois ecrãs estão translúcidos ao
+  mesmo tempo, e por trás deles não havia nada opaco - via-se o fundo da janela, que é branco. O
+  `GestureHandlerRootView`, o `View` que envolve a navegação e o `contentStyle` do `Stack` passaram
+  a levar a cor de fundo dos ecrãs (`theme.background`), e o que se vê durante a transição é a
+  mesma superfície dos ecrãs que a atravessam. A segunda metade do mesmo problema era o teclado:
+  fechava-se quando o ecrã mudava, e a janela a redimensionar por baixo de uma transição a meio é
+  um tremor que se soma ao clarão. Passou a fechar-se no toque em "Entrar" (ver o `handleSubmit`
+  em src/app/login.tsx), com a espera do "A entrar…" a dar-lhe tempo para acabar antes de a Home
+  chegar.
+- **O cartão dos primeiros passos espera pela resposta.** A Home perguntava "tens ligações?" e a
+  resposta começava em `false` - indistinguível de "ainda não sei": quem já tinha ligações via o
+  guia de boas-vindas (um cartão grande, no meio do ecrã) aparecer e desaparecer no instante a
+  seguir à entrada. `hasAnyConnection` passou a `boolean | null`, e o guia só aparece quando a
+  resposta chegou e é mesmo "nenhuma ligação" - a mesma distinção que já se fazia com
+  `connectionsError` entre "não tenho" e "não sei".
 - **A fotografia prepara-se na escolha, não na gravação.** O seletor do sistema devolve a fotografia
   original (12 megapixels numa câmara de telemóvel), e havia trabalho de imagem a acontecer toda do
   lado errado do toque: a pré-visualização desenhava o original num quadrado de ~340 px (caro, e
   exatamente no instante em que se quer ver a resposta ao toque) e o redimensionamento com o base64
   ficavam para o "Guardar", que era quem demorava. Passou para o momento da escolha
   (`pickPreparedProfilePhoto` em src/lib/storage.ts): a vista aparece no mesmo instante e gravar é só
-  escrever. E o botão "Alterar" deixou de ter uma espera de 350 ms **adivinhada** a cobrir a animação
-  de fecho da vista - quem sabe quando o modal desapareceu é o próprio sistema (`onDismiss`), e o
-  temporizador ficou só como rede para quem não dispara esse aviso.
+  escrever.
+- **Escolher fotografia é um toque, uma ação.** O toque no avatar abria a fotografia **em grande**,
+  e era o botão "Alterar" dentro dessa vista que ia ao seletor. Custava um toque a mais - trocar de
+  fotografia é o que se quer fazer quase sempre - e, pior, custava tempo: o seletor da galeria é uma
+  apresentação nativa por cima de tudo, e não pode arrancar enquanto um modal nosso estiver a
+  desaparecer (o iOS larga a apresentação em silêncio, e o botão parece morto). Andaram aqui uma
+  espera fixa de 350 ms e depois o `onDismiss` do modal a tentar acertar no instante certo - tudo
+  isso era o preço de ter um modal pelo caminho. A vista em grande saiu, o toque passou a ser o
+  seletor, e com ela saíram o modal, o temporizador, o `onDismiss` e duas chaves de tradução
+  (`common.viewPhoto` e `common.change`).
+- **A espera pela fotografia anuncia-se, mas só quando é longa.** Tirar o modal tornou o toque
+  imediato, mas não tornou a galeria mais rápida: abri-la é do sistema, e a primeira vez em cada
+  arranque obriga o iOS a levantar a extensão das fotografias - segundos em que a app ficava parada,
+  sem sinal nenhum, e que se lêem como um botão avariado. Agora o avatar mostra que a fotografia
+  está a caminho (indicador no lugar do conteúdo e a legenda "A carregar a fotografia..."), e o
+  `onPress` do `PhotoPicker` passou a poder devolver promessa: é o ecrã que diz quando acabou,
+  porque é ele que abre o seletor **e** prepara a imagem escolhida - a espera visível cobre as duas
+  metades, em vez de terminar quando a pessoa escolhe e deixar a preparação escondida. Duas
+  condições acompanham isto: só se mostra ao fim de `BUSY_SHOW_DELAY_MS` (300 ms - um indicador a
+  piscar não informa ninguém e chama a atenção para uma espera que não existiu), e o travão do
+  segundo toque é do **pedido** (`requestingRef`) e não do indicador, senão os primeiros 300 ms
+  ficavam desprotegidos e um toque repetido abria duas galerias. Uma leitura que falhe é relatada
+  (`reportError(…, 'fotografia')`) e o avatar volta ao que estava.
 - **`require` com o nome escrito no ficheiro, ou o bundle de produção não passa** - o `observe.ts` e o
   `app-check.ts` carregam módulos nativos à mão (dentro de um `try`) para que a falta deles não deite a
   app abaixo. No `observe.ts` o `require` tem o nome literal; no `app-check.ts` chegou a ser uma função
@@ -1165,11 +1199,14 @@ parte da app.
   decide nada). Essa lista tem dois anfitriões e um comportamento só: a secção dos Matches e o
   ecrã `connection-requests`, que renderizam o **mesmo componente** - não há duas versões de
   aceitar um pedido, só duas portas para a mesma sala.
-- **O ecrã `connection-requests` existe por causa de um gesto** - a linha "N pedidos de conexão"
-  da Home e o aviso das Notificações levavam à **aba** dos Matches, e mudar de separador não
-  empilha ecrã nenhum: não havia nada por baixo para o deslize de voltar do iOS desempilhar, e o
-  pedido ficava num beco sem saída. Empilhado, volta-se dele como de qualquer outro ecrã - pelo
-  gesto ou pela seta do cabeçalho.
+- **Os toques da Home e das Notificações abrem a aba dos Matches** - e não o ecrã
+  `connection-requests`. Numa primeira versão era o contrário, e a razão era o gesto de voltar:
+  mudar de separador não empilha ecrã nenhum, e o pedido ficava num beco sem saída. A razão estava
+  certa e a escolha não: quem toca numa linha "N pedidos de conexão" vai **decidir** (aceitar ou
+  recusar), e é nos Matches que a decisão aparece com o que a rodeia - o cabeçalho do ecrã e, por
+  baixo dos pedidos, quem mais se pode encontrar. O ecrã empilhado continua a existir e a render a
+  mesma lista, como destino de um link (o `url` de um aviso, ver src/push/listener.ts), onde o
+  gesto de voltar continua a fazer falta.
 - **Quem já tem um pedido de conexão connosco desaparece da descoberta** (lista dos Matches e
   pesquisa) - em
   qualquer sentido e em qualquer estado: pendente, aceite ou recusado. Excluir apenas o sentido

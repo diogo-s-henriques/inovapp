@@ -1,185 +1,169 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
-import { Image, Modal, Pressable, StyleSheet, Text, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { reportError } from '@/lib/error-reporting';
 
 /**
- * Espera **máxima** entre fechar a vista em grande e abrir o seletor da galeria.
+ * Espera mínima antes de o avatar mostrar que a fotografia está a caminho.
  *
- * Não é o mecanismo, é a rede: no iOS quem manda é o `onDismiss` do Modal, que chega quando o modal
- * desapareceu mesmo - e aí o seletor abre nesse instante, sem espera nenhuma. Isto é para quem não
- * dispara esse evento (o Android), e é a única razão de ainda existir um número aqui.
+ * Um indicador que pisca durante 20 ms não informa ninguém - só chama a atenção para uma espera que
+ * quase não existiu. O que se quer cobrir é a espera **longa** (a galeria a abrir da primeira vez,
+ * ou uma fotografia grande a ser reduzida); abaixo disto não se mostra nada, e a fotografia
+ * simplesmente aparece.
  */
-const PICKER_OPEN_FALLBACK_MS = 400;
+const BUSY_SHOW_DELAY_MS = 300;
 
 export interface PhotoPickerProps extends Omit<PressableProps, 'style' | 'onPress'> {
   uri?: string;
   initials?: string;
-  /**
-   * Trocar a fotografia: abre o seletor do sistema. Chamado pelo botão dentro da fotografia vista
-   * de perto - o toque no avatar não é isto, é vê-la maior.
-   */
-  onPress: () => void;
+  /** Escolher/trocar a fotografia: abre o seletor do sistema. */
+  onPress: () => void | Promise<void>;
   label?: string;
   size?: number;
   style?: StyleProp<ViewStyle>;
 }
 
 /**
- * Seletor de fotografia de perfil.
+ * Seletor de fotografia de perfil: um avatar que se toca e abre a galeria.
  *
- * O avatar abre a fotografia **em grande**, com o botão "Alterar" por baixo: quem tem uma
- * fotografia quer poder olhar para ela antes de decidir trocá-la, e a 96 px não se vê nada. Sem
- * fotografia não há nada para ver, e o toque vai direto ao seletor do sistema.
+ * **Um toque, uma ação.** Houve aqui uma paragem pelo caminho - o toque abria a fotografia **em
+ * grande**, e era o "Alterar" dentro dessa vista que ia ao seletor. Custava duas coisas: um toque a
+ * mais para trocar de fotografia (que é o que se quer fazer quase sempre) e a espera pela animação
+ * de fecho do modal antes de o seletor poder arrancar - o seletor da galeria é uma apresentação
+ * nativa por cima de tudo, e se arrancasse com o modal ainda a desaparecer o iOS largava a
+ * apresentação em silêncio ("present while a presentation is in progress") - que era o botão parecer
+ * morto. Sem modal pelo caminho não há nada para esperar: o toque e o seletor são o mesmo instante.
  *
- * O ícone de máquina fotográfica que ali estava saiu: era um símbolo de ação dentro de um avatar
- * que não fazia nada de diferente do resto do círculo - apontava para um botão que não existia.
+ * **Enquanto a fotografia vem, o avatar mostra que está a vir.** Abrir a galeria não é trabalho
+ * nosso e demora o que demora (a primeira vez em cada arranque é a pior: o iOS tem de levantar a
+ * extensão das fotografias) - sem sinal nenhum, esses segundos lêem-se como um botão avariado. O
+ * `onPress` pode devolver promessa para esta espera cobrir as duas metades: o seletor **e** a
+ * preparação da imagem, que acontece depois de a escolher. Quem tem a fotografia pronta é quem sabe
+ * quando isto acabou - por isso é ele que diz, e não um temporizador nosso a adivinhar.
+ *
+ * Sem fotografia não há nada para ver em grande nem nada para trocar: o mesmo toque é "adicionar" ou
+ * "alterar", e o que muda é só a legenda (que vem de fora, no `label`).
  */
-export function PhotoPicker({
-  uri,
-  initials,
-  onPress,
-  label,
-  size = 96,
-  style,
-  ...rest
-}: PhotoPickerProps) {
+export function PhotoPicker({ uri, initials, onPress, label, size = 96, style, ...rest }: PhotoPickerProps) {
   const theme = useTheme();
   const i18n = useI18n();
   const resolvedLabel = label ?? i18n.common.addPhoto;
-  const [previewing, setPreviewing] = useState(false);
-  // O timer do seletor pendente: o componente pode sair da árvore antes de ele disparar (voltar
-  // para trás com a vista ainda a fechar), e quem fica deve ser ninguém.
-  const pickerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Há um pedido de seletor à espera de a vista desaparecer. É o que impede um segundo toque de
-  // abrir dois, mesmo com dois caminhos (o aviso do modal e o temporizador) a poder chegar ao fim.
-  const openingRef = useRef(false);
+  // Fotografia a caminho (seletor a abrir, ou imagem a ser preparada depois de escolhida).
+  const [busy, setBusy] = useState(false);
+  // Há uma fotografia a caminho. Este travão é do pedido, não da espera visível: segura o segundo
+  // toque desde o primeiro instante, mesmo antes de o indicador aparecer.
+  const requestingRef = useRef(false);
+  // A promessa da fotografia pode chegar depois de o ecrã sair (voltar para trás com a galeria
+  // aberta), e quem fica deve ser ninguém.
+  const mountedRef = useRef(true);
+  const busyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Se o indicador chegou mesmo a aparecer - só então há estado para desfazer (e um pedido rápido
+  // não mexe no ecrã de todo).
+  const busyShownRef = useRef(false);
 
   useEffect(
     () => () => {
-      if (pickerTimerRef.current !== null) clearTimeout(pickerTimerRef.current);
+      mountedRef.current = false;
+      if (busyTimerRef.current !== null) clearTimeout(busyTimerRef.current);
     },
     [],
   );
 
-  const handlePress = () => {
-    if (!uri) {
-      onPress();
-      return;
-    }
-    setPreviewing(true);
-  };
-
   /**
-   * Abre o seletor do sistema, uma vez só por pedido.
+   * Pede a fotografia e fica ocupado enquanto ela não chega.
    *
-   * Chamado por dois caminhos - o `onDismiss` do Modal (o aviso exato, no iOS) e o temporizador
-   * (a rede, onde esse aviso não chega) - e quem chegar primeiro anula o outro.
+   * O `onPress` é o ecrã: ele abre o seletor e prepara a imagem escolhida, e só resolve quando
+   * tiver a fotografia pronta (ou nada, se a pessoa desistir pelo caminho).
    */
-  const openPicker = () => {
-    if (!openingRef.current) return;
-    openingRef.current = false;
+  const requestPhoto = async () => {
+    requestingRef.current = true;
+    busyTimerRef.current = setTimeout(() => {
+      busyTimerRef.current = null;
+      if (!mountedRef.current) return;
+      busyShownRef.current = true;
+      setBusy(true);
+    }, BUSY_SHOW_DELAY_MS);
 
-    if (pickerTimerRef.current !== null) {
-      clearTimeout(pickerTimerRef.current);
-      pickerTimerRef.current = null;
+    try {
+      await onPress();
+    } catch (error) {
+      // A leitura é do sistema (galeria, cortes, ficheiro) e pode falhar; o ecrã fica como estava,
+      // sem fotografia nova, e o erro vai para o relatório como todos os outros.
+      reportError(error, 'fotografia');
+    } finally {
+      requestingRef.current = false;
+      if (busyTimerRef.current !== null) {
+        clearTimeout(busyTimerRef.current);
+        busyTimerRef.current = null;
+      }
+      if (busyShownRef.current) {
+        busyShownRef.current = false;
+        if (mountedRef.current) setBusy(false);
+      }
     }
-
-    onPress();
   };
 
-  const handleChange = () => {
-    // Um segundo toque antes de o primeiro chegar ao seletor não abre dois.
-    if (openingRef.current) return;
-    openingRef.current = true;
-
-    // **Fechar primeiro, abrir depois.** O seletor da galeria é uma apresentação nativa por cima de
-    // tudo; se arrancar enquanto este Modal ainda está a desaparecer, o iOS larga a apresentação em
-    // silêncio ("present while a presentation is in progress") - o modal fecha e nada se abre, e o
-    // botão parecia morto.
-    //
-    // Esteve aqui uma espera fixa de 350 ms a adivinhar quando o modal já tinha desaparecido, e era
-    // isso que se sentia como lentidão no botão: o tempo somava-se à animação de fecho em vez de
-    // esperar por ela. O `onDismiss` diz quando é que ele desapareceu - que é a altura certa para
-    // abrir o seletor, nem antes (a apresentação falhava) nem depois (uns décimos a olhar para
-    // nada).
-    setPreviewing(false);
-    pickerTimerRef.current = setTimeout(openPicker, PICKER_OPEN_FALLBACK_MS);
+  const handlePress = () => {
+    // Já há um pedido a caminho: um segundo toque não abre duas galerias.
+    if (requestingRef.current) return;
+    void requestPhoto();
   };
 
   return (
-    <>
-      <Pressable
-        onPress={handlePress}
-        accessibilityRole="button"
-        accessibilityLabel={uri ? i18n.common.viewPhoto : resolvedLabel}
-        style={[styles.container, style]}
-        {...rest}>
-        <View
-          style={[
-            styles.avatar,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              backgroundColor: theme.primarySoft,
-              borderColor: theme.borderAccent,
-              borderStyle: uri ? 'solid' : 'dashed',
-            },
-          ]}>
-          {/* Prioridade de conteúdo: fotografia > iniciais > ícone genérico */}
-          {uri ? (
-            <Image source={{ uri }} style={styles.image} />
-          ) : initials ? (
-            <Text style={[styles.initials, { fontSize: Math.round(size * 0.4), color: theme.primaryDark }]}>
-              {initials}
-            </Text>
-          ) : (
-            <Ionicons name="person-outline" size={Math.round(size * 0.42)} color={theme.textPrimary} />
-          )}
-        </View>
-        <ThemedText type="smallBold" themeColor="primary">
-          {resolvedLabel}
-        </ThemedText>
-      </Pressable>
-
-      <Modal
-        visible={previewing}
-        transparent
-        animationType="fade"
-        onDismiss={openPicker}
-        onRequestClose={() => setPreviewing(false)}>
-        {/* Tocar fora fecha; o cartão abaixo engole o toque para o botão não fechar o modal. */}
-        <Pressable
-          style={styles.backdrop}
-          onPress={() => setPreviewing(false)}
-          accessibilityRole="button"
-          accessibilityLabel={i18n.common.cancel}>
-          <View
-            style={[styles.previewCard, { backgroundColor: theme.surface }]}
-            onStartShouldSetResponder={() => true}>
-            {uri ? <Image source={{ uri }} style={styles.previewImage} accessibilityIgnoresInvertColors /> : null}
-            <Pressable
-              onPress={handleChange}
-              accessibilityRole="button"
-              accessibilityLabel={i18n.common.change}
-              style={({ pressed }) => [
-                styles.changeButton,
-                { backgroundColor: theme.primaryDark },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText type="smallBold" themeColor="onPrimary" style={styles.changeLabel}>
-                {i18n.common.change}
-              </ThemedText>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-    </>
+    <Pressable
+      onPress={handlePress}
+      accessibilityRole="button"
+      // A etiqueta continua a dizer o que o avatar faz; o estado ocupado acrescenta-se ao lado, que
+      // é o que um leitor de ecrã anuncia. Trocar a etiqueta pela da espera tiraria o botão a quem o
+      // procura por ela enquanto a fotografia vem.
+      accessibilityState={{ busy }}
+      accessibilityLabel={resolvedLabel}
+      style={[styles.container, style]}
+      {...rest}>
+      <View
+        style={[
+          styles.avatar,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: theme.primarySoft,
+            borderColor: theme.borderAccent,
+            borderStyle: uri ? 'solid' : 'dashed',
+          },
+        ]}>
+        {/* Prioridade de conteúdo: fotografia a caminho > fotografia > iniciais > ícone genérico */}
+        {busy ? (
+          <ActivityIndicator color={theme.primaryDark} />
+        ) : uri ? (
+          <Image source={{ uri }} style={styles.image} />
+        ) : initials ? (
+          <Text style={[styles.initials, { fontSize: Math.round(size * 0.4), color: theme.primaryDark }]}>
+            {initials}
+          </Text>
+        ) : (
+          <Ionicons name="person-outline" size={Math.round(size * 0.42)} color={theme.textPrimary} />
+        )}
+      </View>
+      <ThemedText type="smallBold" themeColor="primary">
+        {busy ? i18n.common.loadingPhoto : resolvedLabel}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -200,38 +184,5 @@ const styles = StyleSheet.create({
   },
   initials: {
     fontWeight: '700',
-  },
-  backdrop: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.five,
-    backgroundColor: 'rgba(26, 26, 26, 0.5)',
-  },
-  previewCard: {
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    borderRadius: Spacing.five,
-    padding: Spacing.five,
-    gap: Spacing.four,
-  },
-  // Quadrada de cantos arredondados e do tamanho do cartão: é a mesma fotografia do avatar, sem o
-  // corte do círculo (que a 96 px come os cantos) e sem os 96 px.
-  previewImage: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: Spacing.three,
-  },
-  changeButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.three,
-    borderRadius: Spacing.six,
-  },
-  pressed: {
-    opacity: 0.8,
-  },
-  changeLabel: {
-    fontSize: 15,
   },
 });

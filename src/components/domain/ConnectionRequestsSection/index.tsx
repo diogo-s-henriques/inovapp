@@ -26,11 +26,11 @@ export interface ConnectionRequestsSectionProps extends ViewProps {
 /**
  * Pedidos de conexão pendentes, com Aceitar/Recusar. Não renderiza nada quando não há pedidos.
  *
- * Tem dois anfitriões, e é uma decisão consciente: a aba dos Matches (onde a decisão sempre
- * viveu) e o ecrã `connection-requests`, que existe porque a linha "N pedidos de conexão" da Home
- * e o aviso das Notificações levavam a um **separador** - e mudar de separador não empilha ecrã
- * nenhum, por isso não havia como voltar atrás com o gesto de deslizar do iOS. O ecrã novo é um
- * ecrã a sério, empilhado, e volta-se dele como de qualquer outro.
+ * Tem dois anfitriões, e é uma decisão consciente: a aba dos Matches (onde a decisão sempre viveu,
+ * e para onde apontam a linha "N pedidos de conexão" da Home e o aviso das Notificações) e o ecrã
+ * `connection-requests`, que é a mesma lista sozinha no ecrã e serve quem chega por um link - o
+ * `url` de um aviso traz a pessoa directamente aos pedidos (ver src/push/listener.ts), e aí o que
+ * ela quer é a lista, sem o resto do ecrã dos Matches à volta.
  *
  * A alternativa era tirar a decisão dos Matches, e não foi tomada: a lista dos Matches é onde a
  * pessoa a espera encontrar, e isso foi pedido antes deste ecrã existir.

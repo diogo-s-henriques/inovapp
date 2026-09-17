@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/auth/store';
 import { useAuthSync } from '@/auth/listener';
+import { useTheme } from '@/hooks/use-theme';
 import { useLocaleStore } from '@/i18n/store';
 import { authStage } from '@/lib/auth-gate';
 import { useNotificationObserver, usePushSync } from '@/push/listener';
@@ -102,6 +103,7 @@ const AUTH_SCREEN_ANIMATION = { animation: 'fade' } as const;
  * limite de erro mais externo de todos.
  */
 function AppTree() {
+  const theme = useTheme();
   useAuthSync();
   // Registar o dispositivo para avisos e tratar do toque num aviso. Os dois precisam do estado
   // da sessão, e é por isso que estão aqui e não no `src/push/`: os hooks vivem do que já foi
@@ -148,7 +150,13 @@ function AppTree() {
   }, [isReady, markInteractive]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    // As duas superfícies que envolvem a navegação levam a cor de fundo dos ecrãs, e não a cor da
+    // janela. O `fade` entre o Login e os separadores é uma transição em que os dois ecrãs estão
+    // translúcidos ao mesmo tempo, e uma transição que não encontra nada opaco por trás mostra o
+    // que está por baixo da app - que é branco. Era esse o clarão que se via ao entrar: o instante
+    // em que o ecrã de saída desaparece e só o novo está a aparecer. Com esta cor, o que se vê por
+    // trás é a mesma superfície dos ecrãs, e a transição fica só com o que ela tem para mostrar.
+    <GestureHandlerRootView style={[styles.root, { backgroundColor: theme.background }]}>
       <SafeAreaProvider>
         {/*
          * Tocar fora de um campo fechar o teclado **não** se faz aqui.
@@ -159,10 +167,16 @@ function AppTree() {
          * formas - `keyboardDismissProps` nos que não rolam (src/components/ui/KeyboardDismiss) e
          * `keyboardShouldPersistTaps="handled"` nos que rolam, que é o comportamento nativo.
          */}
-        <View style={styles.root}>
+        <View style={[styles.root, { backgroundColor: theme.background }]}>
           <BottomSheetModalProvider>
             {isReady && (
-              <Stack screenOptions={{ headerShown: false }}>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  // O mesmo por dentro do navegador: cada ecrã assenta sobre esta cor em vez de
+                  // sobre o vazio, e o que se vê durante uma transição é sempre a app.
+                  contentStyle: { backgroundColor: theme.background },
+                }}>
                 {/* `signing-in` mostra os mesmos ecrãs: quem acabou de carregar em "Entrar" ainda
                     está no formulário, à espera de saber se já tem perfil - e é daí que a Home se
                     dissolve quando chega. */}
@@ -186,10 +200,11 @@ function AppTree() {
                 <Stack.Protected guard={stage === 'app'}>
                   <Stack.Screen name="(tabs)" options={AUTH_SCREEN_ANIMATION} />
                   <Stack.Screen name="chat/[id]" />
-                  {/* Ecrã empilhado, e não uma mudança de separador, de propósito: chega-se
-                      aqui pela linha "N pedidos de conexão" da Home e pelo aviso das
-                      Notificações, e estes têm de deixar algo por baixo para o gesto de voltar
-                      (o deslize do iOS) ter o que desempilhar. */}
+                  {/* A lista dos pedidos de conexão sozinha num ecrã. Os toques da Home e das
+                      Notificações passaram a abrir a **aba dos Matches**, onde a mesma lista está
+                      com o resto do ecrã por trás; este ecrã ficou para quem chega por um link
+                      (o `url` de um aviso, ver src/push/listener.ts), que precisa de um destino
+                      que exista e de algo por baixo para o gesto de voltar ter o que desempilhar. */}
                   <Stack.Screen name="connection-requests" />
                   <Stack.Screen name="profile/[id]" />
                   <Stack.Screen name="profile-edit" />

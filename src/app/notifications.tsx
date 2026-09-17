@@ -271,14 +271,15 @@ export default function NotificationsScreen() {
             <ThemedText type="small" themeColor="textMuted" style={styles.sectionHint}>
               {i18n.notifications.connectionRequestHint}
             </ThemedText>
-            {/* O aviso abre o ecrã dos pedidos, e não a aba dos Matches: um separador não se
-                empilha, e quem entra por aqui tem de poder voltar com o gesto do iOS. A decisão
-                (aceitar/recusar) é a mesma lista nos dois sítios - é o mesmo componente. */}
+            {/* O aviso abre a **aba dos Matches**, onde esta decisão aparece com o resto do
+                ecrã por trás (é lá que se aceita ou recusa, e é o que a linha logo acima promete).
+                O ecrã empilhado dos pedidos continua a existir para quem chega por um link, mas
+                deixou de ser o destino dos toques daqui. */}
             <View style={styles.recentList}>
               {connectionRequests.map((request) => (
                 <Pressable
                   key={request.id}
-                  onPress={() => router.push('/connection-requests')}
+                  onPress={() => router.push('/matches')}
                   accessibilityRole="button"
                   accessibilityLabel={i18n.notifications.connectionRequestTitle}>
                   <ActivityListItem

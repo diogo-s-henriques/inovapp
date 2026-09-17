@@ -1,7 +1,7 @@
 # Verificação automática: tudo o que se corre à mão antes de um commit, a correr sozinho.
 #
 # São quatro suites (ver os scripts em package.json) e duas delas precisam do emulador do
-# Firestore, que é um processo Java — daí o `setup-java`. As outras duas (lógica e componentes)
+# Firestore, que é um processo Java - daí o `setup-java`. As outras duas (lógica e componentes)
 # são Node puro. Primeiro o que é rápido e não depende de rede (lint, tipos), para o erro
 # aparecer depressa; só depois as suites.
 name: Testes
@@ -11,7 +11,7 @@ on:
     branches: [main]
   pull_request:
 
-# Um push novo para o mesmo ramo cancela a corrida anterior — não vale a pena pagar duas vezes
+# Um push novo para o mesmo ramo cancela a corrida anterior - não vale a pena pagar duas vezes
 # pela mesma pergunta.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

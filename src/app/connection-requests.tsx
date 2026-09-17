@@ -19,10 +19,11 @@ import { ThemedText } from '@/components/ui/ThemedText';
 /**
  * Pedidos de conexão por decidir, num ecrã só para eles.
  *
- * Existe por causa de um gesto que faltava: a linha "N pedidos de conexão" da Home e o aviso das
- * Notificações levavam à **aba** dos Matches, e mudar de separador não empilha ecrã nenhum - não
- * havia nada por baixo para o deslize de voltar do iOS desempilhar. Este ecrã é um ecrã a sério:
- * entra-se nele por cima de onde se estava e sai-se com o gesto (ou com a seta).
+ * Existe para quem chega **directamente aos pedidos** por um link: o `url` de um aviso (ver
+ * src/push/listener.ts) aponta para aqui, e nesse caso o que a pessoa quer é a lista, por cima de
+ * onde estava, com o gesto de voltar do iOS (ou a seta) a funcionar. Os toques dentro da app - a
+ * linha "N pedidos de conexão" da Home e o aviso das Notificações - abrem a **aba dos Matches**,
+ * onde a mesma lista está com o resto do ecrã por trás.
  *
  * Mostra o mesmo que a secção dos Matches, e mostra-o com o mesmo componente
  * (`ConnectionRequestsSection`): aceitar/recusar tem um comportamento só - criar a conversa,
