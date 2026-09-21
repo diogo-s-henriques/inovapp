@@ -4,7 +4,8 @@ import type { Auth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { activateAppCheck } from '@/lib/app-check';
+// O App Check está desligado nesta build — ver a nota junto ao `activateAppCheck`, no fim do ficheiro.
+// import { activateAppCheck } from '@/lib/app-check';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -63,8 +64,25 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
  * Antes da Auth e do Firestore, e de propósito: o App Check cola um token a cada pedido, e um
  * serviço criado primeiro podia mandar a sua primeira leitura sem ele. Numa build sem o módulo
  * nativo isto não faz nada (ver src/lib/app-check.ts).
+ *
+ * **Desligado nesta build, e a causa já é conhecida.** Isto começou por ser um teste (a app fechava
+ * no arranque e o App Check era a única peça nova do lado nativo), mas o fecho acabou por revelar-se
+ * outra coisa: o plugin do `@react-native-firebase/app-check` inseria um **segundo**
+ * `FirebaseApp.configure()` no `AppDelegate`, e o FirebaseCore lança uma excepção Objective-C na
+ * segunda (`App named __FIRAPP_DEFAULT has already been configured`). O plugin saiu do `app.json`
+ * (ver o README, em "App Check") e a app voltou a abrir.
+ *
+ * Fica desligado **de propósito nesta submissão**: com o plugin fora, a linha
+ * `RNFBAppCheckModule.sharedInstance()` que registava a fábrica do atestador no arranque também
+ * desapareceu. O `app-check.ts` continua a registá-la (é o `provider.configure` dele, do lado do
+ * JavaScript, que a chama), mas isso é um caminho que ainda **não foi validado** num telemóvel — e
+ * uma submissão à App Store não é o sítio para o descobrir. Voltamos a ligar quando houver uma
+ * build de ensaio para o confirmar.
+ *
+ * Nada se perde até lá: a fiscalização do App Check **ainda não está ligada no console**, por isso
+ * os pedidos continuam a ser atendidos sem atestação (ver os passos no README).
  */
-activateAppCheck(app);
+// activateAppCheck(app);
 
 export const auth = createAuth();
 export const db = getFirestore(app);

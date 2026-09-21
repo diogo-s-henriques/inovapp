@@ -800,21 +800,39 @@ sentido único"): numa build que não o tenha, não há atestação e todo o res
 
 **Feito:** a app iOS está registada no Firebase (`1:1008777430223:ios:8bac5797d554fd0dd0e3ba`), o
 `GoogleService-Info.plist` está no repositório (público por desenho, como o `google-services.json`),
-os dois pacotes estão instalados e o `app.json` tem os plugins - com uma **ordem que não é
-decorativa**:
+os dois pacotes estão instalados e o `app.json` tem **um** plugin do RNFB:
 
 ```json
 "plugins": [
-  "@react-native-firebase/app-check",
   ["@react-native-firebase/app", { "ios": { "disableSPM": true } }]
 ]
 ```
 
-O plugin do `app` escreve `FirebaseApp.configure()` no `AppDelegate`, e o do `app-check` tem de
-registar o módulo **antes** disso - é o próprio código do plugin que o diz. Pela ordem inversa (a do
-exemplo de instalação do RNFB), o `app-check` encontra o bloco já escrito, acrescenta o seu *depois*
--e fica com `configure()` duas vezes, a segunda depois do registo. Nesta ordem, o plugin do `app`
-reconhece o `configure()` do `app-check` e não repete nada.
+**O plugin do `app-check` esteve aqui, e foi ele que fechou a app ao abrir.** Os dois plugins
+escrevem no `AppDelegate`, e o do `app-check` tem um ramo que insere `FirebaseApp.configure()`
+**depois** do bloco do `app` quando encontra o marcador `@generated end
+@react-native-firebase/app-didFinishLaunchingWithOptions` (`plugin/build/ios/appDelegate.js`, o
+ramo `if (contents.includes(firebaseLine))`). Saiu um `AppDelegate` com o `configure()` **duas
+vezes**, e o FirebaseCore não perdoa a segunda - lança uma excepção Objective-C a partir do
+`didFinishLaunchingWithOptions`:
+
+```
+App named __FIRAPP_DEFAULT has already been configured.
+```
+
+O sintoma era o pior possível para diagnosticar: a app instalada **abria e fechava logo a seguir**,
+sem ecrã de erro. O `.ips` do iPhone não ajudava - o binário de release sai sem símbolos, e tudo o
+que ele mostra são deslocamentos numéricos. Foi preciso ler o `LC_FUNCTION_STARTS` e resolver as
+referências a `__cfstring` do binário para chegar às quatro funções do FirebaseCore e às mensagens
+que elas lançam. **Nenhuma guarda de ordem resolve isto** - a anterior (o `app-check` primeiro, para
+o plugin do `app` ver o `configure()` dele e não repetir) partia do princípio de que os plugins
+correm pela ordem do `app.json`, e não correm. Com um plugin só, o problema não existe: quem fica
+regista o módulo e escreve o `configure()` uma única vez.
+
+O que se perde: a linha `RNFBAppCheckModule.sharedInstance()` que registava a fábrica do atestador
+antes do `configure()`. O `src/lib/app-check.ts` regista-a do lado do JavaScript (é o
+`initializeAppCheck` do RNFB que a usa), e mantê-la lá é o que permite voltar a ligar tudo sem
+mexer no `AppDelegate`.
 
 Do lado do iOS há ainda uma decisão de ferramentas: o RNFB resolve o Firebase por **Swift Package
 Manager**, que pede frameworks dinâmicos, enquanto o Expo 57 traz o React Native **pré-compilado**,

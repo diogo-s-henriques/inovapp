@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "INOVAPP",
+    "name": "InovApp",
     "slug": "INOVAPP",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -32,7 +32,6 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "@react-native-firebase/app-check",
       [
         "@react-native-firebase/app",
         {
