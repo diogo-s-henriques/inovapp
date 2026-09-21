@@ -76,6 +76,22 @@ jobs:
         with:
           # A mesma versão em que o projeto é desenvolvido (ver README e o fluxo de testes).
           node-version: 24
+          cache: npm
+
+      # **Este passo não é opcional.** O `eas` resolve os plugins do `app.json` (o do RNFB, o do
+      # `expo-splash-screen`, ...) na pasta do projeto **antes** de compilar, e essa resolução segue
+      # os `require` dos plugins - que vivem no `node_modules`. Sem ele, a build local morre em
+      # segundos, e a mensagem nem menciona dependências:
+      #
+      # ```
+      # Failed to resolve plugin for module "@react-native-firebase/app" relative to
+      # "/Users/runner/work/inovapp/inovapp". Do you have node modules installed?
+      # ```
+      #
+      # Foi assim que a primeira corrida deste fluxo falhou. (Nos servidores do EAS não se nota,
+      # porque lá as dependências são instaladas na cópia do projeto que a build recebe.)
+      - name: Instalar dependências
+        run: npm ci
 
       # O `eas-cli` não é dependência do projeto - é uma ferramenta que se corre, não uma peça que
       # se empacota. Instalado globalmente aqui, como o `npx eas-cli` o faz na máquina de quem
