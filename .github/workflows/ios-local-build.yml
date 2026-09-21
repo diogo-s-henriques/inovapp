@@ -27,8 +27,20 @@
 # ## Como se usa
 #
 # Corre-se à mão (Actions > "Build iOS (para a loja)" > Run workflow). Não dispara por push, de
-# propósito: uma build de loja é um ato deliberado, não um efeito de gravar um ficheiro. O que
-# escreveres em "what-to-test" aparece no TestFlight, ao lado da build.
+# propósito: uma build de loja é um ato deliberado, não um efeito de gravar um ficheiro.
+#
+# **O texto de "o que testar" no TestFlight não sai daqui.** O `eas submit` aceita `--what-to-test`,
+# mas por baixo ele é o parâmetro `changelog`, e a Expo só o permite no plano **Enterprise** - a
+# submissão é recusada depois de o `.ipa` já ter sido carregado:
+#
+# ```
+# ✖ Failed to schedule iOS submission
+# This submission specified the `changelog` parameter.
+# Changelog submission is currently available for Enterprise plan only.
+# ```
+#
+# Escreve-se à mão no App Store Connect (TestFlight > a build > "What to Test"), onde não custa nada.
+# Foi assim que a primeira submissão deste fluxo falhou: com a build já feita e a faltar só isto.
 #
 # ## O que isto precisa
 #
@@ -45,20 +57,11 @@ on:
         description: 'Submeter ao App Store Connect (TestFlight) no fim da build'
         type: boolean
         default: true
-      what-to-test:
-        description: 'O que dizer ao TestFlight sobre esta build'
-        type: string
-        default: 'Correção do fecho ao abrir: o AppDelegate deixou de chamar FirebaseApp.configure() duas vezes.'
 
 # Duas builds da loja ao mesmo tempo só gastam tempo e podem colidir nas credenciais.
 concurrency:
   group: ios-store-build
   cancel-in-progress: false
-
-# O que escrever em "what-to-test" viaja por variável de ambiente e não por interpolação no script:
-# um texto com aspas ou `$` dentro não pode partir o comando que faz a submissão.
-env:
-  WHAT_TO_TEST: ${{ inputs.what-to-test }}
 
 jobs:
   build:
@@ -174,8 +177,5 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          ARGS=(--platform ios --profile production --non-interactive --path "${{ steps.artefacto.outputs.ipa }}")
-          if [ -n "$WHAT_TO_TEST" ]; then
-            ARGS+=(--what-to-test "$WHAT_TO_TEST")
-          fi
-          eas submit "${ARGS[@]}"
+          eas submit --platform ios --profile production --non-interactive \
+            --path "${{ steps.artefacto.outputs.ipa }}"
