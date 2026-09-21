@@ -1,0 +1,165 @@
+# A build de iOS para a loja, feita fora dos servidores do EAS.
+#
+# ## Porque é que isto existe
+#
+# O plano Free do EAS dá 30 builds por mês, **até 15 para iOS**, e o dia 21/09/2026 ficou com essa
+# quota esgotada - o comando que costumávamos correr não chega a compilar nada:
+#
+# ```
+# This account has used its iOS builds from the Free plan this month,
+# which will reset in 9 days (on Thu Oct 01 2026).
+# ```
+#
+# O `eas build --local` corre exatamente o mesmo processo (prebuild, CocoaPods, xcodebuild) mas na
+# máquina onde é pedido, e a documentação é explícita sobre o que ele ainda fala com o EAS:
+#
+# ```
+# docs.expo.dev/build-reference/local-builds
+#   "With local builds, ... o único contacto com os servidores do EAS é:
+#    confirmar que o projeto @conta/slug existe; e, se estiveres a usar credenciais geridas,
+#    descarregá-las."
+# ```
+#
+# Daí este ficheiro: um runner **macOS** do GitHub (grátis em repositórios públicos) faz o trabalho
+# que os servidores do EAS faziam, sem gastar quota. As credenciais continuam a vir do EAS - o
+# certificado de distribuição e o perfil App Store que lá estão, e que este fluxo **não** toca.
+#
+# ## Como se usa
+#
+# Corre-se à mão (Actions > "Build iOS (para a loja)" > Run workflow). Não dispara por push, de
+# propósito: uma build de loja é um ato deliberado, não um efeito de gravar um ficheiro. O que
+# escreveres em "what-to-test" aparece no TestFlight, ao lado da build.
+#
+# ## O que isto precisa
+#
+# Um segredo do repositório chamado `EXPO_TOKEN`, criado em expo.dev/settings/access-tokens. É por
+# ele que o runner se autentica para descarregar as credenciais geridas. **A possibilidade de
+# contornar a quota depende de as credenciais continuarem no EAS**: se algum dia forem apagadas de
+# lá, este fluxo falha na assinatura, e o sítio onde isso se arranja é `eas credentials`.
+name: Build iOS (para a loja)
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: 'Submeter ao App Store Connect (TestFlight) no fim da build'
+        type: boolean
+        default: true
+      what-to-test:
+        description: 'O que dizer ao TestFlight sobre esta build'
+        type: string
+        default: 'Correção do fecho ao abrir: o AppDelegate deixou de chamar FirebaseApp.configure() duas vezes.'
+
+# Duas builds da loja ao mesmo tempo só gastam tempo e podem colidir nas credenciais.
+concurrency:
+  group: ios-store-build
+  cancel-in-progress: false
+
+# O que escrever em "what-to-test" viaja por variável de ambiente e não por interpolação no script:
+# um texto com aspas ou `$` dentro não pode partir o comando que faz a submissão.
+env:
+  WHAT_TO_TEST: ${{ inputs.what-to-test }}
+
+jobs:
+  build:
+    # macOS é obrigatório: o `--local` só é suportado em macOS e Linux, e compilar para iOS precisa
+    # de Xcode. Os minutos de runner macOS são grátis em repositórios públicos.
+    runs-on: macos-latest
+    # Uma build local não tem cache nenhuma (a documentação diz que a cache "não é suportada"), por
+    # isso é mais lenta do que os ~7 minutos dos servidores do EAS.
+    timeout-minutes: 150
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # A mesma versão em que o projeto é desenvolvido (ver README e o fluxo de testes).
+          node-version: 24
+
+      # O `eas-cli` não é dependência do projeto - é uma ferramenta que se corre, não uma peça que
+      # se empacota. Instalado globalmente aqui, como o `npx eas-cli` o faz na máquina de quem
+      # desenvolve.
+      - name: Instalar o eas-cli
+        run: npm install --global eas-cli
+
+      # As duas ferramentas que a documentação exige para uma build local de iOS. O CocoaPods já vem
+      # na imagem do runner; o fastlane não, e é ele que conduz o xcodebuild. O fallback pelo brew
+      # existe porque o `gem install` depende da versão de Ruby da imagem, que muda sem aviso.
+      - name: Garantir fastlane e CocoaPods
+        run: |
+          command -v fastlane >/dev/null || sudo gem install fastlane -N || brew install fastlane
+          command -v pod >/dev/null || brew install cocoapods
+          fastlane --version | head -1
+          pod --version
+
+      # Falhar aqui, com uma mensagem que diz o que fazer, é melhor do que falhar a meio da
+      # compilação por causa de um segredo que não existe.
+      - name: Confirmar que o EXPO_TOKEN existe
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Falta o segredo EXPO_TOKEN neste repositório."
+            echo "Cria um em https://expo.dev/settings/access-tokens e adiciona-o em"
+            echo "Settings > Secrets and variables > Actions > New repository secret."
+            exit 1
+          fi
+
+      # `set -o pipefail` não é decorativo: sem ele, o código de saída deste passo era o do `tee`,
+      # que é sempre 0 - e uma build falhada seguia para a submissão como se tivesse corrido bem.
+      - name: Compilar para a loja, localmente
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          # Onde o `.ipa` fica. Por omissão o EAS copia-o para o diretório atual, o que aqui seria a
+          # raiz do repositório.
+          EAS_LOCAL_BUILD_ARTIFACTS_DIR: ${{ github.workspace }}/build-artifacts
+          # Não apagar o diretório de trabalho no fim: é o que permite ler os registos do Xcode se
+          # alguma coisa correr mal (ficam em `logs/`, lá dentro).
+          EAS_LOCAL_BUILD_SKIP_CLEANUP: 1
+        run: |
+          set -o pipefail
+          mkdir -p build-artifacts
+          eas build --local --non-interactive --profile production --platform ios 2>&1 \
+            | tee build-artifacts/build.log
+
+      - name: Identificar o artefacto
+        id: artefacto
+        run: |
+          IPA=$(ls build-artifacts/*.ipa | head -1)
+          echo "ipa=$IPA" >> "$GITHUB_OUTPUT"
+          ls -lh "$IPA"
+
+      # Curta vida de propósito: um repositório público mostra os artefactos de um fluxo a quem o
+      # pode ver, e o `.ipa` não é material que interessa guardar aqui - o que interessa é o que já
+      # está no App Store Connect.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: InovApp-ipa
+          path: build-artifacts/*.ipa
+          retention-days: 2
+          if-no-files-found: error
+
+      # Só quando falha: um registo de xcodebuild tem dezenas de megabytes, e guardá-lo sempre era
+      # guardar quase sempre lixo.
+      - name: Guardar o registo da build (só se falhar)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build-artifacts/build.log
+          retention-days: 3
+          if-no-files-found: ignore
+
+      # Submeter do runner e não da máquina de quem desenvolve: assim o `.ipa` não anda de mão em
+      # mão, e a chave de API da App Store Connect que o EAS já tem é usada onde ela está.
+      - name: Submeter ao App Store Connect
+        if: ${{ inputs.submit }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          ARGS=(--platform ios --profile production --non-interactive --path "${{ steps.artefacto.outputs.ipa }}")
+          if [ -n "$WHAT_TO_TEST" ]; then
+            ARGS+=(--what-to-test "$WHAT_TO_TEST")
+          fi
+          eas submit "${ARGS[@]}"

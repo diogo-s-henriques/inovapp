@@ -252,6 +252,42 @@ variáveis, o schema também aceita a sintaxe `$NOME` (ex.: `"ascApiKeyPath": "$
 que lê o valor do ambiente no momento em que corre. O que não se faz é pôr qualquer delas no
 repositório, que é público.
 
+#### Quando a quota de builds do EAS acaba (build local, no CI)
+
+O plano Free dá 30 builds por mês, **até 15 para iOS**, e a 21/09/2026 a conta bateu nesse limite - o
+comando de sempre deixa de compilar nada e devolve só isto:
+
+```
+This account has used its iOS builds from the Free plan this month,
+which will reset in 9 days (on Thu Oct 01 2026).
+```
+
+O caminho alternativo não é pagar nem esperar: é o **`eas build --local`**, que corre exatamente o
+mesmo processo (prebuild, CocoaPods, xcodebuild) na máquina onde é pedido. A documentação diz o que
+ele ainda fala com o EAS, e não inclui a quota:
+
+```
+docs.expo.dev/build-reference/local-builds
+  "With local builds, ... the only communication with EAS servers is:
+   to make sure project @account/slug exists; if you are using managed credentials to download them."
+```
+
+Só que isso precisa de **macOS com Xcode** (o Windows não serve, e o WSL é Linux - sem Xcode). Daí o
+`.github/workflows/ios-local-build.yml`: um runner **macOS** do GitHub (grátis em repositórios
+públicos) corre o `--local` e, no fim, submete ao App Store Connect de lá mesmo - assim o `.ipa` não
+anda de mão em mão. Precisa de uma coisa que não vive no repositório: o segredo **`EXPO_TOKEN`**
+(expo.dev/settings/access-tokens, em Settings > Secrets and variables > Actions).
+
+Duas consequências a saber:
+
+- **depende das credenciais geridas.** É do EAS que continuam a vir o certificado de distribuição e o
+  perfil App Store; se forem apagados de lá, o fluxo falha na assinatura (`eas credentials` é onde
+  isso se arranja). Este fluxo **não** cria nem altera credenciais;
+- **o Xcode é o da imagem do runner, não o do EAS.** Uma limitação explícita do `--local` é que os
+  campos `node`/`fastlane`/`cocoapods`/`image` do `eas.json` são ignorados. Uma build de loja feita
+  aqui é, portanto, a mesma receita com ferramentas um pouco diferentes - e foi por isso que este
+  caminho ficou **depois** de a app já ter sido validada numa build do EAS.
+
 #### O primeiro envio no Play Console (e a chave de assinatura)
 
 **A app já está criada na Play Console** (`INOVAPP`, gratuita, tipo *app*). O primeiro `.aab` sobe-se
