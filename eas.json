@@ -4,14 +4,27 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAQLSPrAOiXf5ufftllXEVkkn0H0VnJzYc",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "inovapp-68021.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "inovapp-68021",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "inovapp-68021.appspot.com",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "1008777430223",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:1008777430223:web:654d2e0603277454d0e3ba"
+      }
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal"
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal"
     },
     "production": {
+      "extends": "base",
       "uploadSourceMaps": true,
       "autoIncrement": true
     }

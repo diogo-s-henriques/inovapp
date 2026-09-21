@@ -289,3 +289,107 @@ Se a conta de programador for **pessoal** (criada depois de novembro de 2023), a
 depois de um teste fechado com **12 testadores durante 14 dias** - ou seja, há duas semanas entre o
 primeiro `.aab` e o público, e os testadores têm de aceitar o convite. Contas de **organização**
 (ISEC) não têm este requisito. Vale a pena confirmar qual é antes de contar com uma data.
+
+## A revisão da 1.0 (6): as duas recusas (19/09/2026)
+
+Duas, e independentes uma da outra. A 2.1(a) é um defeito da app e resolve-se com código; a 3.2 é
+uma discussão de distribuição e resolve-se com uma resposta (ou com uma decisão de produto).
+
+### 2.1(a) - "we were unable to review the app because it crashed on launch"
+
+Não era intermitente nem do dispositivo do revisor (iPhone 17 Pro Max, iOS 27.0): era **sempre**, em
+qualquer aparelho, em qualquer build vinda dos servidores do EAS. A causa é uma configuração que
+nunca chegou ao bundle:
+
+```
+.env no .gitignore, sem .easignore
+  -> o EAS arquiva o projeto pelo .gitignore e o .env nao sobe para o construtor
+  -> as seis EXPO_PUBLIC_FIREBASE_* saem undefined no bundle de loja
+  -> src/lib/firebase.ts faz `export const auth = createAuth()` no topo do ficheiro
+  -> o SDK do Firebase recusa a chave vazia (auth/invalid-api-key) e o modulo rebenta
+  -> um throw a avaliar um modulo nao tem ecra por tras: a app fecha ao abrir
+```
+
+Está escrita por inteiro no README, em "As variáveis que as lojas precisam". O que fica para esta
+ficha é o que ela obriga a fazer **antes de voltar a submeter**:
+
+1. as chaves passaram para o `eas.json` (perfil `base`), que é o que a build de loja lê;
+2. **build nova** - o valor vai dentro do bundle, por isso a build que já existe não serve;
+3. e a prova de que o bundle agora tem configuração, antes de gastar a build:
+
+```bash
+rm -rf .expo/export-check
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=prova-do-eas-12345 npx expo export --platform ios --output-dir .expo/export-check
+BUNDLE=$(find .expo/export-check -name '*.hbc' | head -1)
+grep -c 'prova-do-eas-12345' "$BUNDLE"     # tem de dar 1
+```
+
+Não se submete antes de esta linha dar 1. Foi não a ter que se mandaram duas builds sem
+configuração nenhuma.
+
+### 3.2 - "intended to be used by a specific business or organization"
+
+A Apple perguntou se a app é para uma organização específica e, se acharmos que não, responde a
+cinco perguntas. **Os factos estão do lado deles**: o registo exige email institucional
+(`src/constants/auth.ts`) e as regras do Firestore derivam o papel do domínio do email - só entram
+`@alunos.iseclisboa.pt` e `@iseclisboa.pt`. Dizer que é para o público geral sem mais nada era falso,
+e a revisão verifica-o.
+
+O que se pode dizer, e é verdade, é isto: **não é uma ferramenta interna de uma empresa**, é um
+serviço de uma instituição de ensino, aberto a quem lá estuda ou ensina, sem convite, sem aprovação e
+sem pagamento. E há um precedente verificável, que é o argumento mais forte desta resposta:
+
+- **Campus Buddy** (`https://apps.apple.com/pt/app/campus-buddy/id6761728419`, programador *ISEC
+  Lisboa*, a mesma conta de programador) está **publicamente** na App Store, na categoria Ensino, e a
+  descrição diz que "alcança todos os alunos da instituição". É o mesmo modelo de acesso, a mesma
+  instituição - e é do mesmo projeto ("Happy Campus") de onde vem o documento de privacidade que
+  esta submissão usa;
+- a App Store distribui publicamente apps universitárias equivalentes (a app do ISCTE, a netPApp).
+
+Uma coisa a ter em conta: **o revisor não conseguiu abrir a app**. A 3.2 foi escrita a partir do ecrã
+de login, e é possível que a correção do crash mude a avaliação sozinha. Se voltar a recusar, a
+resposta é a **distribuição não listada** (*App Store Connect > Distribuição*): fica na App Store,
+instala-se por link, não aparece em buscas - que é o que a Apple indica para este caso, e não obriga
+a mexer na app.
+
+Resposta a colar no *Resolution Center*:
+
+```
+The app is a student service of ISEC Lisboa, a higher education institution. It is not an internal
+tool of a company.
+
+1. Is the app restricted to users who are part of a single company or organization?
+   It is restricted to one educational institution: the students and teaching staff of ISEC Lisboa.
+   It is not restricted to a company's employees, and it is not an internal tool - it is the
+   institution's student mentoring service.
+
+2. Is the app designed for use by a limited or specific group of companies or organizations?
+   No. It serves the community of a single school, and it is not sold to or used by other
+   organizations.
+
+3. What features in the app, if any, are intended for use by the general public?
+   The audience is the institution's community - its students and teaching staff - not a company's
+   employees, and access requires nothing but being part of that community. Any person who studies or
+   teaches at the institution can obtain access by themselves, at any time, with no invitation, no
+   pre-approval from us and no payment. Under the same access model, the App Store already
+   distributes publicly "Campus Buddy" (id 6761728419, developer ISEC Lisboa) - an app of this same
+   institution, in the Education category, covered by the same privacy document we linked in this
+   submission.
+
+4. How do users obtain an account?
+   By registering in the app with their institutional email address (@alunos.iseclisboa.pt for
+   students, @iseclisboa.pt for teaching staff) and confirming it through the link sent to that
+   mailbox. There is no invitation, no approval and no membership list: it is self-service, the same
+   way a university student portal works. Two demonstration accounts are provided in App Review
+   Information.
+
+5. Is there any paid content in the app and if so who pays for it?
+   No. There are no in-app purchases, no subscriptions and no paid features. No user pays anything to
+   open an account or to use the app.
+
+We would also like to add that the crash on launch reported under guideline 2.1(a) has been found
+and fixed: the release build was compiled without the Firebase configuration (the environment file
+is not uploaded to the build server, so the app had no valid API key and terminated during startup).
+The configuration now travels with the repository, and build 7 carries the fix. We would appreciate
+another look at the app itself.
+```

@@ -10,6 +10,7 @@ import { useAuthSync } from '@/auth/listener';
 import { useTheme } from '@/hooks/use-theme';
 import { useLocaleStore } from '@/i18n/store';
 import { authStage } from '@/lib/auth-gate';
+import { isDev } from '@/lib/dev';
 import { useNotificationObserver, usePushSync } from '@/push/listener';
 import { reportError } from '@/lib/error-reporting';
 import { observe, useMarkInteractive } from '@/lib/observe';
@@ -30,16 +31,18 @@ SplashScreen.preventAutoHideAsync();
  *   nossos levam nomes, ids e disciplinas de pessoas (`firstName`, `toUid`, `id`…). O que aqui
  *   está é retirado antes de sair do dispositivo; a rota em si (o nome do ecrã) fica.
  *
- * **`dispatchInDebug: true` está ligado para se poder ver os primeiros eventos no desenvolvimento
- * build** (por omissão, uma build de debug não envia nada). **Tirar antes de publicar**: as
- * medições de uma build de debug estão distorcidas e sujam o dashboard.
+ * **`dispatchInDebug` segue o `isDev()`** - numa build de desenvolvimento os primeiros eventos
+ * chegam ao painel (por omissão, uma build de debug não envia nada) e numa build de loja ficam
+ * desligados, porque as medições de uma build de debug estão distorcidas e sujariam o dashboard.
+ * Esteve aqui um `true` fixo com a nota "tirar antes de publicar" - e o valor chegou às builds de
+ * loja, que é o que acontece a toda a configuração que depende de alguém se lembrar.
  *
  * **Numa build sem o módulo nativo** (o Expo Go, por exemplo) `observe` é `null` e não há nada para
  * configurar - ver src/lib/observe.ts. A interrogação é o que impede que isto deite abaixo o
  * arranque da app.
  */
 observe?.Observe.configure({
-  dispatchInDebug: true,
+  dispatchInDebug: isDev(),
   integrations: {
     'expo-router': {
       filteredParams: ['id', 'toUid', 'firstName', 'lastName', 'image', 'subject', 'role', 'date'],

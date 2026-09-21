@@ -13,9 +13,14 @@
 
 ```bash
 npm install
-cp .env.example .env     # .env.example lista as variáveis a preencher com os dados do Firebase
+cp .env.example .env     # só para desenvolvimento: as builds do EAS leem o eas.json (ver abaixo)
 npx expo start
 ```
+
+O `.env` serve o `expo start` e um development build (que vai buscar o JS ao Metro). **As builds do
+EAS não o leem**, e não é um pormenor de configuração: o `.env` está no `.gitignore`, o EAS arquiva
+o projeto por ele, e o bundle de loja sai sem as seis variáveis. Os mesmos seis valores vivem em
+`eas.json`, no perfil `base` - a história por inteiro está em [As variáveis que as lojas precisam](#as-variáveis-que-as-lojas-precisam-o-env-não-chega-lá).
 
 ### Publicar as regras do Firestore
 
@@ -660,6 +665,62 @@ com o mesmo `firestore.rules` que é publicado:
 ```bash
 npm run test:rules        # arranca o emulador, corre os testes e desliga-o (precisa de Java)
 ```
+
+### As variáveis que as lojas precisam (o `.env` não chega lá)
+
+**Duas builds foram para as lojas sem configuração do Firebase nenhuma, e a app fechava ao abrir.**
+Foi a primeira coisa que a Apple disse da 1.0 (6): *"we were unable to review the app because it
+crashed on launch"* (diretriz 2.1(a), iPhone 17 Pro Max, iOS 27.0). A causa estava numa linha que
+nenhuma leitura de código mostra, e é esta:
+
+```
+.env está no .gitignore, e não há .easignore
+  -> o EAS arquiva o projeto pelo .gitignore: o .env não sobe para o construtor
+  -> as seis EXPO_PUBLIC_FIREBASE_* saem undefined no bundle
+  -> src/lib/firebase.ts faz `export const auth = createAuth()` no topo do ficheiro
+  -> o SDK recusa a chave vazia: FirebaseError: Error (auth/invalid-api-key)
+  -> um throw ao avaliar um módulo não tem ecrã por trás: a app fecha no arranque
+```
+
+Não se descobriu isto a olhar para o código - perguntou-se ao **artefacto**. Dentro do `.ipa` e do
+`.aab` que tinham ido para as lojas, o valor da chave e o `projectId` apareciam **zero vezes**. E a
+segunda metade da prova corre-se em Node, com o mesmo SDK da app:
+
+```
+initializeAuth(app, { apiKey: undefined, ... })  ->  auth/invalid-api-key
+```
+
+Em desenvolvimento nada disto se vê, e é isso que torna este erro caro: o `expo start` lê o `.env`,
+um *development build* vai buscar o JS ao Metro, e a app corre em todos os telemóveis onde foi
+testada - falhando exatamente onde não podia, no revisor. (O `.env.example` dizia "sem estes valores
+a app arranca mas não consegue ligar-se ao Firebase". Era falso, e foi essa suposição que deixou
+passar as duas builds.)
+
+**A correção:** os seis valores vivem agora no `eas.json`, no perfil `base`, herdado pelos três
+perfis de build (`extends`). É o que a documentação do EAS prevê para o campo `env` - *"valores que
+committerias ao teu repositório"* -, e é verdade neste caso: as chaves de API do Firebase são
+públicas por desenho (ver a secção abaixo). O `eas.json` entrou no `paths-ignore` do
+`.github/secret_scanning.yml` pela mesma razão que os outros dois ficheiros.
+
+Duas coisas guardam isto, porque uma configuração em falta não se vê:
+
+- **um teste** (`tests/lib/eas-env.test.mts`): todas as `process.env.EXPO_PUBLIC_*` que o código lê
+têm de estar no `eas.json` **e** no `.env.example`, todos os perfis têm de chegar lá, e o `.env` e o
+`eas.json` não podem apontar para projetos diferentes (comparação feita sem nunca escrever os
+valores, que isto corre em logs);
+- **a prova de que o valor chega ao bundle**, que é a pergunta que o teste anterior não faz. Exporta-se
+e lê-se o resultado:
+
+```bash
+rm -rf .expo/export-check
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=prova-do-eas-12345 npx expo export --platform ios --output-dir .expo/export-check
+BUNDLE=$(find .expo/export-check -name '*.hbc' | head -1)
+grep -c 'prova-do-eas-12345' "$BUNDLE"     # 1 = uma variável do ambiente do processo entra no bundle
+```
+
+A última linha é o que interessa: o bundler **inlina o que vem do ambiente do processo**, que é
+exatamente o mecanismo do `env` do `eas.json` (localmente o valor sai do `.env`, no construtor sai
+do perfil). Foi assim que se soube que a correção funcionava antes de gastar uma build.
 
 ### A chave de API do Firebase está no repositório, e é para estar
 
