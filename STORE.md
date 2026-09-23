@@ -498,12 +498,19 @@ A distinção que sobrevive **não restringe acesso**: qualquer pessoa entra e u
 guarda é um **rótulo** - ser docente do ISEC é algo que a instituição empresta, não uma escolha de
 quem se regista. Nada na app ficou fechado atrás do domínio.
 
-O que isto obriga, e ainda falta:
+O que isto obriga, e onde está (fim do dia 23/09/2026):
 
-1. **Publicar as regras** (`firebase deploy --only firestore:rules`) - a app nova com as regras
-   velhas não deixa entrar ninguém de fora;
-2. **build nova** (é código: `src/constants/auth.ts`, `src/auth/actions.ts` e os dicionários);
-3. e a nota em *Review Notes* a dizer que é para distribuição pública, com o registo aberto.
+1. **Publicar as regras** - **feito** (`firebase deploy --only firestore:rules`). Sem elas no
+   servidor, a app nova não deixava entrar ninguém de fora: o cliente era o problema menor;
+2. **build nova** - **em curso**, `1.0.0 (11)`, pelo runner macOS do fluxo `.github/workflows`
+   (a quota de iOS do EAS está gasta até 1 de outubro). É ela que leva o código -
+   `src/constants/auth.ts`, `src/auth/actions.ts` e os dicionários;
+3. **as credenciais das duas contas** em *App Review Information*, com *Sign-in required* -
+   **falta**, e é o que decide a leitura da 2.1(a): a revisão pede "all account types", e esta app
+   tem dois lados, que são duas contas. Os endereços e a nota estão na secção *Notas para a
+   revisão*; a palavra-passe é a que ficou das lojas e **não fica neste repositório**;
+4. e a nota em *Review Notes* a dizer que o registo está aberto e a distribuição é pública -
+   escrita abaixo, pronta a colar.
 
 Resposta a colar no *Resolution Center*:
 
@@ -550,8 +557,8 @@ Registration is now open to any email address:
    purchases, no subscriptions and no advertising. No user pays anything to open an account or to
    use any feature.
 
-The app is submitted with public distribution on the App Store, which is now an accurate
-description of it.
+The app is submitted with public distribution on the App Store, in build 1.0.0 (11), which is now an
+accurate description of it.
 ```
 
 ### O que fica por arrumar (a próxima versão)
