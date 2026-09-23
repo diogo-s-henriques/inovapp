@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Cria a **conta de demonstração** que a revisão da Apple e a da Google usam.
+ * Cria a **conta de demonstração**.
  *
- * A app só entra com email institucional, e a conta só fica ativa depois de confirmar esse email
- * (ver firestore.rules, `isVerified()`). Um revisor não tem email do ISEC e não recebe link nenhum -
- * se não lhe dermos credenciais, a revisão é recusada com a diretriz 2.1 ("a app pede autenticação
- * e não foram fornecidas credenciais de demonstração"). É este script que faz essa conta, e fá-la
+ * O registo é aberto a qualquer email, mas a conta só fica ativa depois de confirmar esse email (ver
+ * firestore.rules, `isVerified()`) - e um revisor não vai ler a caixa de correio de um endereço que
+ * inventou na hora. Se não lhe dermos credenciais, a revisão é recusada com a diretriz 2.1 ("a app
+ * pede autenticação e não foram fornecidas credenciais de demonstração"). É este script que faz essa conta, e fá-la
  * com o email **já confirmado** e o perfil **já completo**, para o revisor ver a app e não o
  * assistente de configuração.
  *
@@ -29,9 +29,9 @@
  *
  * O `--email` só é preciso para fazer uma segunda conta (ex.: uma de aluno, que vê o deck de
  * descoberta que um Tutor não vê). O papel deriva do domínio, como em src/constants/auth.ts - um
- * endereço @alunos.iseclisboa.pt é Tutorando, um @iseclisboa.pt é Tutor. E o modo de participação
- * segue a regra da app: um docente ensina (`teach`), porque é isso que o assistente de perfil
- * escreve para ele (ver src/app/profile-setup.tsx).
+ * @iseclisboa.pt é Tutor, e **qualquer outro endereço é Tutorando**, que é o papel por omissão
+ * desde que o registo abriu. E o modo de participação segue a regra da app: um docente ensina
+ * (`teach`), porque é isso que o assistente de perfil escreve para ele (ver src/app/profile-setup.tsx).
  */
 const crypto = require('crypto');
 const fs = require('fs');
@@ -48,11 +48,14 @@ function getProjectId() {
   return JSON.parse(fs.readFileSync(firebasercPath, 'utf8')).projects.default;
 }
 
-/** O mesmo que as regras do Firestore exigem: o papel vem do domínio, nunca de uma escolha. */
+/**
+ * O mesmo que a app decide (ver `getAccountRole` em src/constants/auth.ts): só o **docente** é que o
+ * domínio decide. Qualquer outro endereço é aluno, e é isso que o apresenta à revisão como uma app
+ * aberta a quem quiser - era a restrição de domínio que a Apple recusava na diretriz 3.2 (ver
+ * STORE.md).
+ */
 function papelDoEmail(email) {
-  if (/^[^@]+@alunos\.iseclisboa\.pt$/i.test(email)) return 'student';
-  if (/^[^@]+@iseclisboa\.pt$/i.test(email)) return 'professor';
-  return null;
+  return /^[^@]+@iseclisboa\.pt$/i.test(email) ? 'professor' : 'student';
 }
 
 function argumento(nome) {
@@ -103,7 +106,11 @@ function perfil(email, papel, nome, modo, disciplinas) {
     role: papel,
     profileCompleted: true,
     fullName: `${firstName}${resto.length > 0 ? ` ${resto.join(' ')}` : ''}`,
-    about: 'Conta de demonstração para revisão da App Store e da Google Play.',
+    // O `about` aparece **dentro da app** (o cartão da descoberta e o perfil), e o revisor lê-o.
+    // Nomear as lojas aqui foi o que fez a revisão da 1.0 (10) tropeçar na diretriz 2.3.10
+    // ("information about third-party platforms"): um texto de bastidores não tem nada que fazer
+    // à frente de quem usa a app. Fica a dizer o mesmo sem nomear plataforma nenhuma.
+    about: 'Perfil de demonstração da INOVAPP. Ensina Programação e Matemática a quem precisa.',
     // Um docente não tem curso nem ano (a app mostra "Docente ISEC Lisboa" no lugar disso).
     ...(papel === 'student' ? { course: { type: 'Licenciatura', name: 'Engenharia Informática' }, year: '3º ano' } : {}),
     participationMode: modo,
@@ -121,10 +128,6 @@ async function main() {
   const disciplinas = (argumento('subjects') ?? 'Programação,Matemática').split(',').map((s) => s.trim());
 
   const papel = papelDoEmail(email);
-  if (!papel) {
-    console.error(`"${email}" não é um email institucional (@alunos.iseclisboa.pt ou @iseclisboa.pt).`);
-    process.exit(1);
-  }
 
   // Um docente ensina, sempre: é o que a app escreve para ele. Um aluno pode aprender, ensinar ou
   // as duas coisas - e o modo 'both' é o que dá a um revisor o deck de descoberta inteiro.

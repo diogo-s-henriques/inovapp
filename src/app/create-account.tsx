@@ -157,23 +157,27 @@ const styles = StyleSheet.create({
   passwordHint: {
     marginTop: Spacing.one,
   },
+  // As três linhas de baixo - "Lembrar-me / Esqueceu", o botão, e o rodapé - levam a **mesma**
+  // folga em cima, e a mesma dos campos do formulário (`form.gap`): 24. Antes eram 20, 32 e 16,
+  // três números escolhidos um a um, e o resultado lia-se como três blocos soltos em vez de uma
+  // pilha. As duas telas de entrada partilham esta cadência - ver o mesmo comentário no `login`.
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: Spacing.four,
+    marginTop: Spacing.five,
   },
   error: {
     marginTop: Spacing.three,
   },
   submit: {
-    marginTop: Spacing.six,
+    marginTop: Spacing.five,
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.one,
-    marginTop: Spacing.three,
+    marginTop: Spacing.five,
   },
 });

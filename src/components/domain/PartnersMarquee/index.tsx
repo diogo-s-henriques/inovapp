@@ -15,7 +15,24 @@ import { Spacing } from '@/constants/theme';
 // que define o passo do ciclo (uma faixa por volta).
 const STRIP_HEIGHT = 56;
 const STRIP_ASPECT_RATIO = 1093 / 131;
-const STRIP_WIDTH = STRIP_HEIGHT * STRIP_ASPECT_RATIO;
+
+/**
+ * Largura de uma cópia da faixa, a partir da altura pedida.
+ *
+ * Existe como função porque **o passo do ciclo tem de sair da mesma altura que desenha as cópias**.
+ * Este componente aceita `height` desde o início, mas o ciclo andava sempre a largura do valor por
+ * omissão. Enquanto ninguém passou outra altura, as duas coincidiam e não se notava; a partir do
+ * momento em que a faixa é maior, o passo e as cópias deixavam de bater certo e via-se uma
+ * **costura** a cada volta (a imagem salta para trás do que devia).
+ */
+function stripWidthFor(height: number): number {
+  return height * STRIP_ASPECT_RATIO;
+}
+
+/** Duração de uma volta à velocidade definida, para uma dada largura. */
+function loopDurationFor(width: number): number {
+  return Math.round((width / STRIP_SPEED_PER_SECOND) * 1000);
+}
 
 /**
  * A velocidade da faixa, em pontos por segundo.
@@ -30,7 +47,6 @@ const STRIP_WIDTH = STRIP_HEIGHT * STRIP_ASPECT_RATIO;
  * versão e os 72 pt/s que duraram uma volta.
  */
 const STRIP_SPEED_PER_SECOND = 50;
-const LOOP_DURATION_MS = Math.round((STRIP_WIDTH / STRIP_SPEED_PER_SECOND) * 1000);
 
 // O PNG (e não o WebP que aqui esteve) tem o fundo **transparente**: o ficheiro anterior era um
 // VP8 sem canal alfa, por isso trazia uma tarja branca colada que se via sobre o cinzento do ecrã.
@@ -44,8 +60,8 @@ const stripImage = require('../../../../assets/Parceiros/parceiros.png');
  * O ciclo anda exatamente uma largura de faixa; no ponto mais deslocado, a janela é coberta pelas
  * cópias que ficam à direita, ou seja `(cópias - 1) * largura >= largura da janela`.
  */
-function copiesForWindow(windowWidth: number): number {
-  return Math.max(2, Math.ceil(windowWidth / STRIP_WIDTH) + 1);
+function copiesForWindow(windowWidth: number, stripWidth: number): number {
+  return Math.max(2, Math.ceil(windowWidth / stripWidth) + 1);
 }
 
 /** A definição do sistema "reduzir movimento" - quem a tem ligada vê a faixa parada. */
@@ -83,8 +99,9 @@ export interface PartnersMarqueeProps {
  */
 export function PartnersMarquee({ height = STRIP_HEIGHT }: PartnersMarqueeProps) {
   const reduceMotion = useReduceMotion();
-  const scroll = useSharedValue(-STRIP_WIDTH);
-  const [windowWidth, setWindowWidth] = useState(STRIP_WIDTH);
+  const stripWidth = stripWidthFor(height);
+  const scroll = useSharedValue(-stripWidth);
+  const [windowWidth, setWindowWidth] = useState(stripWidth);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -92,16 +109,23 @@ export function PartnersMarquee({ height = STRIP_HEIGHT }: PartnersMarqueeProps)
       return;
     }
 
-    scroll.value = withRepeat(withTiming(0, { duration: LOOP_DURATION_MS, easing: Easing.linear }), -1, false);
+    // O valor de partida volta a ser -largura antes de arrancar: se a altura mudar, a posição que
+    // ficou a meio da volta anterior já não corresponde à grelha nova.
+    scroll.value = -stripWidth;
+    scroll.value = withRepeat(
+      withTiming(0, { duration: loopDurationFor(stripWidth), easing: Easing.linear }),
+      -1,
+      false,
+    );
 
     return () => cancelAnimation(scroll);
-  }, [reduceMotion, scroll]);
+  }, [reduceMotion, scroll, stripWidth]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: scroll.value }],
   }));
 
-  const stripStyle = { height, width: height * STRIP_ASPECT_RATIO };
+  const stripStyle = { height, width: stripWidth };
 
   if (reduceMotion) {
     return <Image source={stripImage} style={[styles.strip, stripStyle, styles.staticStrip]} resizeMode="contain" />;
@@ -112,7 +136,7 @@ export function PartnersMarquee({ height = STRIP_HEIGHT }: PartnersMarqueeProps)
       style={[styles.window, { height }]}
       onLayout={(event) => setWindowWidth(event.nativeEvent.layout.width)}>
       <Animated.View style={[styles.row, animatedStyle]}>
-        {Array.from({ length: copiesForWindow(windowWidth) }, (_, index) => (
+        {Array.from({ length: copiesForWindow(windowWidth, stripWidth) }, (_, index) => (
           <Image key={index} source={stripImage} style={[styles.strip, stripStyle]} resizeMode="contain" />
         ))}
       </Animated.View>

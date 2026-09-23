@@ -71,6 +71,7 @@ alternativa, cria só os que faltam no link que o erro da consola apresenta.
 | `npm run test:rules` | testes das regras do Firestore no emulador (precisa de Java) |
 | `npm run logcat` | lê o logcat de um Android ligado por USB à procura da causa de um crash |
 | `node scripts/png-transparent-background.js <entrada> <saída>` | tira o fundo branco de um logótipo PNG (ver [Imagens com fundo branco](#imagens-com-fundo-branco)) |
+| `node scripts/png-inspect.js <ficheiro.png>` | diz o que um PNG tem: alfa, cor e quantidade de tinta (o par do anterior) |
 | `npm run icons:build` | gera os ícones da app (iOS, Android, favicon) a partir do logótipo da marca (`scripts/build-app-icons.js`) |
 | `npm run cleanup:legacy-profiles` | migração pontual dos perfis antigos (ver [Migração](#migração)) |
 | `npm run verify:legacy-accounts` | confirma à mão as contas anteriores à confirmação de email (ver [Confirmação de email](#confirmação-de-email)) |
@@ -136,6 +137,33 @@ poder ver se apanhou um logótipo claro por engano.
 A faixa dos parceiros (`assets/Parceiros/parceiros.png`, 1093x131, mostrada a 42 px de altura no
 `PartnersMarquee`) foi feita assim. O ficheiro que lá estava era um WebP **VP8 sem canal alfa** -
 tinha o mesmo problema do fundo branco e ainda a perda de qualidade da compressão.
+
+#### Quando a origem é um WebP
+
+O logótipo do INOVEDU (`assets/Parceiros/inovedu-2c475acd.png`, no crédito `PoweredBy` dos ecrãs de
+entrada) veio pelo mesmo caminho, com um passo a mais: a origem também era um WebP VP8 sem alfa, e
+**não há descodificador de WebP no Node deste projeto** (o leitor do
+`png-transparent-background.js` só lê PNG). O que há é o Chrome: renderiza-se o WebP numa página
+mínima com o fundo do documento transparente e tira-se um PNG - que é o que o script já sabe tratar.
+
+```bash
+# 1. uma página só com a imagem, do tamanho exato do ficheiro (`.expo/` está no .gitignore):
+#    <img src="../assets/Parceiros/entrada.webp" style="display:block;width:200px;height:59px">
+# 2. renderiza-a (o fundo do *documento* sai transparente; o do WebP não - é esse que o passo 3 tira)
+CHROME="/c/Program Files/Google/Chrome/Application/chrome.exe"
+"$CHROME" --headless=new --hide-scrollbars --window-size=200,59 \
+  --default-background-color=00000000 --screenshot=.expo/render.png 'file:///caminho/para/pagina.html'
+# 3. e o passo de sempre
+node scripts/png-transparent-background.js .expo/render.png assets/Parceiros/inovedu-2c475acd.png
+```
+
+O `node scripts/png-inspect.js <ficheiro.png>` lê um PNG e diz o que interessa antes de acreditar
+nele: se a moldura está mesmo transparente, de que cor é a tinta e quanta há.
+
+O `tests/lib/partner-logos.test.mts` fixa o resultado - o componente tem de exigir o **PNG tratado**
+(e não o WebP de origem), a moldura tem de estar toda transparente, e a tinta tem de ser escura o
+bastante para se ler sobre o fundo claro. É o mesmo género de teste do `app-icon.test.mts`, e existe
+porque este defeito já apareceu **duas vezes**.
 
 ### Depurar um crash no telemóvel (Android)
 
@@ -337,23 +365,26 @@ código atual - e não o que diz o commit etiquetado, que ficou para trás do tr
 | Ícone da app | 1024x1024 **sem canal alfa** - a Apple recusa o ficheiro de marketing com transparência. É o `assets/images/icon.png`, gerado por `npm run icons:build` a partir do logótipo da marca |
 | Capturas de ecrã | Apple: iPhone 6,7"; Play: 2 a 8 capturas **e** uma imagem de destaque 1024x500 |
 | Segurança de dados (Play) e App Privacy (Apple) | o que é recolhido, para que serve e se é ligado à identidade - o `PRIVACY.md` é a fonte para responder a isto |
-| Conta de demonstração | a app só aceita email institucional, por isso a **revisão não consegue entrar**. Feito: `npm run create:demo-account` cria `aluno.demo@alunos.iseclisboa.pt` (vê o deck inteiro) e `demo@iseclisboa.pt` (o lado do Tutor), com o email confirmado e o perfil completo - falta escrever as credenciais nas duas fichas |
+| Conta de demonstração | o registo é aberto a qualquer email, mas a conta só se ativa com o endereço **confirmado** - e um revisor não lê a caixa de um email inventado na hora, por isso sem credenciais a **revisão não consegue entrar**. Feito: `npm run create:demo-account` cria `aluno.demo@alunos.iseclisboa.pt` (vê o deck inteiro) e `demo@iseclisboa.pt` (o lado do Tutor), com o email confirmado e o perfil completo - falta escrever as credenciais **das duas contas** nas duas fichas |
 
-Texto de partida para a ficha (nome, subtítulo e descrição), para não se escrever do zero:
+Texto de partida para a ficha (nome, subtítulo e descrição), para não se escrever do zero. **A versão
+completa e atual - com os limites contados pelo `npm run store:check` - é o `STORE.md`**; isto aqui é
+só o resumo:
 
 ```
-Nome           INOVAPP
-Subtítulo      Mentorias entre alunos e docentes do ISEC Lisboa (máx. 30 car.)
+Nome           INOVAPP: Mentoria entre pares
+Subtítulo      Mentoria no ensino superior (máx. 30 car.)
 
 Descrição
-A INOVAPP liga quem quer aprender a quem pode ensinar, dentro do ISEC Lisboa.
+A INOVAPP liga quem quer aprender a quem pode ensinar, na tua instituição de ensino superior.
 
 · Descobre mentores por disciplina, curso e disponibilidade
 · Pede conexão e combina sessões de apoio em dois toques
 · Fala com quem te acompanha, com os materiais todos no mesmo sítio
 · Acompanha as tuas sessões (agendadas, dadas e recebidas)
 
-Só entra quem tem email institucional (@alunos.iseclisboa.pt ou @iseclisboa.pt).
+Entra quem quiser, com qualquer email: o registo é aberto, e a conta só fica ativa depois de a
+confirmares.
 ```
 
 > **Não prometer avisos no telemóvel nesta descrição** enquanto não existirem as Cloud Functions
@@ -461,7 +492,7 @@ Rotas em `src/app/` (Expo Router, ficheiro = rota):
 src/app/
   login.tsx, create-account.tsx      autenticação
   forgot-password.tsx                pedido de reposição de palavra-passe
-  verify-email.tsx                   confirmação do email institucional (antes do perfil)
+  verify-email.tsx                   confirmação do email (antes do perfil)
   profile-setup.tsx                  onboarding obrigatório após 1º login
   (tabs)/                            navegação principal, 5 separadores
     index.tsx                        Home
@@ -495,7 +526,7 @@ src/components/
                      EvaluationModal, RequestCard, ProfileSetup/, ScreenHero - o bloco de
                      cabeçalho comum aos cinco separadores -, StackHeader - o dos ecrãs
                      empilhados, com o BackButton -, ErrorScreen…)
-src/constants/       valores fixos (disciplinas, cursos, regras de email institucional, tema)
+src/constants/       valores fixos (disciplinas, cursos, a regra do papel a partir do email, tema)
 src/i18n/            traduções (pt, en), contrato `Translations` e store do idioma
 src/types/           tipos TypeScript partilhados
 tests/               testes automáticos, um diretório por suite (ver "Scripts"):
@@ -513,11 +544,21 @@ scripts/             utilitários (limpeza de perfis antigos, gerador de compone
 
 ## Autenticação e papéis
 
-Sem sistema de registo livre: o **papel do utilizador deriva sempre do domínio do email
-institucional**, nunca de uma escolha manual (`src/constants/auth.ts`):
+**O registo é livre**: qualquer email cria conta, e a conta só fica ativa depois de confirmar o
+endereço. Era a restrição de domínio que fazia a Apple recusar a distribuição pública (diretriz
+3.2) - enquanto as regras do servidor só aceitassem dois domínios, "esta app é de audiência geral"
+ninguém a podia escrever a sério. O raciocínio e a decisão estão no `STORE.md`.
 
-- `@alunos.iseclisboa.pt` → `student` (Tutorando)
-- `@iseclisboa.pt` → `professor` (Mentor)
+O papel continua a vir do email, mas **deixou de ser uma porta de entrada**
+(`src/constants/auth.ts`):
+
+- qualquer email → `student` (Tutorando/tutelado), que é o papel por omissão;
+- `@iseclisboa.pt` → `professor` (Tutor) - o rótulo de docente do ISEC, que a instituição empresta e
+  que por isso não é uma escolha de quem se regista.
+
+O par está também do lado do servidor (`roleAllowedForEmail`, em `firestore.rules`): aluno para
+todos os endereços, docente só para aquele domínio. Sem essa metade, um cliente feito à mão escrevia
+`role: 'professor'` com um email qualquer e aparecia no diretório como docente.
 
 Um utilizador pode ainda escolher o seu `participationMode` no onboarding (`learn` / `teach` /
 `both`) - é isto que decide se aparece como Tutorando, Mentor, ou ambos, dentro da app; ser
@@ -665,12 +706,14 @@ Não existe coleção de notificações: o ecrã de Notificações deriva tudo d
 `firestore.rules` é a fonte de verdade da autorização - **nenhuma regra de negócio de segurança
 depende só da UI**. Pontos a destacar:
 
-- `isVerified()` - a política transversal: sem o email institucional confirmado (`email_verified`
-  no token) não se lê nem se escreve nada, com as duas exceções contadas descritas em
-  [Confirmação de email](#confirmação-de-email). É esta a peça que o domínio do email não dá.
-- `users`: `create` valida que o `role` gravado bate com o domínio do email do token autenticado
-  (impede um cliente feito à mão criar-se com `role` arbitrário) e recusa qualquer campo privado
-  da conta; `update` nunca deixa mudar o `role` e exige o email confirmado.
+- `isVerified()` - a política transversal: sem o email confirmado (`email_verified` no token) não
+  se lê nem se escreve nada, com as duas exceções contadas descritas em
+  [Confirmação de email](#confirmação-de-email). É esta a peça que o domínio do email não dá - e,
+  agora que qualquer email entra, é **a única** que separa uma conta verdadeira de um endereço
+  inventado.
+- `users`: `create` valida o `role` gravado contra o email do token autenticado
+  (`roleAllowedForEmail`) e recusa qualquer campo privado da conta; `update` nunca deixa mudar o
+  `role` e exige o email confirmado.
 - `userAccounts`: só o próprio lê, e o `create` exige que o `email` gravado seja o do token.
   Foi esta a razão da separação: `users` é legível por toda a comunidade autenticada (a pesquisa
   e o matching precisam disso), portanto o email e a última entrada não podem viver lá.
@@ -994,10 +1037,11 @@ Três decisões que ficaram tomadas no código, para não se perderem no meio do
 
 ## Confirmação de email
 
-O papel de cada pessoa (Tutorando/Tutor) deriva do **domínio** do email institucional, e isso não
-prova que o email seja de quem o escreveu: qualquer pessoa podia criar conta com
-`professor.x@iseclisboa.pt` e ficar com um perfil em nome dela. O que fecha isso é o link que o
-Firebase manda para a caixa de correio - que só quem a lê pode abrir.
+O papel de docente deriva do **domínio** do email, e o domínio não prova que o email seja de quem o
+escreveu: qualquer pessoa podia criar conta com `professor.x@iseclisboa.pt` e ficar com um perfil em
+nome dela. O que fecha isso é o link que o Firebase manda para a caixa de correio - que só quem a lê
+pode abrir. Desde que o registo abriu (ver `STORE.md`, diretriz 3.2), esta é também a peça que
+impede contas em série com endereços inventados.
 
 Está em **três sítios**, e os três são precisos:
 
@@ -1605,21 +1649,29 @@ parte da app.
 
 ## Contas de teste
 
-A app só entra com email institucional, e uma revisão precisa de credenciais (a diretriz 2.1 da
-Apple recusa uma app que pede autenticação sem as fornecer). Existem duas contas **no projeto
-Firebase real**, criadas pelo `npm run create:demo-account`, já com o **email confirmado** e o
-**perfil completo** - para o revisor ver a app e não o assistente de configuração:
+Uma revisão precisa de credenciais (a diretriz 2.1 da Apple recusa uma app que pede autenticação
+sem as fornecer). O registo é aberto, mas a conta só se ativa com o **email confirmado** - e um
+revisor não vai ler a caixa de correio de um endereço que inventou na hora. Existem por isso duas
+contas **no projeto Firebase real**, criadas pelo `npm run create:demo-account`, já com o **email
+confirmado** e o **perfil completo** - para o revisor ver a app e não o assistente de configuração:
 
 | conta | papel | o que mostra |
 |---|---|---|
 | `demo@iseclisboa.pt` | **Tutor** (`professor`, modo `teach`) | o lado de quem ensina: tutorandos para si, pedidos de conexão a chegar, sessões |
 | `aluno.demo@alunos.iseclisboa.pt` | **Tutorando** (`student`, modo `both`) | o deck de descoberta inteiro, e as duas metades (aprende e ensina) |
 
+> **A conta de Tutor tem um defeito conhecido.** Quem só ensina e **não tem nenhum pedido pendente**
+> não vê lista nenhuma: cai no `BlockedScreen`, com o título "Funcionalidade bloqueada". É o
+> candidato mais provável ao *"such as Matches"* que a revisão da 1.0 (10) devolveu. Ver o aviso
+> nas notas de revisão do `STORE.md` - e é coisa para arrumar na próxima versão, porque numa app
+> aberta este ecrã aparece a qualquer mentor novo.
+
 **A palavra-passe não está aqui, e não pode estar**: este repositório é público. É a que foi passada
 em `--password` no dia em que cada conta nasceu, e escreve-se nos dois sítios onde os revisores a vão
 ler (esses sim, privados):
 
-- **App Store Connect** → a versão → *App Review Information* → *Sign-in required*;
+- **App Store Connect** → a versão → *App Review Information* → *Sign-in required*, com as **duas
+  contas**: a revisão pede acesso a *"all account types"*, e faltando uma falta metade da app;
 - **Play Console** → *App content* → *App access* → *All functionality is available without special
   access*: **não**, com as credenciais.
 

@@ -14,11 +14,32 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { Logo } from '@/components/ui/Logo';
 import { LanguageSwitcher } from '@/components/domain/LanguageSwitcher';
 import { PartnersMarquee } from '@/components/domain/PartnersMarquee';
+import { PoweredBy } from '@/components/domain/PoweredBy';
 import { Link } from 'expo-router';
 import { signIn, getAuthErrorMessage } from '@/auth/actions';
 import { useAuthStore } from '@/auth/store';
 
-// Ecrã de entrada; só aceita emails institucionais (ver getAccountRole em constants/auth.ts).
+/**
+ * Altura da faixa de parceiros neste ecrã.
+ *
+ * É passada daqui (e não deixada no valor por omissão do componente) porque é uma decisão de
+ * **desenho deste ecrã** - como o `height` do crédito logo acima -, e quem lê o ecrã vê os dois
+ * tamanhos lado a lado. A largura sai das proporções da imagem; a velocidade não muda com isto.
+ */
+const PARTNERS_STRIP_HEIGHT = 72;
+
+/**
+ * Altura do logótipo da INOVEDU no crédito - **a mesma do logótipo da INOVAPP** no cabeçalho
+ * (`Logo`, 24 pt).
+ *
+ * Não é um valor escolhido a esmo: é o que faz os dois lerem-se como marcas do mesmo nível, em vez
+ * de a assinatura do parceiro aparecer como um rodapé secundário. Se a altura do `Logo` mudar, é
+ * este número que tem de acompanhá-la.
+ */
+const POWERED_BY_HEIGHT = 24;
+
+// Ecrã de entrada. O registo é aberto a qualquer email (ver getAccountRole em constants/auth.ts):
+// o que o domínio ainda decide é o **papel**, não a entrada.
 export default function LoginScreen() {
   const theme = useTheme();
   const i18n = useI18n();
@@ -85,6 +106,9 @@ export default function LoginScreen() {
       </View>
 
       <View style={styles.content}>
+        {/* As três folgas do bloco são proporcionais (3:2:1) - ver os estilos. */}
+        <View style={styles.slackAboveForm} />
+
         <ThemedText type="title" style={styles.title}>
           {i18n.auth.welcomeTitle}
         </ThemedText>
@@ -134,9 +158,18 @@ export default function LoginScreen() {
             <Button label={i18n.auth.createAccount} variant="link" />
           </Link>
         </View>
+
+        {/* O crédito da INOVEDU vive dentro do bloco do formulário e desce até **2/3 do vão** que
+            vai do "Criar conta" à faixa - medido a descer desde o "Criar conta", que é o que o
+            afasta da linha de cima sem o colar à faixa. Quem o põe lá são as folgas de `flexGrow`
+            (ver os estilos), e não uma margem. A folga acima dele é a **mesma** que está entre o
+            logótipo e o "Bem-vindo". */}
+        <View style={styles.slackAboveCredit} />
+        <PoweredBy height={POWERED_BY_HEIGHT} />
+        <View style={styles.slackBelowCredit} />
       </View>
 
-      <PartnersMarquee />
+      <PartnersMarquee height={PARTNERS_STRIP_HEIGHT} />
     </SafeAreaView>
   );
 }
@@ -155,9 +188,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.five,
     paddingTop: Spacing.three,
   },
+  // Sem `justifyContent`: quem distribui o espaço são as três folgas abaixo, todas com `flexGrow`
+  // (o `justifyContent` só olha para o que sobra, e aqui não sobra nada).
   content: {
     flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: Spacing.five,
   },
   title: {
@@ -170,23 +204,46 @@ const styles = StyleSheet.create({
   form: {
     gap: Spacing.five,
   },
+  // As três linhas de baixo - "Lembrar-me / Esqueceu", o botão, e o "Criar conta" - levam a
+  // **mesma** folga em cima, e a mesma dos campos do formulário (`form.gap`): 24. Antes eram 20,
+  // 32 e 16, três números escolhidos um a um, e o resultado lia-se como três blocos soltos em vez
+  // de uma pilha. A folga igual é o que faz a leitura descer em passo certo.
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: Spacing.four,
+    marginTop: Spacing.five,
   },
   error: {
     marginTop: Spacing.three,
   },
   submit: {
-    marginTop: Spacing.six,
+    marginTop: Spacing.five,
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.one,
-    marginTop: Spacing.three,
+    marginTop: Spacing.five,
+  },
+  // As três folgas do bloco, todas em `flexGrow` e nenhuma em píxeis: em píxeis, a proporção durava
+  // um ecrã e desfazia-se no seguinte ("2/3 de 40" só é 2/3 naquele ecrã).
+  //
+  // 3 + 3 + 1 = 7 partes da sobra, e cada uma tem um dono:
+  //   - `slackAboveForm` (3) e `slackAboveCredit` (3) são **iguais**, e é isso que faz o vão entre
+  //     o logótipo e o "Bem-vindo" medir o mesmo que o vão entre o "Criar conta" e o crédito da
+  //     INOVEDU. Como as duas folgas vivem no mesmo contentor, partes iguais dão píxeis iguais em
+  //     qualquer ecrã - com píxeis fixos, o que é igual num ecrã não é no seguinte;
+  //   - `slackBelowCredit` (1) fecha o par de baixo a 3:1, e é isso que assenta o crédito a cerca
+  //     de **2/3 do vão** que desce do "Criar conta" até à faixa.
+  slackAboveForm: {
+    flexGrow: 3,
+  },
+  slackAboveCredit: {
+    flexGrow: 3,
+  },
+  slackBelowCredit: {
+    flexGrow: 1,
   },
 });

@@ -34,7 +34,9 @@ const PROJECT_ID = 'inovapp-68021';
 const EMULATOR_HOST = '127.0.0.1';
 const EMULATOR_PORT = 8080;
 
-// Contas usadas nos cenários. O papel de cada uma deriva sempre do domínio do email, como na app.
+// Contas usadas nos cenários. O papel de **docente** continua a derivar do domínio
+// (@iseclisboa.pt); todo o resto é aluno, que é o papel por omissão desde que o registo abriu (ver
+// DEFAULT_ACCOUNT_ROLE em src/constants/auth.ts).
 const ALUNO = { uid: 'alunoA', email: 'aluno.a@alunos.iseclisboa.pt' };
 const ALUNO_B = { uid: 'alunoB', email: 'aluno.b@alunos.iseclisboa.pt' };
 const PROFESSOR = { uid: 'professorA', email: 'professor.a@iseclisboa.pt' };
@@ -253,6 +255,44 @@ describe('users - o perfil é público dentro da comunidade, mas não se forja o
     const db = dbAs(PROFESSOR);
     await assertFails(
       setDoc(doc(db, 'users', PROFESSOR.uid), { role: 'student', profileCompleted: false }),
+    );
+  });
+
+  it('um email de fora do ISEC cria o perfil como aluno - o registo é aberto', async () => {
+    // É esta abertura que torna a distribuição pública da app uma afirmação verdadeira (era a
+    // restrição de domínio, e só ela, que a revisão da Apple recusava na diretriz 3.2): a regra
+    // já não recusa um endereço que não seja um dos domínios do ISEC.
+    const visitante = { uid: 'visitanteFora', email: 'alguem@exemplo.pt' };
+    await assertSucceeds(
+      setDoc(doc(dbAs(visitante), 'users', visitante.uid), {
+        role: 'student',
+        profileCompleted: false,
+      }),
+    );
+  });
+
+  it('um email de fora do ISEC NÃO se cria como docente', async () => {
+    // O rótulo de docente é a única parte que continua presa ao domínio, e é de propósito: é um
+    // rótulo que a instituição empresta. Sem isto, um cliente feito à mão escrevia
+    // `role: 'professor'` com um email qualquer e aparecia no diretório como docente do ISEC.
+    const visitante = { uid: 'visitanteFora', email: 'alguem@exemplo.pt' };
+    await assertFails(
+      setDoc(doc(dbAs(visitante), 'users', visitante.uid), {
+        role: 'professor',
+        profileCompleted: false,
+      }),
+    );
+  });
+
+  it('um email de fora do ISEC escreve o userAccounts da entrada como aluno', async () => {
+    const visitante = { uid: 'visitanteFora', email: 'alguem@exemplo.pt' };
+    await assertSucceeds(
+      setDoc(doc(dbAs(visitante), 'userAccounts', visitante.uid), {
+        email: visitante.email,
+        role: 'student',
+        lastLoginAt: serverTimestamp(),
+        rememberSession: false,
+      }),
     );
   });
 

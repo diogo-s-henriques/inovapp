@@ -68,7 +68,6 @@ export interface Translations {
     alreadyHaveAccount: string;
     passwordsDontMatch: string;
     passwordRequirements: string;
-    institutionalEmailRequired: string;
     errorInvalidEmail: string;
     errorEmailInUse: string;
     errorWeakPassword: string;
@@ -105,7 +104,7 @@ export interface Translations {
     clear: string;
     apply: (count: number) => string;
   };
-  /** Ecrã de confirmação do email institucional (ver src/lib/auth-gate.ts). */
+  /** Ecrã de confirmação do email (ver src/lib/auth-gate.ts). */
   emailVerification: {
     title: string;
     description: (email: string) => string;

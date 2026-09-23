@@ -70,10 +70,10 @@ export function getAuthErrorMessage(error: unknown): string {
  *   autenticado conseguiria ler o email e a última entrada de todos os outros.
  */
 export async function signUp(email: string, password: string, remember: boolean): Promise<void> {
+  // Devolve sempre um papel: o registo é aberto a qualquer email (ver DEFAULT_ACCOUNT_ROLE em
+  // src/constants/auth.ts). O único que não é o de aluno é o de docente do ISEC, que o domínio
+  // ainda decide - e é o mesmo par que a regra `roleAllowedForEmail` impõe no servidor.
   const role = getAccountRole(email);
-  if (!role) {
-    throw new Error(getTranslations().auth.institutionalEmailRequired);
-  }
 
   const credential = await createUserWithEmailAndPassword(auth, email, password);
 
@@ -120,11 +120,11 @@ export async function signIn(email: string, password: string, remember: boolean)
   // dispositivo, e tem de valer mesmo para contas cujo email não dá um `role` reconhecível.
   await setRememberedEmail(remember ? accountEmail : null);
 
+  // O papel vem sempre do email (docente só para @iseclisboa.pt, aluno para tudo o resto) e é
+  // sempre um papel: desde que o registo abriu, deixou de haver contas sem `role` reconhecível, e
+  // por isso as escritas de manutenção abaixo correm para todas - antes paravam à porta das
+  // contas cujo domínio ninguém reconhecia.
   const role = getAccountRole(accountEmail);
-
-  // Contas sem `role` reconhecível (email fora dos domínios institucionais) continuam a entrar:
-  // só não fazemos as escritas de manutenção, que as regras do Firestore recusariam.
-  if (!role) return;
 
   // setDoc com merge (e não updateDoc) também repara contas cujo documento ainda não exista no
   // Firestore: antes disto, um login válido no Auth rebentava com um erro sem sentido.

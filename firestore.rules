@@ -2,12 +2,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // O role deriva sempre do domínio do email institucional do token autenticado
-    // (student = @alunos.iseclisboa.pt, professor = @iseclisboa.pt) - nunca de uma escolha
-    // do cliente.
-    function roleMatchesEmailDomain(role) {
-      return (role == 'student' && request.auth.token.email.matches('(?i)^[^@]+@alunos\\.iseclisboa\\.pt$'))
-        || (role == 'professor' && request.auth.token.email.matches('(?i)^[^@]+@iseclisboa\\.pt$'));
+    // O papel deixou de ser uma porta de entrada. O registo aceita qualquer email (é isso que
+    // torna a distribuição pública da app uma afirmação verdadeira - ver a diretriz 3.2 da Apple
+    // no STORE.md) e quem entra com um endereço de fora é **aluno**. O que continua presa ao
+    // domínio é só o rótulo de **docente do ISEC**: é um rótulo que a instituição empresta, e por
+    // isso não pode ser uma escolha de quem se regista. Sem esta parte, um cliente feito à mão
+    // escrevia `role: 'professor'` com um email qualquer e aparecia no diretório como docente.
+    function isIsecTeacherEmail() {
+      return request.auth.token.email.matches('(?i)^[^@]+@iseclisboa\\.pt$');
+    }
+
+    function roleAllowedForEmail(role) {
+      return (role == 'student' && !isIsecTeacherEmail())
+        || (role == 'professor' && isIsecTeacherEmail());
     }
 
     // A caixa de correio institucional **confirmada** - o link que o Firebase manda ao registar e
@@ -79,7 +86,7 @@ service cloud.firestore {
       // que a confirmação do email existe para impedir.
       allow create: if request.auth != null && request.auth.uid == userId
         && hasNoPrivateAccountFields(request.resource.data)
-        && roleMatchesEmailDomain(request.resource.data.role)
+        && roleAllowedForEmail(request.resource.data.role)
         && (
           isVerified()
           || (request.resource.data.profileCompleted == false
@@ -133,7 +140,7 @@ service cloud.firestore {
       // de se registar com o email de outra pessoa).
       allow create: if request.auth != null && request.auth.uid == userId
         && request.resource.data.email == request.auth.token.email
-        && roleMatchesEmailDomain(request.resource.data.role);
+        && roleAllowedForEmail(request.resource.data.role);
       allow update: if request.auth != null && request.auth.uid == userId
         && request.resource.data.email == resource.data.email
         && request.resource.data.role == resource.data.role;

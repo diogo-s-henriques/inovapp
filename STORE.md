@@ -15,7 +15,7 @@ tropeça. O mesmo vale para "grátis": diz-se que não há compras dentro da app
 |---|---|---|
 | **URL da política de privacidade** | um endereço público com a política | **decidido**: `https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf` - ler a nota abaixo antes de o colar |
 | **URL de suporte** | uma página onde se possa pedir ajuda (não serve `mailto:`) | **decidido**: `https://happycampus.pt` |
-| **Conta de demonstração para a revisão** | a app só entra com email institucional e com o email confirmado - o revisor não tem como criar conta, e sem credenciais a revisão é recusada (diretriz 2.1) | **feita** (`npm run create:demo-account`): `aluno.demo@alunos.iseclisboa.pt` e `demo@iseclisboa.pt`, com o email confirmado e o perfil completo. Falta escrever as credenciais em *App Review Information* / *App access* |
+| **Conta de demonstração para a revisão** | o registo está aberto a qualquer email, mas a conta só fica ativa depois de **confirmar o email** - e um revisor não vai ler a caixa de correio de um endereço que inventou na hora. Sem credenciais, a app não se consegue ver e a revisão é recusada (diretriz 2.1) | **feita** (`npm run create:demo-account`): `aluno.demo@alunos.iseclisboa.pt` e `demo@iseclisboa.pt`, com o email confirmado e o perfil completo. **Escrever as credenciais das *duas* contas em *App Review Information* (com *Sign-in required*) e em *App access* na Play** |
 
 ### Sobre a política de privacidade que vai ligada (decisão assumida)
 
@@ -41,41 +41,53 @@ Duas consequências que ficam desta escolha:
 **Nome (App Store, máx. 30)**
 
 ```
-INOVAPP: Mentorias ISEC
+INOVAPP: Mentoria entre pares
 ```
 
 **Subtítulo (App Store, máx. 30)**
 
 ```
-Mentorias no ISEC Lisboa
+Mentoria no ensino superior
 ```
 
 **Título (Google Play, máx. 30)**
 
 ```
-INOVAPP: Mentorias ISEC
+INOVAPP: Mentoria entre pares
 ```
 
 **Descrição breve (Google Play, máx. 80)**
 
 ```
-Mentorias entre alunos e docentes do ISEC Lisboa.
+Mentoria entre estudantes e docentes do ensino superior.
 ```
 
 **Categoria** Educação · **Classificação** 4+ (Apple) / *Todos* (Play) · **Idiomas** Português (pt-PT),
 Inglês (en-US) · **Preço** grátis, sem compras dentro da app.
 
+**Sobre o nome e o subtítulo (reescritos em 23/09/2026).** A ficha dizia "INOVAPP: Mentorias ISEC"
+com o subtítulo "Mentorias no ISEC Lisboa", e isso era o mesmo risco que a Apple já usou duas vezes
+(diretriz 3.2): **metadados que descrevem uma organização**, com a app aberta a qualquer pessoa e a
+caminho das universidades do **consórcio INOVAPP**. O nome passa a descrever a app - mentoria entre
+pares no ensino superior - e o ISEC fica onde deve ficar: como a instituição onde ela começou, dito
+no corpo da descrição. Duas notas honestas:
+
+- **é a peça que vale a pena confirmar antes de colar**, porque é a única que não se muda à vontade:
+  depois de a versão estar publicada, o nome deixa de ser editável (o subtítulo não);
+- **o nome perde as palavras que davam busca** ("mentorias", "ISEC"). Compensam-se nas palavras-chave
+  e na descrição, que é onde a Apple as lê de facto - mas é uma troca, e fica dito.
+
 ## Texto promocional (App Store, máx. 170)
 
 ```
 Encontra quem te ajude na disciplina que te está a dar trabalho. Pede conexão, combina uma sessão e
-leva os materiais contigo - tudo dentro do ISEC.
+leva os materiais contigo - tudo dentro da tua instituição.
 ```
 
 ## Descrição (App Store, máx. 4000)
 
 ```
-A INOVAPP liga quem quer aprender a quem pode ensinar, dentro do ISEC Lisboa.
+A INOVAPP liga quem quer aprender a quem pode ensinar, na tua instituição de ensino superior.
 
 Procurar quem te ajude numa disciplina não devia dar mais trabalho do que a própria disciplina.
 Aqui, quem precisa de apoio encontra quem já passou pela mesma unidade curricular - colegas mais
@@ -94,9 +106,13 @@ O QUE PODE FAZER
 
 PARA QUEM É
 
-Para estudantes e docentes do ISEC Lisboa. Entra-se com o email institucional -
-@alunos.iseclisboa.pt ou @iseclisboa.pt -, e a conta só fica ativa depois de confirmares esse email.
-Não há contas para pessoas de fora.
+Para quem quer aprender e para quem pode ensinar. Cria conta com o teu email - qualquer email - e
+confirma-o pelo link que te enviamos: não há convite, não há aprovação e não há pagamento.
+
+A INOVAPP é a app de mentoria do **consórcio INOVAPP**, usada pelas instituições de ensino superior
+que dele fazem parte. Quem entra com o email institucional de uma delas fica logo ligado à
+comunidade dessa instituição - alunos e docentes; todos os outros entram como alunos, e podem dar e
+receber apoio.
 
 O QUE NÃO FAZ
 
@@ -113,7 +129,7 @@ O mesmo texto da App Store, com o fim que a Play pede e a Apple não (por isso e
 inteiro e não por referência: é daqui que se cola):
 
 ```
-A INOVAPP liga quem quer aprender a quem pode ensinar, dentro do ISEC Lisboa.
+A INOVAPP liga quem quer aprender a quem pode ensinar, na tua instituição de ensino superior.
 
 Procurar quem te ajude numa disciplina não devia dar mais trabalho do que a própria disciplina.
 Aqui, quem precisa de apoio encontra quem já passou pela mesma unidade curricular - colegas mais
@@ -132,9 +148,13 @@ O QUE PODE FAZER
 
 PARA QUEM É
 
-Para estudantes e docentes do ISEC Lisboa. Entra-se com o email institucional -
-@alunos.iseclisboa.pt ou @iseclisboa.pt -, e a conta só fica ativa depois de confirmares esse email.
-Não há contas para pessoas de fora.
+Para quem quer aprender e para quem pode ensinar. Cria conta com o teu email - qualquer email - e
+confirma-o pelo link que te enviamos: não há convite, não há aprovação e não há pagamento.
+
+A INOVAPP é a app de mentoria do **consórcio INOVAPP**, usada pelas instituições de ensino superior
+que dele fazem parte. Quem entra com o email institucional de uma delas fica logo ligado à
+comunidade dessa instituição - alunos e docentes; todos os outros entram como alunos, e podem dar e
+receber apoio.
 
 O QUE NÃO FAZ
 
@@ -179,25 +199,26 @@ A app tem os dois idiomas; a ficha pode ficar só em português. Se quiseres a l
 **Name (máx. 30)**
 
 ```
-INOVAPP: ISEC Mentoring
+INOVAPP: Peer mentoring
 ```
 
 **Subtitle (máx. 30)**
 
 ```
-Mentoring at ISEC Lisboa
+Mentoring in higher education
 ```
 
 **Keywords (máx. 100)**
 
 ```
-mentoring,tutor,ISEC,study help,peers,lecturers,sessions,subjects,campus,college
+mentoring,tutor,study help,peers,lecturers,sessions,subjects,campus,college,university
 ```
 
 **Description (máx. 4000)**
 
 ```
-INOVAPP connects people who want to learn with people who can teach, inside ISEC Lisboa.
+INOVAPP connects people who want to learn with people who can teach, at your higher-education
+institution.
 
 Finding someone to help you with a subject should not be harder than the subject itself. Here,
 whoever needs support finds someone who has already been through the same course unit - students
@@ -216,9 +237,13 @@ WHAT YOU CAN DO
 
 WHO IT IS FOR
 
-For students and lecturers at ISEC Lisboa. You sign in with your institutional email -
-@alunos.iseclisboa.pt or @iseclisboa.pt - and the account only becomes active after you confirm
-that email.
+For anyone who wants to learn and anyone who can teach. Create an account with your email - any
+email - and confirm it through the link we send you: no invitation, no approval and no payment.
+
+INOVAPP is the mentoring app of the **INOVAPP consortium**, used by the higher-education
+institutions that are part of it. Anyone who signs in with an institutional email from one of them
+is linked straight to that institution's community - students and lecturers; everyone else joins as
+a student and can both give and receive support.
 
 WHAT IT DOES NOT DO
 
@@ -232,9 +257,10 @@ You can delete your account inside the app, in Profile → Settings → Delete a
 ## Notas para a revisão (App Review Information)
 
 ```
-A app é para a comunidade do ISEC Lisboa e o registo exige um email institucional, que é confirmado
-por link. Não é possível criar conta em revisão, por isso deixamos duas contas já confirmadas e com
-perfil completo - uma de cada lado da app:
+O registo está aberto a qualquer email, mas a conta só fica ativa depois de confirmar o endereço
+pelo link que o Firebase envia - e um revisor não tem acesso à caixa de correio de um endereço
+inventado na hora. Por isso deixamos duas contas já confirmadas e com perfil completo - uma de cada
+lado da app:
 
   Aluno   aluno.demo@alunos.iseclisboa.pt
   Tutor   demo@iseclisboa.pt
@@ -255,6 +281,14 @@ E com a conta de **Tutor** vê-se o outro lado: no Match não há lista de mento
 recebe pedidos, e são os Tutorandos que o encontram (é a app a funcionar como foi desenhada, não
 uma limitação da conta).
 
+> **Cuidado, e é uma armadilha real:** quem só ensina **e não tem nenhum pedido pendente** não vê
+> lista nenhuma - cai no `BlockedScreen`, com o título "Funcionalidade bloqueada". A conta de Tutor
+> de demonstração está exatamente nesse estado (o único pedido que tem está `accepted`, e um aceite
+> não conta). Foi provavelmente isto que a revisão da 1.0 (10) leu como "não conseguimos verificar
+> todas as funcionalidades, como o Match". Duas saídas, nenhuma delas feita: dar a essa conta um
+> pedido pendente de outra pessoa, **ou** trocar o estado/texto desse ecrã na próxima versão - um
+> separador que anuncia "funcionalidade bloqueada" a um mentor novo não é só um problema de revisão.
+
 Não há compras dentro da app e não há recolha de localização, contactos, câmara ou microfone.
 ```
 
@@ -268,10 +302,10 @@ npm run create:demo-account                      # só mostra o que faria
 npm run create:demo-account -- --apply --password=NovaPalavra1!
 ```
 
-É uma conta de **docente**, e é isso que o revisor vê: no separador *Match* não há deck de
-descoberta, porque um Tutor não procura mentores - quem procura são os Tutorandos, e são eles que
-lhe chegam como pedidos. Se quiseres que a revisão veja os dois lados da app, faz uma segunda conta
-de **aluno**, que tem o deck inteiro:
+A conta de **docente** mostra o outro lado da app: no separador *Match* não há deck de descoberta,
+porque um Tutor não procura mentores - quem procura são os Tutorandos, e são eles que lhe chegam
+como pedidos. A segunda conta de **aluno** (`aluno.demo@alunos.iseclisboa.pt`, criada com
+`--mode=both`) é a que tem o deck inteiro, e é por ela que a revisão deve começar:
 
 ```bash
 npm run create:demo-account -- --apply --email=aluno.demo@alunos.iseclisboa.pt --mode=both --password=OutraPalavra1!
@@ -347,10 +381,11 @@ sem pagamento. E há um precedente verificável, que é o argumento mais forte d
 - a App Store distribui publicamente apps universitárias equivalentes (a app do ISCTE, a netPApp).
 
 Uma coisa a ter em conta: **o revisor não conseguiu abrir a app**. A 3.2 foi escrita a partir do ecrã
-de login, e é possível que a correção do crash mude a avaliação sozinha. Se voltar a recusar, a
-resposta é a **distribuição não listada** (*App Store Connect > Distribuição*): fica na App Store,
-instala-se por link, não aparece em buscas - que é o que a Apple indica para este caso, e não obriga
-a mexer na app.
+de login, e era possível que a correção do crash mudasse a avaliação sozinha. **Não mudou**: a ronda
+seguinte (1.0 (10)) recusou outra vez com o mesmo texto. E o que ficou decidido não foi a
+distribuição não listada - que continua a ser a via que a Apple indica para este caso -, foi **abrir
+o registo**, para que "esta app é de audiência geral" seja um facto em vez de uma afirmação que a
+app desmente no primeiro ecrã. A ronda da 1.0 (10) está registada no fim deste ficheiro.
 
 Resposta a colar no *Resolution Center*:
 
@@ -393,3 +428,141 @@ is not uploaded to the build server, so the app had no valid API key and termina
 The configuration now travels with the repository, and build 7 carries the fix. We would appreciate
 another look at the app itself.
 ```
+
+## A revisão da 1.0 (10): três diretrizes, e uma decisão de produto (23/09/2026)
+
+A build 10 foi revista (iPhone 17 Pro Max, iOS 27.0) e voltou com **três** diretrizes. Só uma delas
+é sobre a app estar partida, e nenhuma é o problema da ronda anterior:
+
+| diretriz | o que dizia | o que é |
+|---|---|---|
+| 2.1(a) | na 1.0 (6): *"the app crashed on launch"* → agora: **"Information Needed"** | a app **abre**: o crash do `FirebaseApp.configure()` está resolvido. Falta a revisão conseguir entrar e ver tudo |
+| 2.3.10 | *"Revise the app's binary to remove Google Play references"* | **corrigido** - e não era código |
+| 3.2 | outra vez *"intended to be used by a specific business or organization"* | **decisão tomada: abrir o registo** |
+
+### 2.3.10 - a referência à Google Play estava no perfil, não no código
+
+Não há uma única linha de "Google Play" em `src/`. O que a revisão leu foi o campo `about` das
+**contas de demonstração**, que aparece dentro da app (no cartão da descoberta e no perfil):
+
+```
+Aluno Demo   "Conta de demonstração para revisão da App Store e da Google Play."
+Tutor Demo   "Conta de demonstração para revisão da App Store e da Google Play."
+```
+
+Um texto de bastidores à frente de quem usa a app - que é exatamente o que a diretriz descreve
+("information about third-party platforms"). Corrigido nos dois sítios, e **sem build nova**: o
+`about` vive no Firestore, por isso a build 10 que já estava submetida passou a mostrar o texto
+novo assim que o documento foi escrito.
+
+- **`scripts/create-demo-account.js`** passa a escrever
+  `"Perfil de demonstração da INOVAPP. Ensina Programação e Matemática a quem precisa."`;
+- e o mesmo valor foi escrito nos dois documentos em produção (`users/{uid}.about`), a partir do
+  `.expo/rest-firestore.js` (por REST - o cliente gRPC do `firebase-admin` pendura nesta máquina).
+
+### 2.1(a) - o que falta é entrar, e o ecrã do Match de quem só ensina
+
+O texto mudou de "a app crashou" para "não conseguimos aceder a tudo": o crash acabou. Duas causas
+possíveis, e nenhuma precisa de build:
+
+1. **As credenciais.** Só uma das duas contas ficou na *App Review Information*. A revisão pede "a
+   demo account that has access to all features... for all account types" - e esta app tem dois
+   lados (quem procura e quem ensina), que são duas contas diferentes. Faltando uma, falta metade
+   da app.
+2. **O ecrã do Match da conta de Tutor** (ver o aviso nas notas de revisão): quem só ensina e não
+   tem pedidos pendentes cai em "Funcionalidade bloqueada". É o candidato mais provável ao
+   *"such as Matches"* da Apple.
+
+### 3.2 - a decisão: abrir o registo, e continuar a distribuir publicamente
+
+A Apple nomeia explicitamente, na sua página sobre **distribuição não listada**, o público desta
+app: *"limited audiences (such as part-time employees, franchisees, partners, business affiliates,
+**higher-education students**, or conference attendees)"*. Era o caminho fácil, e ficou disponível.
+
+O caminho decidido foi outro, e é o que torna a resposta **verdadeira** em vez de apenas
+defensável: **o registo passa a aceitar qualquer email**. A Apple não recusava uma ideia, recusava
+um facto - as regras do servidor só deixavam entrar `@alunos.iseclisboa.pt` e `@iseclisboa.pt`.
+Enquanto isso fosse assim, "esta app é para o público geral" era uma afirmação que a app desmentia
+no primeiro ecrã, com a app à frente de quem revisava.
+
+O que mudou, e o que se mantém:
+
+| | antes | agora |
+|---|---|---|
+| Entrada | só dois domínios do ISEC | **qualquer email** |
+| Papel | derivado do domínio; fora dos domínios, o registo era recusado | **aluno** por omissão; **docente** só com `@iseclisboa.pt` |
+| Confirmação do email | obrigatória para escrever | **mantém-se** - é a defesa contra contas falsas, e é o que a Apple recomenda (mecanismo que trava o uso não autorizado) |
+| Regra no servidor | `roleMatchesEmailDomain` | `roleAllowedForEmail` - aluno aberto a todos, docente preso ao domínio (senão um cliente feito à mão escrevia `role: 'professor'` com um email qualquer) |
+
+A distinção que sobrevive **não restringe acesso**: qualquer pessoa entra e usa tudo. O que ela
+guarda é um **rótulo** - ser docente do ISEC é algo que a instituição empresta, não uma escolha de
+quem se regista. Nada na app ficou fechado atrás do domínio.
+
+O que isto obriga, e ainda falta:
+
+1. **Publicar as regras** (`firebase deploy --only firestore:rules`) - a app nova com as regras
+   velhas não deixa entrar ninguém de fora;
+2. **build nova** (é código: `src/constants/auth.ts`, `src/auth/actions.ts` e os dicionários);
+3. e a nota em *Review Notes* a dizer que é para distribuição pública, com o registo aberto.
+
+Resposta a colar no *Resolution Center*:
+
+```
+Thank you for the review.
+
+We have addressed all three items.
+
+Guideline 2.3.10 - Accurate Metadata. The Google Play reference was not in our code: it was in the
+profile text of the demo accounts, which is displayed inside the app. It has been removed, and the
+profile now reads as a normal user profile. No new build was needed for this, because that text is
+stored in our database and read by the app at runtime.
+
+Guideline 2.1(a) - Information Needed. Both demonstration accounts are now provided in App Review
+Information, with "Sign-in required" enabled: a student account and a teacher account, each with a
+confirmed email address and a complete profile. We are sorry that only one of them was available in
+the previous submission. Please start with the student account, which shows the whole app -
+Matches, Chat, Sessions and the delete-account flow.
+
+Guideline 3.2 - Business. You are right, and we have changed the app rather than argue the point.
+Until this version, registration accepted only two email domains, which made the app effectively
+restricted to a single institution - "public distribution" was not a true statement about it.
+Registration is now open to any email address:
+
+1. Is the app restricted to users who are part of a single company or organization? No. Any person
+   can create an account with any email address and confirm it through the link we send to it.
+   There is no invitation, no approval and no membership list. An email address from ISEC Lisboa
+   simply links the account to that school's community; it does not grant or restrict access.
+
+2. Is the app designed for use by a limited or specific group of companies or organizations? No.
+   It is a peer-mentoring app: people say what they want to learn and what they can teach, find
+   each other, request a connection, schedule sessions, share materials and chat. Nothing in it is
+   built around one organization's workflow, and no organization has to sign anything to use it.
+
+3. What features in the app, if any, are intended for use by the general public? All of them. The
+   app can be discovered and downloaded by anyone, with no invitation and no pre-approval, and
+   every feature is available to any registered user.
+
+4. How do users obtain an account? By registering in the app with their email address and
+   confirming it through the link we send to that address. It is self-service: no invitation, no
+   approval and no payment. Two demonstration accounts are provided in App Review Information.
+
+5. Is there any paid content in the app and if so who pays for it? No. There are no in-app
+   purchases, no subscriptions and no advertising. No user pays anything to open an account or to
+   use any feature.
+
+The app is submitted with public distribution on the App Store, which is now an accurate
+description of it.
+```
+
+### O que fica por arrumar (a próxima versão)
+
+- **O ecrã do Match de quem só ensina.** O `BlockedScreen` com "Funcionalidade bloqueada" aparece a
+  qualquer mentor novo que ainda não tenha recebido pedidos. Numa app aberta isso deixa de ser um
+  problema de revisão e passa a ser o que um utilizador novo vê.
+- **O catálogo de cursos é só do ISEC** (`COURSES_BY_TYPE`): um aluno de outra instituição do
+  consórcio tem de escolher um curso do ISEC. Não trava nada, mas é o mesmo género de incoerência que
+  a 3.2 - uma app que diz servir todos e que só conhece uma escola. Cada universidade que adira ao
+  consórcio vai precisar dos seus cursos, e o resto do produto foi feito a pensar numa escola só.
+- **O nome e o subtítulo da ficha** já não dizem ISEC (ver a nota acima). O que fica por confirmar é
+  a própria decisão: publicar como app **do consórcio** - que é o que ela vai ser - ou continuar a
+  parecer a app de uma instituição, com o risco que isso teve duas vezes na revisão.

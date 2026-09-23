@@ -41,7 +41,10 @@ connectAuthEmulator(auth, `http://${AUTH_HOST}`, { disableWarnings: true });
 
 export const SENHA_DE_TESTE = 'Password1!';
 
-/** Emails institucionais: o papel deriva sempre do domínio (ver src/constants/auth.ts). */
+/**
+ * Emails institucionais do ISEC. Só o **docente** é que o domínio decide (@iseclisboa.pt);
+ * qualquer outro endereço entra como aluno (ver getAccountRole em src/constants/auth.ts).
+ */
 export const CONTAS = {
   /** Aluna que só aprende - o lado "Tutorando" dos fluxos. */
   aluna: 'ana.aluna@alunos.iseclisboa.pt',

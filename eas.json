@@ -35,6 +35,10 @@
         "appleId": "info@iseclisboa.pt",
         "appleTeamId": "64ZH528SHV",
         "ascAppId": "6812723892"
+      },
+      "android": {
+        "track": "production",
+        "releaseStatus": "draft"
       }
     }
   }

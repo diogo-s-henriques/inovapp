@@ -189,6 +189,23 @@ describe('criação de conta e entrada', () => {
     assert.equal((await lerDocumento(`users/${uid}`))?.profileCompleted, false);
   });
 
+  it('um email fora do ISEC cria conta: o registo está aberto a qualquer email', async () => {
+    // A restrição de domínio era o que a revisão da Apple recusava (diretriz 3.2): enquanto as
+    // regras só aceitassem dois domínios, "esta app é de audiência geral" não era verdade. Aqui o
+    // registo corre de ponta a ponta - conta no Auth, `users` e `userAccounts` - e o papel por
+    // omissão é o de aluno. O par do lado das regras está em tests/firestore-rules.test.mts.
+    await signOut(auth).catch(() => undefined);
+    await signUp('visitante@exemplo.pt', SENHA_DE_TESTE, false);
+
+    const uid = auth.currentUser?.uid;
+    assert.ok(uid, 'o signUp devia ter deixado alguém com sessão');
+
+    const conta = await lerDocumento(`userAccounts/${uid}`);
+    assert.equal(conta?.email, 'visitante@exemplo.pt');
+    assert.equal(conta?.role, 'student');
+    assert.equal((await lerDocumento(`users/${uid}`))?.role, 'student');
+  });
+
   it('cada entrada regrava o "Lembrar" escolhido', async () => {
     await signIn(CONTAS.aluna, SENHA_DE_TESTE, true);
     assert.equal((await lerDocumento(`userAccounts/${cenario.ana}`))?.rememberSession, true);
