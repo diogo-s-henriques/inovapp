@@ -382,7 +382,10 @@ android.versionCode 11        # a seguir ao 10, que é o que está na Play
 
 Antes de cada envio, sobe-se o número da loja que vai receber o bundle - e o `eas.json` passou a
 `appVersionSource: local` para o EAS não manter um contador paralelo a estes valores (dois
-contadores era a maneira mais fácil de acabar com o mesmo número em duas builds diferentes).
+contadores era a maneira mais fácil de acabar com o mesmo número em duas builds diferentes). O
+`autoIncrement` do perfil de produção saiu pelo mesmo motivo: com as versões locais, ele subia o
+número **dentro da build** e o repositório ficava a dizer outro - o artefacto com o número 12 e o
+`app.json` no 11, e a build seguinte a repetir o 12.
 
 **É o ficheiro que diz o que lá está, e ele abre-se.** O EAS etiqueta cada build com o commit do
 `HEAD` (`vcs/clients/git.js` só copia os ficheiros alterados *por cima* do clone raso, a não ser que
@@ -408,51 +411,42 @@ Os bundles de loja passaram a ser feitos no **Codemagic**, e a receita vive no r
 `codemagic.yaml`, na raiz - é lá que o Codemagic o procura. Sem ele, o que se configura no painel não
 se reproduz em lado nenhum.
 
-Há dois workflows, `android-release` (.aab) e `ios-release` (.ipa), sem `triggering`: só correm
-quando os pedires no painel. Ambos começam por `npm ci` e por `npx expo prebuild`, e é daí que vêm
-todas as peças do projeto nativo - **as versões e o R8 inclusive**, que estão no `app.json` e não
-neste ficheiro. Não há `android/` nem `ios/` no repositório (estão no .gitignore), por isso este é o
-único caminho: gerar, aqui, exatamente o que o `app.json` descreve.
+Há dois workflows, `ios-release` (.ipa + TestFlight) e `android-release` (.aab + rascunho na Play),
+sem `triggering`: só correm quando os pedires no painel. O que constrói é o **`eas build --local`** -
+o processo todo dos servidores do EAS (prebuild, CocoaPods, Gradle, xcodebuild) a correr na máquina
+da Codemagic.
 
-Três coisas no painel, e uma vez cada:
+E é isso que faz este ficheiro ser curto: **quem assina é o EAS**, que descarrega as credenciais no
+arranque. A keystore de upload que a Play conhece e o certificado de distribuição que a app publicada
+já usou ficam onde sempre estiveram, e o painel da Codemagic precisa de **uma coisa só**:
 
-- **Android, a keystore**: subir em *Code signing identities > Android keystores* a keystore com a
-  referência `inovapp_upload` - e tem de ser a **mesma keystore de upload** que a Play já conhece (o
-  Gradle gerado assina com a chave de *debug*; quem assinava a sério era o EAS, injectando
-  `android.injected.signing.*`, que o AGP lê - é o que o workflow volta a fazer com as variáveis do
-  Codemagic). Uma keystore diferente só entra depois de um *reset* da upload key na Play Console.
-  Exporta-se pelo `eas credentials` (Android → perfil → *credentials.json: Upload/Download
-  credentials* → *Download credentials from EAS*, que descarrega o `.jks` e as palavras-passe);
-- **iOS, a chave privada do certificado**: a variável `CERTIFICATE_PRIVATE_KEY` (grupo `code-signing`),
-  gerada na hora (`ssh-keygen -t rsa -b 2048 -m PEM -f ios_distribution_private_key -q -N ""`). A
-  partir dela e da API key, o workflow manda o Codemagic buscar o certificado e o perfil que
-  correspondem à chave - e **criá-los se não existirem**. Não se exporta o certificado do EAS: a
-  chave privada é dele e não sai de lá. Passa a haver dois certificados de distribuição (o do EAS e
-  este), e é por isso que o do EAS pode ser revogado quando o Codemagic for o único a construir;
-- **a integração Apple Developer Portal** (Team integrations → Developer Portal), com uma App Store
-  Connect API key de permissão *App Manager*, com o nome `INOVAPP` - é o nome que o workflow procura,
-  e serve o certificado, o perfil **e** o envio ao TestFlight.
+- um grupo de variáveis de ambiente chamado `inovapp` com **`EXPO_TOKEN`**
+  (expo.dev/settings/access-tokens), marcado como Secret.
 
-E, para o envio automático à Play, mais uma: a variável
-`GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS` (grupo `play_credentials`), com o conteúdo do JSON da
-service account que a Play autorizou - a mesma que o EAS já usava
-(`firebase-adminsdk-fbsvc@inovapp-68021.iam.gserviceaccount.com`), e que **enquanto não for convidada
-na consola** (Utilizadores e permissões → Lançar para faixas de teste + Lançar para produção) faz
-falhar o passo de publicação. A falha acontece no fim, com o `.aab` já nos artefactos, e não a meio do
-build.
+As credenciais de **publicação** também vivem no EAS - a chave da App Store Connect e a conta de
+serviço da Play -, por isso o `eas submit` chega a elas com o mesmo token: não há integrações para
+ligar nem JSON para colar no painel. Uma ressalva, para a Play: a conta de serviço
+(`firebase-adminsdk-fbsvc@inovapp-68021.iam.gserviceaccount.com`) **tem de estar convidada na Play
+Console** (Utilizadores e permissões → Lançar para faixas de teste + Lançar para produção). Enquanto
+não estiver, o passo da submissão é o único que falha - e falha no fim, com o `.aab` já nos
+artefactos.
 
-O envio é automático **para um estado reversível**, e é isso que o desenha assim: na Play o `.aab`
-entra como **rascunho no *track* de produção** (nada vai ao ar sem um "Iniciar lançamento" a sério,
-feito por uma pessoa - o mesmo que o `releaseStatus: draft` que o `eas.json` pedia); no App Store
-Connect sobe para o **TestFlight**. Não há `submit_to_app_store` nem
-`expire_build_submitted_for_review`: a build que está em revisão na Apple não pode ser expirada por
-um build de CI que ninguém pediu para publicar.
+**O caminho que não se seguiu** - e vale a pena ficar escrito, porque é o primeiro que apetece - era
+carregar a keystore e o certificado para a Codemagic e deixá-la assinar. Foi escrito e descartado:
+pedia exportar a keystore do EAS, gerar uma chave privada nova (um **segundo** certificado de
+distribuição, com a Apple a limitar a três) e ligar duas integrações, tudo para chegar ao mesmo sítio
+com mais sítios onde falhar. O `--local` não gasta quota do EAS - o único contacto com os servidores
+é confirmar que o projeto existe e descarregar as credenciais - e gasta minutos da Codemagic, que é
+exatamente o que a Codemagic serve para dar.
 
-**O que ainda não aconteceu foi uma build a sério.** O ficheiro está validado como YAML e as peças
-(instâncias, `android_signing`, `ios_signing`, `xcode-project`) vieram dos docs do Codemagic; o
-primeiro ensaio é que dirá se os nomes coincidem - os dois que podem ter de ser ajustados são a
-referência da keystore (`inovapp_upload`) e o esquema do Xcode, que o workflow descobre a partir do
-projeto gerado em vez de o escrever à mão.
+O envio é automático **para um estado reversível**: na Play o `.aab` entra como **rascunho no *track*
+de produção** (nada vai ao ar sem um "Iniciar lançamento" a sério, feito por uma pessoa - é o
+`releaseStatus: draft` que o `eas.json` já pedia); no App Store Connect sobe para o **TestFlight**, e
+publicar continua a exigir passar por App Review na consola.
+
+**O que ainda não aconteceu foi uma build a sério** - mas o que aqui está não é uma invenção: é a
+receita do **Campus Buddy** (o outro projeto no Codemagic), que já correu e publicou, com as peças
+desta app (Node 24, o Java 17 que o SDK 57 pede ao Gradle, o mesmo `EXPO_TOKEN`).
 
 #### O que a ficha das lojas pede
 

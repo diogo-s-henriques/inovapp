@@ -1,172 +1,210 @@
-# Receita dos bundles de loja no Codemagic (codemagic.io), que passou a ser quem os produz.
-# Tem de estar na raiz do repositório - é lá que o Codemagic a procura.
+# Release da INOVAPP no Codemagic — a mesma receita do Campus Buddy, e pela mesma razão.
 #
-# Duas coisas deste projeto explicam os passos todos:
+# ## Porque é que assina o EAS e não a Codemagic
 #
-# 1. **Não há `android/` nem `ios/` no repositório** (nascem do `expo prebuild` e estão no
-#    .gitignore), por isso o projeto nativo é gerado aqui, na máquina de build. Não se copia o
-#    `build.gradle` para o repositório: era uma segunda cópia do projeto nativo a divergir da
-#    primeira, e as duas só se encontram no dia em que algo falha.
-# 2. **As versões e o R8 vêm do `app.json`.** `version: 1.0.1`, `ios.buildNumber: "12"`,
-#    `android.versionCode: 11` e `android.enableMinifyInReleaseBuilds: true` são aplicados pelo
-#    prebuild - não há nada a ajustar aqui, e nada que se possa esquecer num build à mão. Ver a
-#    secção "O primeiro envio no Play Console" no README para a política de números.
+# O build é `eas build --local`: corre o processo todo do EAS (prebuild, CocoaPods, Gradle,
+# xcodebuild) na máquina da Codemagic, mas **as credenciais continuam a ser do EAS** e são
+# descarregadas no arranque. Isso é o que faz este ficheiro ser curto:
 #
-# O que tem de existir no painel do Codemagic antes do primeiro build (uma vez cada):
+# - a **keystore de upload** do Android é a que a Google Play já conhece. Não se exporta, não se
+#   carrega aqui, e não se corre o risco de gerar uma nova (uma keystore diferente só entra depois de
+#   um *reset* da upload key na Play Console, com 72 h de espera impostas pela Google);
+# - o **certificado de distribuição e o perfil App Store** do iOS são os que estão no EAS e que a
+#   app publicada já usou. Não se gera um segundo certificado (a Apple limita-os a três).
 #
-#   - **Code signing identities → Android keystores**: a **mesma keystore de upload** que a Play já
-#     conhece, com a referência `inovapp_upload`. Exporta-se do EAS com `eas credentials -p android`
-#     (Android > Keystore > Download). Uma keystore nova obriga a um *reset* da upload key na Play.
-#   - **iOS: a chave privada do certificado de distribuição**, na variável `CERTIFICATE_PRIVATE_KEY`
-#     (grupo `code-signing`). É uma chave que se gera aqui mesmo, num segundo
-#     (`ssh-keygen -t rsa -b 2048 -m PEM -f ios_distribution_private_key -q -N ""`), e o Codemagic
-#     cria o certificado na conta Apple a partir dela. Não se exporta o certificado do EAS: a chave
-#     privada é dele e não sai de lá - o que sai é este caminho, que é mais curto e não depende de
-#     ninguém. Consequência a saber: passa a haver **dois** certificados de distribuição (o do EAS e
-#     este), e a Apple limita-os a 3 - o do EAS pode ser revogado quando o Codemagic for o único a
-#     construir. Nada disto afeta a app já publicada.
+# A alternativa - a Codemagic tratar da assinatura com ficheiros carregados à mão - foi escrita e
+# descartada: pedia uma keystore exportada, uma chave privada gerada e duas integrações ligadas para
+# chegar ao mesmo sítio, com mais sítios onde falhar. O `--local` não gasta quota do EAS (o único
+# contacto com os servidores é confirmar que o projeto existe e descarregar as credenciais) e gasta
+# minutos da Codemagic, que é exactamente o que a Codemagic serve para dar.
 #
-# E, para o envio automático às duas lojas (ver o `publishing:` no fim de cada workflow):
+# ## Antes de correr, no painel da Codemagic
 #
-#   - **variável `GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS`** (grupo `play_credentials`): o conteúdo do
-#     JSON da service account que a Google Play autorizou. É a mesma que o EAS já usa
-#     (`firebase-adminsdk-fbsvc@inovapp-68021.iam.gserviceaccount.com`) e **enquanto ela não for
-#     convidada na Play Console** (Utilizadores e permissões → Lançar para faixas de teste + Lançar
-#     para produção) o passo falha no fim da build - com o `.aab` já produzido e guardado nos artefactos;
-#   - **integração Apple Developer Portal** (Team integrations → Developer Portal), com uma App Store
-#     Connect API key de permissão *App Manager*, com o nome `INOVAPP` - é o nome que o workflow iOS
-#     procura, e serve as duas coisas: criar/buscar o certificado e o perfil, e enviar ao TestFlight.
-#     Sem ela, o `.ipa` é construído e fica nos artefactos, mas não sobe ao TestFlight.
+# Um grupo de variáveis de ambiente chamado `inovapp` com:
 #
-# Nada mais: as variáveis do Firebase (públicas, ver o README) estão aqui em baixo, e as versões no
-# `app.json`. Os workflows não têm `triggering`, por isso só correm quando os pedires no painel.
+#   EXPO_TOKEN   (expo.dev/settings/access-tokens)  — marcado como Secret
 #
-# O envio é sempre para um estado **reversível**: na Play fica um rascunho no *track* de produção
-# (nada vai ao ar sem um "Iniciar lançamento" a sério, feito por uma pessoa), e no App Store Connect
-# sobe para o TestFlight. Não há `submit_to_app_store` nem `expire_build_submitted_for_review` de
-# propósito: a build que está em revisão na Apple neste momento não pode ser expirada por um build de
-# CI que ninguém pediu para publicar.
-
-definitions:
-  # As seis variáveis que o código lê em tempo de build (`process.env.EXPO_PUBLIC_*`, inlinadas pelo
-  # Metro). São os mesmos valores que o `eas.json` já tem e que estão em `.env.example`: não são
-  # segredos - a chave do Firebase é pública por desenho, e o que protege os dados são as regras do
-  # Firestore e o App Check (ver o README). Estão escritas aqui porque uma máquina de build não tem
-  # `.env` (está no .gitignore), e sem elas a app arranca a preto no telemóvel de quem a instalar.
-  # O teste `tests/lib/eas-env.test.mts` guarda os outros dois sítios contra o que o código lê.
-  env_firebase: &env_firebase
-    EXPO_PUBLIC_FIREBASE_API_KEY: "AIzaSyAQLSPrAOiXf5ufftllXEVkkn0H0VnJzYc"
-    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "inovapp-68021.firebaseapp.com"
-    EXPO_PUBLIC_FIREBASE_PROJECT_ID: "inovapp-68021"
-    EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "inovapp-68021.appspot.com"
-    EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "1008777430223"
-    EXPO_PUBLIC_FIREBASE_APP_ID: "1:1008777430223:web:654d2e0603277454d0e3ba"
+# Só isto. As credenciais de assinatura *e* as de publicação (a chave da App Store Connect e a conta
+# de serviço da Play) vivem no EAS, e é por `EXPO_TOKEN` que o `eas submit` chega a elas.
+#
+# ## Como se usa
+#
+# Os workflows não têm `triggering`: uma build de loja é um ato deliberado, não um efeito de gravar
+# um ficheiro. Start new build → branch `main` → `ios-release` (.ipa + TestFlight) ou
+# `android-release` (.aab + rascunho na Play).
+#
+# ## As versões
+#
+# Vêm do `app.json` (`1.0.1`, iOS build 12, Android versionCode 11) e o `eas.json` está em
+# `appVersionSource: local`. **Sobe o número da loja antes de cada envio**: nem o EAS nem a Codemagic
+# inventam um número por ti, e um `versionCode` repetido é recusado na Play sem apagar nada.
 
 workflows:
-  android-release:
-    name: INOVAPP · Android (.aab)
-    # macOS serve para Android, e é a instância que não depende de faturação ativa. Com billing
-    # ligado, `linux_x2` faz o mesmo mais barato.
-    instance_type: mac_mini_m2
-    max_build_duration: 60
-    environment:
-      node: 24
-      java: 21
-      android_signing:
-        - inovapp_upload
-      groups:
-        # A service account da Play (variável criada no painel, por ser um segredo).
-        - play_credentials
-      vars:
-        <<: *env_firebase
-    cache:
-      cache_paths:
-        - $HOME/.gradle/caches
-        - $CM_BUILD_DIR/node_modules
-    scripts:
-      - name: Dependências
-        script: npm ci
-      - name: Projeto nativo (as versões e o R8 vêm do app.json)
-        script: npx expo prebuild --platform android --no-install
-      - name: Assinatura
-        script: |
-          # O Gradle gerado assina o release com a **chave de debug** (é o que o prebuild escreve, com
-          # um comentário a dizer para não o fazer em produção); quem injectava a chave a sério era o
-          # EAS, e era por aqui: estas quatro propriedades são lidas pelo AGP, não pelo projeto.
-          # Escrevem-se no gradle.properties do utilizador para não tocar em nada do prebuild.
-          {
-            echo "android.injected.signing.store.file=$CM_KEYSTORE_PATH"
-            echo "android.injected.signing.store.password=$CM_KEYSTORE_PASSWORD"
-            echo "android.injected.signing.key.alias=$CM_KEY_ALIAS"
-            echo "android.injected.signing.key.password=$CM_KEY_PASSWORD"
-          } >> "$HOME/.gradle/gradle.properties"
-      - name: Bundle
-        script: cd android && ./gradlew bundleRelease
-    artifacts:
-      - android/app/build/outputs/bundle/release/*.aab
-    publishing:
-      google_play:
-        # Sem permissões na Play Console, este passo é o único que falha - o `.aab` já está nos
-        # artefactos e a falha é no fim, não a meio de um build.
-        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
-        track: production
-        # Rascunho: o `.aab` aparece no *track* de produção à espera de um "Iniciar lançamento".
-        # É o mesmo que o `releaseStatus: draft` que o `eas.json` pedia, e não pode ser combinado
-        # com `rollout_fraction`.
-        submit_as_draft: true
-
   ios-release:
-    name: INOVAPP · iOS (.ipa)
-    # O nome que o workflow procura em Team integrations → Developer Portal (App Store Connect API
-    # key), e que é preciso existir para o envio ao TestFlight funcionar.
-    integrations:
-      app_store_connect: INOVAPP
+    name: INOVAPP · iOS (.ipa + TestFlight)
+    # A M2 é a máquina incluída no plano gratuito (a M4 exige faturação ativa), e o macOS é
+    # obrigatório: o `--local` para iOS precisa de Xcode.
     instance_type: mac_mini_m2
+    # Uma build local não tem cache nenhuma do lado do EAS, e o pod install do RNFB é lento.
     max_build_duration: 120
+
     environment:
-      node: 24
-      xcode: latest
-      cocoapods: default
       groups:
-        # A chave privada do certificado de distribuição (variável criada no painel).
-        - code-signing
-      vars:
-        <<: *env_firebase
+        - inovapp
+      # A mesma versão em que o projeto é desenvolvido (ver o fluxo de testes).
+      node: 24
+      # O SDK 57 assenta no iOS 26 e a Apple recusa uploads feitos com Xcode anterior; a imagem da
+      # Codemagic traz este por omissão, e o passo "Verificar Xcode" falha cedo se ele mudar.
+      xcode: 26.6
+
     cache:
       cache_paths:
         - $HOME/Library/Caches/CocoaPods
         - $CM_BUILD_DIR/node_modules
+
     scripts:
-      - name: Dependências
-        script: npm ci
-      - name: Projeto nativo
-        script: npx expo prebuild --platform ios --no-install
-      - name: Pods
-        script: cd ios && pod install
-      # A assinatura iOS é feita aqui, e não com ficheiros carregados à mão: a partir da chave
-      # privada (CERTIFICATE_PRIVATE_KEY) e da API key, o Codemagic vai à conta Apple buscar o
-      # certificado e o perfil que correspondem à chave, e cria-os se ainda não existirem. É a ordem
-      # dos docs: keychain, ficheiros, certificado no keychain, perfis no projeto, e só depois build.
-      - name: Keychain
-        script: keychain initialize
-      - name: Certificado e perfil (cria o que faltar)
-        script: app-store-connect fetch-signing-files "com.diyogo.inovapp" --type IOS_APP_STORE --create
-      - name: Certificado no keychain
-        script: keychain add-certificates
-      - name: Perfil no projeto
-        script: xcode-project use-profiles
-      - name: .ipa
+      # Falhar aqui, com uma mensagem que diz o que fazer, é melhor do que falhar a meio da
+      # compilação por causa de um segredo que não existe.
+      - name: Verificar segredos
         script: |
-          # O nome do esquema é o do projeto gerado pelo prebuild (deriva do `expo.name`), por isso
-          # descobre-se em vez de ficar escrito à mão a apontar para o nome errado.
-          WORKSPACE=$(ls -d ios/*.xcworkspace | head -1)
-          xcode-project build-ipa --workspace "$WORKSPACE" --scheme "$(basename "$WORKSPACE" .xcworkspace)"
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "Falta EXPO_TOKEN no grupo inovapp."
+            echo "Cria um em https://expo.dev/settings/access-tokens e adiciona-o em"
+            echo "Codemagic > Environment variables > grupo inovapp (marcado como Secret)."
+            exit 1
+          fi
+
+      - name: Ferramentas disponíveis
+        script: |
+          node -v
+          npm -v
+          xcodebuild -version
+          pod --version
+
+      - name: Verificar Xcode 26+
+        script: |
+          XCODE_MAJOR=$(xcodebuild -version | head -1 | awk '{print $2}' | cut -d. -f1)
+          if [ "$XCODE_MAJOR" -lt 26 ]; then
+            echo "Xcode $XCODE_MAJOR detetado, mas o SDK 57 exige Xcode 26+."
+            exit 1
+          fi
+          echo "Xcode major $XCODE_MAJOR OK"
+
+      # **Este passo não é opcional.** O `eas` resolve os plugins do `app.json` (o do RNFB, o do
+      # `expo-splash-screen`, ...) antes de compilar, e essa resolução segue os `require` dos
+      # plugins - que vivem no `node_modules`. Sem ele, a build local morre em segundos com uma
+      # mensagem que nem menciona dependências:
+      #
+      #   Failed to resolve plugin for module "@react-native-firebase/app" relative to ...
+      #
+      # Nos servidores do EAS não se nota, porque lá as dependências são instaladas na cópia do
+      # projeto que a build recebe.
+      - name: Instalar dependências
+        script: npm ci
+
+      # O `eas-cli` não é dependência do projeto - é uma ferramenta que se corre, não uma peça que
+      # se empacota.
+      - name: Instalar o eas-cli
+        script: npm install --global eas-cli
+
+      # As duas ferramentas que a documentação exige para uma build local de iOS. A imagem da
+      # Codemagic já as traz; o passo existe para o caso de isso mudar, e para se ver no registo
+      # quais as versões que compilaram de facto.
+      - name: Garantir fastlane e CocoaPods
+        script: |
+          command -v fastlane >/dev/null || sudo gem install fastlane -N || brew install fastlane
+          command -v pod >/dev/null || brew install cocoapods
+          fastlane --version | head -1
+          pod --version
+
+      # `set -o pipefail` não é decorativo: sem ele, o código de saída deste passo era o do `tee`,
+      # que é sempre 0 - e uma build falhada seguia para a submissão como se tivesse corrido bem.
+      - name: Compilar para a loja (EAS local)
+        script: |
+          set -o pipefail
+          mkdir -p artifacts
+          # Cada bloco de scripts corre numa shell nova, por isso os `export` ficam dentro do passo.
+          export EAS_LOCAL_BUILD_ARTIFACTS_DIR="$CM_BUILD_DIR/artifacts"
+          # Não apagar o diretório de trabalho no fim: é o que permite ler os registos do Xcode se
+          # alguma coisa correr mal (ficam em `logs/`, lá dentro).
+          export EAS_LOCAL_BUILD_SKIP_CLEANUP=1
+          eas build --local --non-interactive --profile production --platform ios 2>&1 \
+            | tee artifacts/build.log
+
+      # Submeter daqui e não da máquina de quem desenvolve: o `.ipa` não anda de mão em mão, e a
+      # chave da App Store Connect que o EAS já tem é usada onde ela está. O upload cai no
+      # TestFlight; publicar na App Store continua a exigir passar por App Review, na consola.
+      - name: Submeter ao App Store Connect
+        script: |
+          IPA=$(ls artifacts/*.ipa | head -1)
+          ls -lh "$IPA"
+          eas submit --platform ios --profile production --non-interactive --path "$IPA"
+
     artifacts:
-      - build/ios/ipa/*.ipa
-    publishing:
-      app_store_connect:
-        auth: integration
-        # Sobe ao TestFlight (e não a revisão da App Store): a app estava a ser revista quando isto
-        # foi escrito, e uma revisão nova a partir do CI era um botão que ninguém quer carregar sem
-        # olhar. Para a revisão, é a partir da consola, como sempre foi.
-        submit_to_testflight: true
+      - artifacts/*.ipa
+      # Só interessa quando algo corre mal, e é o que se pede no primeiro comentário de um erro.
+      - artifacts/build.log
+
+  android-release:
+    name: INOVAPP · Android (.aab + rascunho na Play)
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    environment:
+      groups:
+        - inovapp
+      node: 24
+      # O SDK 57 exige JDK 17 para o Gradle; com versões mais recentes falha.
+      java: 17
+
+    cache:
+      cache_paths:
+        - $HOME/.gradle/caches
+        - $CM_BUILD_DIR/node_modules
+
+    scripts:
+      - name: Verificar segredos
+        script: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "Falta EXPO_TOKEN no grupo inovapp."
+            exit 1
+          fi
+
+      - name: Ferramentas disponíveis
+        script: |
+          node -v
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+
+      - name: Instalar dependências
+        script: npm ci
+
+      - name: Instalar o eas-cli
+        script: npm install --global eas-cli
+
+      - name: Compilar para a loja (EAS local)
+        script: |
+          set -o pipefail
+          mkdir -p artifacts
+          export EAS_LOCAL_BUILD_ARTIFACTS_DIR="$CM_BUILD_DIR/artifacts"
+          export EAS_LOCAL_BUILD_SKIP_CLEANUP=1
+          eas build --local --non-interactive --profile production --platform android 2>&1 \
+            | tee artifacts/build.log
+
+      # O `eas.json` pede `releaseStatus: draft`: o `.aab` entra no *track* de produção como
+      # rascunho, à espera de um "Iniciar lançamento" a sério, feito por uma pessoa.
+      #
+      # A conta de serviço da Play vive no EAS (a do `firebase-adminsdk-fbsvc@…`), por isso não há
+      # aqui credencial nenhuma - mas **tem de estar convidada na Play Console** (Utilizadores e
+      # permissões → Lançar para faixas de teste + Lançar para produção). Enquanto não estiver, este
+      # passo é o único que falha, e falha no fim: o `.aab` já está nos artefactos.
+      - name: Submeter à Google Play (rascunho)
+        script: |
+          AAB=$(ls artifacts/*.aab | head -1)
+          ls -lh "$AAB"
+          eas submit --platform android --profile production --non-interactive --path "$AAB"
+
+    artifacts:
+      - artifacts/*.aab
+      - artifacts/build.log
