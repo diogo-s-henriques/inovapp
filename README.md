@@ -364,9 +364,25 @@ Outra razão para não deixar isto para o fim.
    assinatura que vai no telemóvel, e é essa que o Play Integrity vê) e colar no formulário do Play
    Integrity na Consola Firebase, com a vida útil de **1 hora**.
 
-O `versionCode` é do EAS (`cli.appVersionSource: remote` + `autoIncrement`), por isso cada `.aab`
-novo entra com o seguinte e nunca há número repetido a resolver. E **um `.aab` que já existe na Play
-não se apaga**: o que se sobe a seguir tem de ter número maior - é o que acontece por construção.
+**Um `.aab` que já existe na Play não se apaga**: o que se sobe a seguir tem de ter número maior.
+Até agora isso era responsabilidade do EAS - `cli.appVersionSource: remote` fazia o EAS escolher o
+`versionCode` seguinte no momento da build, e o número nunca aparecia no repositório. Deixou de
+servir: a partir do momento em que os bundles são feitos fora do EAS (ver "Os bundles de loja no
+Codemagic", abaixo), não há ninguém a contar, e um build que não saiba o número repete o **um** - que era exatamente o que o
+`prebuild` escrevia no `build.gradle` (`versionCode 1`) e que a Play recusa por já estar usado.
+
+As versões passaram a ser **locais e explícitas**, em `app.json` - é o único sítio onde os dois
+construtores (EAS e CI) as vão ler, e é onde se vê o que está publicado:
+
+```
+version             1.0.1     # versão de marketing (as duas lojas)
+ios.buildNumber     "12"      # a seguir ao 11, que é o que está no App Store Connect
+android.versionCode 11        # a seguir ao 10, que é o que está na Play
+```
+
+Antes de cada envio, sobe-se o número da loja que vai receber o bundle - e o `eas.json` passou a
+`appVersionSource: local` para o EAS não manter um contador paralelo a estes valores (dois
+contadores era a maneira mais fácil de acabar com o mesmo número em duas builds diferentes).
 
 **É o ficheiro que diz o que lá está, e ele abre-se.** O EAS etiqueta cada build com o commit do
 `HEAD` (`vcs/clients/git.js` só copia os ficheiros alterados *por cima* do clone raso, a não ser que
@@ -386,11 +402,60 @@ Foi assim que se confirmou que a `f3de75c0` (iOS, 1.0.0/4, perfil `*[expo] … A
 código atual - e não o que diz o commit etiquetado, que ficou para trás do trabalho feito a seguir
 (são as últimas duas builds de produção e servem para o primeiro envio às duas lojas).
 
+#### Os bundles de loja no Codemagic
+
+Os bundles de loja passaram a ser feitos no **Codemagic**, e a receita vive no repositório:
+`codemagic.yaml`, na raiz - é lá que o Codemagic o procura. Sem ele, o que se configura no painel não
+se reproduz em lado nenhum.
+
+Há dois workflows, `android-release` (.aab) e `ios-release` (.ipa), sem `triggering`: só correm
+quando os pedires no painel. Ambos começam por `npm ci` e por `npx expo prebuild`, e é daí que vêm
+todas as peças do projeto nativo - **as versões e o R8 inclusive**, que estão no `app.json` e não
+neste ficheiro. Não há `android/` nem `ios/` no repositório (estão no .gitignore), por isso este é o
+único caminho: gerar, aqui, exatamente o que o `app.json` descreve.
+
+A assinatura é a parte que exige trabalho manual, e uma vez cada:
+
+- **Android**: subir em *Code signing identities > Android keystores* a keystore com a referência
+  `inovapp_upload` - e tem de ser a **mesma keystore de upload** que a Play já conhece (o Gradle
+  gerado assina com a chave de *debug*; quem assinava a sério era o EAS, injectando
+  `android.injected.signing.*`, que o AGP lê - é o que o workflow volta a fazer com as variáveis do
+  Codemagic). Uma keystore diferente obriga a um *reset* da upload key na Play Console antes de
+  qualquer envio ser aceite. Exporta-se do EAS com `eas credentials -p android`;
+- **iOS**: subir o certificado de distribuição (.p12) e o perfil App Store de `com.diyogo.inovapp`
+  em *Code signing identities > iOS*, também exportáveis do EAS (`eas credentials -p ios`). O
+  Codemagic não consegue buscar um certificado que não gerou - a chave privada não é dele -, por
+  isso não vale a pena procurar um botão que o faça.
+
+E, para o envio automático, mais duas:
+
+- **Android**: a variável `GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS` (grupo `play_credentials`), com o
+  conteúdo do JSON da service account que a Play autorizou - a mesma que o EAS já usava
+  (`firebase-adminsdk-fbsvc@inovapp-68021.iam.gserviceaccount.com`), e que **enquanto não for
+  convidada na consola** (Utilizadores e permissões → Lançar para faixas de teste + Lançar para
+  produção) faz falhar o passo de publicação. A falha acontece no fim, com o `.aab` já nos
+  artefactos, e não a meio do build;
+- **iOS**: a integração **Apple Developer Portal** (Team integrations), com uma App Store Connect API
+  key de permissão *App Manager*, com o nome `INOVAPP` - é esse o nome que o workflow procura.
+
+O envio é automático **para um estado reversível**, e é isso que o desenha assim: na Play o `.aab`
+entra como **rascunho no *track* de produção** (nada vai ao ar sem um "Iniciar lançamento" a sério,
+feito por uma pessoa - o mesmo que o `releaseStatus: draft` que o `eas.json` pedia); no App Store
+Connect sobe para o **TestFlight**. Não há `submit_to_app_store` nem
+`expire_build_submitted_for_review`: a build que está em revisão na Apple não pode ser expirada por
+um build de CI que ninguém pediu para publicar.
+
+**O que ainda não aconteceu foi uma build a sério.** O ficheiro está validado como YAML e as peças
+(instâncias, `android_signing`, `ios_signing`, `xcode-project`) vieram dos docs do Codemagic; o
+primeiro ensaio é que dirá se os nomes coincidem - os dois que podem ter de ser ajustados são a
+referência da keystore (`inovapp_upload`) e o esquema do Xcode, que o workflow descobre a partir do
+projeto gerado em vez de o escrever à mão.
+
 #### O que a ficha das lojas pede
 
 | | o que é |
 |---|---|
-| Política de privacidade **num URL público** | usa-se o PDF que a Universitas publica (`https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf`) - decisão tomada com os olhos abertos: é o TC de **outra** aplicação («Buddy App»), e o que isso implica está escrito em `STORE.md` e no topo do `PRIVACY.md` |
+| Política de privacidade **num URL público** | `https://agendamentos.iseclisboa.pt/termos/inovapp` - o documento que o ISEC publicou para a INOVAPP. **Já nomeia a app, mas o conteúdo ainda é o do bem-estar/saúde mental** (o antigo «Happy Campus»), e o responsável pelo tratamento é a Cooperativa, não quem consta no `PRIVACY.md`. O que isso implica - e a correção, que é de texto e do lado da instituição - está em `STORE.md` e no topo do `PRIVACY.md` |
 | URL de suporte | `https://happycampus.pt` |
 | Ícone da app | 1024x1024 **sem canal alfa** - a Apple recusa o ficheiro de marketing com transparência. É o `assets/images/icon.png`, gerado por `npm run icons:build` a partir do logótipo da marca |
 | Capturas de ecrã | Apple: iPhone 6,7"; Play: 2 a 8 capturas **e** uma imagem de destaque 1024x500 |
@@ -436,8 +501,10 @@ um subtítulo de 31 caracteres recusa o texto todo na loja e não se vê a olho.
   também um **URL** para pedir a eliminação (além do caminho na app); o URL de suporte já escolhido
   serve para isso.
 - **Contas no Play criadas como pessoais** só ganham acesso à produção depois de um teste fechado
-  com **12 testadores durante 14 dias**. Contas de **organização** (ISEC) estão fora desta regra -
-  vale a pena confirmar qual é a tua antes de contar com uma data.
+  com **12 testadores durante 14 dias**. Contas de **organização** estão fora desta regra, e a desta
+  app é de organização (ISEC) - confirmado, portanto não há aqui espera nenhuma a contar. A regra
+  fica escrita porque é ela que decide a data de qualquer app nova que venha a ser publicada com
+  uma conta pessoal.
 
 ### Erros em produção (EAS Observe)
 

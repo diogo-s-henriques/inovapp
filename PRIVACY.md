@@ -6,20 +6,29 @@ A INOVAPP é uma aplicação de ligação entre estudantes e docentes do ISEC Li
 sessões de apoio académico. Esta política explica que dados a aplicação guarda, para que servem, com
 quem são partilhados e como se pede a sua remoção.
 
-> **O que está publicado nas lojas é outro documento.** O URL que a App Store e a Google Play vão
-> abrir é `https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf` - os *Termos e Condições da aplicação
-> «Buddy App»*, publicados pela Universitas/Cooperativa de Ensino Superior. Foi uma decisão tomada
-> com os olhos abertos (os dois documentos foram lidos lado a lado), e tem duas consequências:
+> **O que está publicado nas lojas já é desta app - mas ainda não é este texto.** O URL que a App
+> Store e a Google Play abrem é `https://agendamentos.iseclisboa.pt/termos/inovapp`, publicado pela
+> instituição. Substituiu o PDF da aplicação «Buddy App», e isso resolveu metade do problema: o
+> documento **nomeia a InovApp** e é dela que fala no cabeçalho e no objeto.
 >
-> - o documento das lojas **nomeia outra aplicação** e descreve serviços que a INOVAPP não tem
->   (apoio psicológico, monitorização emocional, dados de bem-estar), e não descreve os desta (email
->   institucional, fotografia, mensagens, token dos avisos, Firebase/Expo/EAS Observe);
-> - este ficheiro continua a ser a descrição **exata** da INOVAPP, e é ele que serve para responder
->   ao questionário *App Privacy* (Apple) e à *Segurança de dados* (Play) - responder pelo documento
->   das lojas era declarar dados que não existem e calar os que existem.
+> O que ficou por resolver é o **conteúdo**, que continua a ser o do *Happy Campus* / bem-estar: fala
+> em "saúde mental, bem-estar e qualidade de vida", em "ferramentas de autoavaliação e monitorização
+> emocional", em "acesso a serviços de apoio psicológico" e em "dados relacionados com bem-estar" -
+> nada disto a INOVAPP faz, e nenhum destes dados existe nesta aplicação. O responsável pelo
+> tratamento, lá, é a **Cooperativa de Ensino Superior** (NIPC 503383082); aqui é o Diogo Henriques.
 >
-> Se o ISEC publicar um TC equivalente para a INOVAPP, troca-se o URL nas duas fichas e este aviso
-> desaparece.
+> Duas consequências que se mantêm:
+>
+> - este ficheiro continua a ser a descrição **exata** da INOVAPP, e é ele que serve para responder ao
+>   questionário *App Privacy* (Apple) e à *Segurança de dados* (Play) - responder pelo documento das
+>   lojas era declarar dados que não existem (bem-estar, saúde) e calar os que existem (mensagens,
+>   token dos avisos, Firebase/Expo/EAS Observe);
+> - as perguntas de saúde das duas lojas respondem-se pelo que a app faz ("não é uma app de saúde"),
+>   e ficam a contradizer o documento ligado na mesma ficha. A correção é de texto, do lado do ISEC:
+>   publicar **este** texto no mesmo endereço, e confirmar quem responde pelos dados.
+>
+> Quando isso acontecer, este aviso desaparece e os três documentos - ficha, política publicada e
+> este ficheiro - passam a dizer a mesma coisa.
 >
 > **Por confirmar antes de publicar seja o que for:** quem é o responsável pelo tratamento. Aqui
 > está Diogo Henriques; no documento que as lojas abrem, o responsável é a **Cooperativa de Ensino

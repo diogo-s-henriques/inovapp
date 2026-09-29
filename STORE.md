@@ -13,28 +13,43 @@ tropeça. O mesmo vale para "grátis": diz-se que não há compras dentro da app
 
 | | o que é | estado |
 |---|---|---|
-| **URL da política de privacidade** | um endereço público com a política | **decidido**: `https://happycampus.pt/pdfs/TC_App_HappyCampus.pdf` - ler a nota abaixo antes de o colar |
+| **URL da política de privacidade** | um endereço público com a política | **decidido**: `https://agendamentos.iseclisboa.pt/termos/inovapp` (já não é o PDF da «Buddy App») - ler a nota abaixo: o documento **nomeia a InovApp**, mas o conteúdo ainda não é o dela |
 | **URL de suporte** | uma página onde se possa pedir ajuda (não serve `mailto:`) | **decidido**: `https://happycampus.pt` |
 | **Conta de demonstração para a revisão** | o registo está aberto a qualquer email, mas a conta só fica ativa depois de **confirmar o email** - e um revisor não vai ler a caixa de correio de um endereço que inventou na hora. Sem credenciais, a app não se consegue ver e a revisão é recusada (diretriz 2.1) | **feita** (`npm run create:demo-account`): `aluno.demo@alunos.iseclisboa.pt` e `demo@iseclisboa.pt`, com o email confirmado e o perfil completo. **Escrever as credenciais das *duas* contas em *App Review Information* (com *Sign-in required*) e em *App access* na Play** |
 
-### Sobre a política de privacidade que vai ligada (decisão assumida)
+### Sobre a política de privacidade que vai ligada (metade do caminho andado)
 
-O URL é um **PDF publicado pela Universitas/Cooperativa de Ensino Superior** - e é os *Termos e
-Condições da aplicação «Buddy App»*, não desta. Tem uma secção de proteção de dados (RGPD,
-finalidades, direitos), é HTTPS e abre sem autenticação, por isso as duas lojas aceitam-no como
-política. A decisão de o usar foi tomada com isto à frente: **o documento nomeia outra aplicação e
-descreve serviços que a INOVAPP não tem** (apoio psicológico, monitorização emocional, dados de
-bem-estar) e não descreve os que ela tem (email institucional, fotografia, mensagens, token dos
-avisos, Firebase/Expo/EAS Observe).
+O URL é `https://agendamentos.iseclisboa.pt/termos/inovapp`, publicado pela instituição. Substituiu o
+PDF da «Buddy App» e é uma melhoria real: é HTTPS, abre sem autenticação e **nomeia a InovApp** - o
+nome do ficheiro, o cabeçalho e o objeto dos termos são desta aplicação. O que não mudou foi o
+**conteúdo**, que continua a ser o do *Happy Campus* / bem-estar:
 
-Duas consequências que ficam desta escolha:
+```
+"promover a saúde mental, o bem-estar e a qualidade de vida no contexto do campus académico"
+"b) Ferramentas de autoavaliação e monitorização emocional;"
+"c) Acesso a serviços de apoio psicológico ou encaminhamento;"
+"c) Dados relacionados com bem-estar (quando fornecidos voluntariamente)."
+"Dada a natureza sensível de alguns dados (ex.: saúde mental), a Entidade Gestora..."
+```
+
+Nada disto é o que a INOVAPP faz: não há questionários emocionais, não há encaminhamento
+psicológico, e os dados que a app guarda (email, nome, fotografia, disciplina, mensagens) não são
+dados de bem-estar. E o responsável pelo tratamento, no documento, é a **Cooperativa de Ensino
+Superior** (NIPC 503383082) - no `PRIVACY.md` é o **Diogo Henriques**.
+
+Três consequências, e nenhuma se resolve do lado do código:
 
 - o **questionário** *App Privacy* (Apple) e *Segurança de dados* (Play) tem de descrever o que a
-  app faz **na mesma** - responder pelo documento alinhado era declarar dados que não existem e
-  calar os que existem, e é essa incoerência que a revisão procura;
-- o `PRIVACY.md` deste repositório continua a ser a descrição exata da app. Se um dia o ISEC
-  publicar o equivalente para a INOVAPP, é trocar **uma linha** aqui (o URL) e alinhar os dois
-  documentos.
+  app faz **na mesma** - responder pelo documento ligado era declarar dados que não existem
+  (bem-estar, saúde) e calar os que existem (mensagens, token dos avisos, Firebase/Expo/EAS
+  Observe). É essa incoerência que a revisão procura;
+- **a declaração de aplicação de saúde** (Play) e as perguntas de saúde da Apple respondem-se pelo
+  que a app faz - "não é uma app de saúde" -, e isso fica a contradizer o documento ligado na mesma
+  ficha. Duas revisões diferentes (a da ficha e a do documento) podem ler coisas diferentes;
+- **a correção certa é uma troca de texto, do lado do ISEC:** o `PRIVACY.md` deste repositório já
+  está escrito e é a descrição exata da app (que dados, para quê, com quem, durante quanto tempo e
+  como se apagam). Falta alguém com autoridade na instituição publicá-lo no mesmo endereço - é
+  trocar o conteúdo e mais nada, porque o URL já serve.
 
 ## Nome, subtítulo e categoria
 
@@ -317,12 +332,118 @@ utilizadores** (mensagens privadas entre duas pessoas que aceitaram ligar-se) e 
 utilizador** (nome, fotografia, email). Responde-se, e não se declara "sem interação": é
 exatamente esse o campo em que estas apps são apanhadas a mentir.
 
+## App content (Google Play): as respostas que faltam
+
+A consola lista sete itens por preencher em *App content*, e nenhum deles depende de bundle nem de
+código - são declarações sobre o que a app faz. A fonte para as responder é o **`PRIVACY.md` deste
+repositório**, que descreve a app, e **não** o documento que a ficha abre (ver o aviso no fim desta
+secção).
+
+### Classificação de conteúdo (questionário IARC)
+
+Categoria **Aplicação** (não é jogo). Quase tudo se responde "não", e são as duas respostas "sim" que
+decidem a classificação:
+
+| pergunta (resumo) | resposta |
+|---|---|
+| Violência, sangue, medo | não |
+| Sexualidade e nudez | não |
+| Linguagem imprópria | não |
+| Drogas, álcool e tabaco | não |
+| Jogos de azar e apostas | não |
+| **Interação entre utilizadores** (mensagens privadas, só entre quem aceitou ligar-se) | **sim** |
+| **Partilha de informação pessoal** (nome, fotografia, email e o que se escreve nas mensagens) | **sim** |
+| Partilha de localização | não |
+| Compras digitais | não |
+
+O resultado esperado é **12 anos ou mais**, com as notas *Users Interact* e *Shares Info* na ficha.
+**Não se responde "sem interação"** - é exatamente o campo em que estas apps são apanhadas a mentir,
+e a app tem chat.
+
+### Público-alvo e conteúdo
+
+**18 anos ou mais.** É o apoio académico de uma instituição de ensino superior: quem a usa são alunos
+e docentes adultos. Nas perguntas seguintes, a app **não** é dirigida a crianças, **não** atrai
+crianças e **não** faz parte do programa *Designed for Families*. Isto é a idade do **público** e não
+se confunde com a classificação do IARC (acima): uma app para adultos pode sair com 12.
+
+### Anúncios
+
+**Não** há publicidade em lado nenhum (nem SDKs de publicidade, nem identificador de publicidade -
+não há `AD_ID` no manifesto nem qualquer biblioteca que o peça). É a mesma resposta à declaração do
+*Advertising ID*.
+
+### Health apps
+
+**Não é uma app de saúde.** Não tem funcionalidades de saúde, bem-estar, fitness, sintomas,
+diagnóstico ou monitorização - as disciplinas chamadas "Saúde" e "Anatomia" são **conteúdo escolar**
+de uma lista de disciplinas, não funcionalidades da app, e nenhum dado de saúde é recolhido ou
+inferido. (O aviso no fim desta secção explica porque é que esta resposta, sendo verdadeira, vai ser
+lida ao lado de um documento que diz o contrário.)
+
+### Segurança de dados
+
+"Recolhido" é o que sai do telemóvel para os nossos serviços; "partilhado" é o que vai para terceiros
+**com finalidades próprias**. Os fornecedores que tratam os dados por nossa conta - Google/Firebase,
+Expo Push e EAS Observe - **não contam como partilha** na definição do Play (transferência para
+fornecedores de serviço que processam os dados em nosso nome está fora do âmbito).
+
+| tipo (Play) | recolhido? | obrigatório? | para quê | partilhado? |
+|---|---|---|---|---|
+| Nome | sim | sim | Funcionalidade da app · Gestão de conta | não |
+| Endereço de email | sim | sim | Gestão de conta (entrar, confirmar, repor palavra-passe) | não |
+| IDs de utilizador | sim | sim | Funcionalidade da app · Gestão de conta | não |
+| Fotografia | sim | **não** | Funcionalidade da app (perfil) | não |
+| Outras informações (curso, ano, apresentação, disciplinas, disponibilidade) | sim | sim | Funcionalidade da app | não |
+| Mensagens na app | sim | não | Funcionalidade da app | não |
+| Outro conteúdo do utilizador (avaliações de sessões, ligações partilhadas na conversa) | sim | não | Funcionalidade da app | não |
+| Atividade na app (pedidos de conexão, sessões, bloqueios) | sim | sim | Funcionalidade da app | não |
+| IDs de dispositivo ou outros (token dos avisos + identificador da instalação) | sim | não (só com avisos aceites) | Funcionalidade da app (avisos) | não |
+| Informações e desempenho → Diagnósticos (erros e tempos de arranque, sem dados pessoais, via EAS Observe) | sim | sim | Análise · Funcionalidade da app | não |
+
+Responde-se **"não"** a tudo o resto, e não é por simpatia: localização, contactos, calendário,
+saúde e fitness, informação financeira, histórico de pesquisa e de navegação, e ficheiros ou
+documentos. **Não há upload de ficheiros** - o que se partilha numa conversa é texto e ligações, e os
+materiais vivem dentro das mensagens (é isso que `src/lib/materials.ts` lê).
+
+Mais três respostas fixas: os dados são **cifrados em trânsito** (sim - tudo passa por HTTPS/TLS do
+Firebase); o utilizador **pode pedir a eliminação dos dados** (sim) - dentro da app em *Perfil →
+Definições → Apagar conta*, e o URL para pedir a eliminação é o URL de suporte; e **não há recolha de
+dados para publicidade nem para partilha com terceiros para fins próprios**.
+
+### Instruções de início de sessão
+
+A consola pede isto porque a app foi declarada como "all or some functionality is restricted":
+**toda** a funcionalidade exige sessão iniciada (não há ecrã de convidado) e a conta só fica ativa
+depois de confirmar o email. Em *App access* escreve-se isso mesmo, com as credenciais das **duas**
+contas - a de aluno e a de docente -, iguais às que vão na *App Review Information* (ver a secção
+*Notas para a revisão*). Sem elas, a revisão não entra: não vai ler a caixa de correio de um endereço
+inventado na hora.
+
+### Categoria e países/regiões
+
+Categoria **Educação** (já escolhida na consola). Países/regiões: **adicionar o resto do mundo** (as
+177 em falta), porque a app não está limitada a Portugal - o registo aceita qualquer email, e é isso
+que a defesa da 3.2 diz à Apple. Deixar o mundo de fora por omissão era a ficha a contradizer o
+texto.
+
+### Aviso: o documento que a ficha abre descreve outra aplicação
+
+O URL da política de privacidade (`agendamentos.iseclisboa.pt/termos/inovapp`) nomeia a InovApp, mas o
+conteúdo é o do *Happy Campus*/bem-estar - saúde mental, monitorização emocional, encaminhamento
+psicológico, dados de bem-estar. A análise completa está na secção *Sobre a política de privacidade*,
+no topo deste ficheiro. O que importa para este formulário: **uma pergunta de saúde e uma declaração
+de dados respondem-se pelo que a app faz**, e ficam a contradizer o documento ligado na mesma ficha.
+É o género de incoerência que já custou uma recusa à Apple (ver a 3.2). A correção é de texto, do lado
+do ISEC: publicar o `PRIVACY.md` no mesmo endereço.
+
 ## Datas do lado da Play
 
 Se a conta de programador for **pessoal** (criada depois de novembro de 2023), a produção só abre
 depois de um teste fechado com **12 testadores durante 14 dias** - ou seja, há duas semanas entre o
-primeiro `.aab` e o público, e os testadores têm de aceitar o convite. Contas de **organização**
-(ISEC) não têm este requisito. Vale a pena confirmar qual é antes de contar com uma data.
+primeiro `.aab` e o público, e os testadores têm de aceitar o convite. **A desta app é de
+organização (ISEC) e está fora desta regra - confirmado**, portanto não há aqui espera nenhuma a
+contar: o que separa a app do público é o *App content* em baixo e a revisão.
 
 ## A revisão da 1.0 (6): as duas recusas (19/09/2026)
 

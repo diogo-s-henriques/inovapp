@@ -1,0 +1,157 @@
+# Receita dos bundles de loja no Codemagic (codemagic.io), que passou a ser quem os produz.
+# Tem de estar na raiz do repositório - é lá que o Codemagic a procura.
+#
+# Duas coisas deste projeto explicam os passos todos:
+#
+# 1. **Não há `android/` nem `ios/` no repositório** (nascem do `expo prebuild` e estão no
+#    .gitignore), por isso o projeto nativo é gerado aqui, na máquina de build. Não se copia o
+#    `build.gradle` para o repositório: era uma segunda cópia do projeto nativo a divergir da
+#    primeira, e as duas só se encontram no dia em que algo falha.
+# 2. **As versões e o R8 vêm do `app.json`.** `version: 1.0.1`, `ios.buildNumber: "12"`,
+#    `android.versionCode: 11` e `android.enableMinifyInReleaseBuilds: true` são aplicados pelo
+#    prebuild - não há nada a ajustar aqui, e nada que se possa esquecer num build à mão. Ver a
+#    secção "O primeiro envio no Play Console" no README para a política de números.
+#
+# O que tem de existir no painel do Codemagic antes do primeiro build (uma vez cada):
+#
+#   - **Code signing identities → Android keystores**: a **mesma keystore de upload** que a Play já
+#     conhece, com a referência `inovapp_upload`. Exporta-se do EAS com `eas credentials -p android`
+#     (Android > Keystore > Download). Uma keystore nova obriga a um *reset* da upload key na Play.
+#   - **Code signing identities → iOS certificates/profiles**: o certificado de distribuição (.p12) e
+#     o perfil App Store de `com.diyogo.inovapp`, ambos exportáveis do EAS com `eas credentials -p ios`.
+#     O Codemagic não consegue buscar um certificado que não gerou (a chave privada não é dele), por
+#     isso este passo é mesmo de upload manual.
+#
+# E, para o envio automático às duas lojas (ver o `publishing:` no fim de cada workflow):
+#
+#   - **variável `GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS`** (grupo `play_credentials`): o conteúdo do
+#     JSON da service account que a Google Play autorizou. É a mesma que o EAS já usa
+#     (`firebase-adminsdk-fbsvc@inovapp-68021.iam.gserviceaccount.com`) e **enquanto ela não for
+#     convidada na Play Console** (Utilizadores e permissões → Lançar para faixas de teste + Lançar
+#     para produção) o passo falha no fim da build - com o `.aab` já produzido e guardado nos artefactos;
+#   - **integração Apple Developer Portal** (Team integrations → Developer Portal), com uma App Store
+#     Connect API key de permissão *App Manager*, com o nome `INOVAPP` - é o nome que o workflow iOS
+#     procura. Sem ela, o `.ipa` é construído e fica nos artefactos, mas não sobe ao TestFlight.
+#
+# Nada mais: as variáveis do Firebase (públicas, ver o README) estão aqui em baixo, e as versões no
+# `app.json`. Os workflows não têm `triggering`, por isso só correm quando os pedires no painel.
+#
+# O envio é sempre para um estado **reversível**: na Play fica um rascunho no *track* de produção
+# (nada vai ao ar sem um "Iniciar lançamento" a sério, feito por uma pessoa), e no App Store Connect
+# sobe para o TestFlight. Não há `submit_to_app_store` nem `expire_build_submitted_for_review` de
+# propósito: a build que está em revisão na Apple neste momento não pode ser expirada por um build de
+# CI que ninguém pediu para publicar.
+
+definitions:
+  # As seis variáveis que o código lê em tempo de build (`process.env.EXPO_PUBLIC_*`, inlinadas pelo
+  # Metro). São os mesmos valores que o `eas.json` já tem e que estão em `.env.example`: não são
+  # segredos - a chave do Firebase é pública por desenho, e o que protege os dados são as regras do
+  # Firestore e o App Check (ver o README). Estão escritas aqui porque uma máquina de build não tem
+  # `.env` (está no .gitignore), e sem elas a app arranca a preto no telemóvel de quem a instalar.
+  # O teste `tests/lib/eas-env.test.mts` guarda os outros dois sítios contra o que o código lê.
+  env_firebase: &env_firebase
+    EXPO_PUBLIC_FIREBASE_API_KEY: "AIzaSyAQLSPrAOiXf5ufftllXEVkkn0H0VnJzYc"
+    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "inovapp-68021.firebaseapp.com"
+    EXPO_PUBLIC_FIREBASE_PROJECT_ID: "inovapp-68021"
+    EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "inovapp-68021.appspot.com"
+    EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "1008777430223"
+    EXPO_PUBLIC_FIREBASE_APP_ID: "1:1008777430223:web:654d2e0603277454d0e3ba"
+
+workflows:
+  android-release:
+    name: INOVAPP · Android (.aab)
+    # macOS serve para Android, e é a instância que não depende de faturação ativa. Com billing
+    # ligado, `linux_x2` faz o mesmo mais barato.
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      node: 24
+      java: 21
+      android_signing:
+        - inovapp_upload
+      groups:
+        # A service account da Play (variável criada no painel, por ser um segredo).
+        - play_credentials
+      vars:
+        <<: *env_firebase
+    cache:
+      cache_paths:
+        - $HOME/.gradle/caches
+        - $CM_BUILD_DIR/node_modules
+    scripts:
+      - name: Dependências
+        script: npm ci
+      - name: Projeto nativo (as versões e o R8 vêm do app.json)
+        script: npx expo prebuild --platform android --no-install
+      - name: Assinatura
+        script: |
+          # O Gradle gerado assina o release com a **chave de debug** (é o que o prebuild escreve, com
+          # um comentário a dizer para não o fazer em produção); quem injectava a chave a sério era o
+          # EAS, e era por aqui: estas quatro propriedades são lidas pelo AGP, não pelo projeto.
+          # Escrevem-se no gradle.properties do utilizador para não tocar em nada do prebuild.
+          {
+            echo "android.injected.signing.store.file=$CM_KEYSTORE_PATH"
+            echo "android.injected.signing.store.password=$CM_KEYSTORE_PASSWORD"
+            echo "android.injected.signing.key.alias=$CM_KEY_ALIAS"
+            echo "android.injected.signing.key.password=$CM_KEY_PASSWORD"
+          } >> "$HOME/.gradle/gradle.properties"
+      - name: Bundle
+        script: cd android && ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        # Sem permissões na Play Console, este passo é o único que falha - o `.aab` já está nos
+        # artefactos e a falha é no fim, não a meio de um build.
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+        track: production
+        # Rascunho: o `.aab` aparece no *track* de produção à espera de um "Iniciar lançamento".
+        # É o mesmo que o `releaseStatus: draft` que o `eas.json` pedia, e não pode ser combinado
+        # com `rollout_fraction`.
+        submit_as_draft: true
+
+  ios-release:
+    name: INOVAPP · iOS (.ipa)
+    # O nome que o workflow procura em Team integrations → Developer Portal (App Store Connect API
+    # key), e que é preciso existir para o envio ao TestFlight funcionar.
+    integrations:
+      app_store_connect: INOVAPP
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    environment:
+      node: 24
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.diyogo.inovapp
+      vars:
+        <<: *env_firebase
+    cache:
+      cache_paths:
+        - $HOME/Library/Caches/CocoaPods
+        - $CM_BUILD_DIR/node_modules
+    scripts:
+      - name: Dependências
+        script: npm ci
+      - name: Projeto nativo
+        script: npx expo prebuild --platform ios --no-install
+      - name: Pods
+        script: cd ios && pod install
+      - name: Perfil de assinatura
+        script: xcode-project use-profiles
+      - name: .ipa
+        script: |
+          # O nome do esquema é o do projeto gerado pelo prebuild (deriva do `expo.name`), por isso
+          # descobre-se em vez de ficar escrito à mão a apontar para o nome errado.
+          WORKSPACE=$(ls -d ios/*.xcworkspace | head -1)
+          xcode-project build-ipa --workspace "$WORKSPACE" --scheme "$(basename "$WORKSPACE" .xcworkspace)"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Sobe ao TestFlight (e não a revisão da App Store): a app estava a ser revista quando isto
+        # foi escrito, e uma revisão nova a partir do CI era um botão que ninguém quer carregar sem
+        # olhar. Para a revisão, é a partir da consola, como sempre foi.
+        submit_to_testflight: true
