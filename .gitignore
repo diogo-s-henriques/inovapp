@@ -33,6 +33,10 @@ yarn-error.*
 
 # chaves de conta de servico do Firebase (o script de limpeza usa uma)
 *firebase-adminsdk*.json
+
+# o `eas credentials` escreve aqui a keystore do Android e as palavras-passe dela (e a chave da
+# conta de serviço do Play, quando é por ali que se descarrega o ficheiro)
+credentials.json
 *service-account*.json
 *serviceAccount*.json
 

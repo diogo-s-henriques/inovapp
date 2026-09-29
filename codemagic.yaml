@@ -17,10 +17,14 @@
 #   - **Code signing identities → Android keystores**: a **mesma keystore de upload** que a Play já
 #     conhece, com a referência `inovapp_upload`. Exporta-se do EAS com `eas credentials -p android`
 #     (Android > Keystore > Download). Uma keystore nova obriga a um *reset* da upload key na Play.
-#   - **Code signing identities → iOS certificates/profiles**: o certificado de distribuição (.p12) e
-#     o perfil App Store de `com.diyogo.inovapp`, ambos exportáveis do EAS com `eas credentials -p ios`.
-#     O Codemagic não consegue buscar um certificado que não gerou (a chave privada não é dele), por
-#     isso este passo é mesmo de upload manual.
+#   - **iOS: a chave privada do certificado de distribuição**, na variável `CERTIFICATE_PRIVATE_KEY`
+#     (grupo `code-signing`). É uma chave que se gera aqui mesmo, num segundo
+#     (`ssh-keygen -t rsa -b 2048 -m PEM -f ios_distribution_private_key -q -N ""`), e o Codemagic
+#     cria o certificado na conta Apple a partir dela. Não se exporta o certificado do EAS: a chave
+#     privada é dele e não sai de lá - o que sai é este caminho, que é mais curto e não depende de
+#     ninguém. Consequência a saber: passa a haver **dois** certificados de distribuição (o do EAS e
+#     este), e a Apple limita-os a 3 - o do EAS pode ser revogado quando o Codemagic for o único a
+#     construir. Nada disto afeta a app já publicada.
 #
 # E, para o envio automático às duas lojas (ver o `publishing:` no fim de cada workflow):
 #
@@ -31,7 +35,8 @@
 #     para produção) o passo falha no fim da build - com o `.aab` já produzido e guardado nos artefactos;
 #   - **integração Apple Developer Portal** (Team integrations → Developer Portal), com uma App Store
 #     Connect API key de permissão *App Manager*, com o nome `INOVAPP` - é o nome que o workflow iOS
-#     procura. Sem ela, o `.ipa` é construído e fica nos artefactos, mas não sobe ao TestFlight.
+#     procura, e serve as duas coisas: criar/buscar o certificado e o perfil, e enviar ao TestFlight.
+#     Sem ela, o `.ipa` é construído e fica nos artefactos, mas não sobe ao TestFlight.
 #
 # Nada mais: as variáveis do Firebase (públicas, ver o README) estão aqui em baixo, e as versões no
 # `app.json`. Os workflows não têm `triggering`, por isso só correm quando os pedires no painel.
@@ -122,9 +127,9 @@ workflows:
       node: 24
       xcode: latest
       cocoapods: default
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.diyogo.inovapp
+      groups:
+        # A chave privada do certificado de distribuição (variável criada no painel).
+        - code-signing
       vars:
         <<: *env_firebase
     cache:
@@ -138,7 +143,17 @@ workflows:
         script: npx expo prebuild --platform ios --no-install
       - name: Pods
         script: cd ios && pod install
-      - name: Perfil de assinatura
+      # A assinatura iOS é feita aqui, e não com ficheiros carregados à mão: a partir da chave
+      # privada (CERTIFICATE_PRIVATE_KEY) e da API key, o Codemagic vai à conta Apple buscar o
+      # certificado e o perfil que correspondem à chave, e cria-os se ainda não existirem. É a ordem
+      # dos docs: keychain, ficheiros, certificado no keychain, perfis no projeto, e só depois build.
+      - name: Keychain
+        script: keychain initialize
+      - name: Certificado e perfil (cria o que faltar)
+        script: app-store-connect fetch-signing-files "com.diyogo.inovapp" --type IOS_APP_STORE --create
+      - name: Certificado no keychain
+        script: keychain add-certificates
+      - name: Perfil no projeto
         script: xcode-project use-profiles
       - name: .ipa
         script: |

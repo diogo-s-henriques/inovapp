@@ -414,29 +414,32 @@ todas as peças do projeto nativo - **as versões e o R8 inclusive**, que estão
 neste ficheiro. Não há `android/` nem `ios/` no repositório (estão no .gitignore), por isso este é o
 único caminho: gerar, aqui, exatamente o que o `app.json` descreve.
 
-A assinatura é a parte que exige trabalho manual, e uma vez cada:
+Três coisas no painel, e uma vez cada:
 
-- **Android**: subir em *Code signing identities > Android keystores* a keystore com a referência
-  `inovapp_upload` - e tem de ser a **mesma keystore de upload** que a Play já conhece (o Gradle
-  gerado assina com a chave de *debug*; quem assinava a sério era o EAS, injectando
+- **Android, a keystore**: subir em *Code signing identities > Android keystores* a keystore com a
+  referência `inovapp_upload` - e tem de ser a **mesma keystore de upload** que a Play já conhece (o
+  Gradle gerado assina com a chave de *debug*; quem assinava a sério era o EAS, injectando
   `android.injected.signing.*`, que o AGP lê - é o que o workflow volta a fazer com as variáveis do
-  Codemagic). Uma keystore diferente obriga a um *reset* da upload key na Play Console antes de
-  qualquer envio ser aceite. Exporta-se do EAS com `eas credentials -p android`;
-- **iOS**: subir o certificado de distribuição (.p12) e o perfil App Store de `com.diyogo.inovapp`
-  em *Code signing identities > iOS*, também exportáveis do EAS (`eas credentials -p ios`). O
-  Codemagic não consegue buscar um certificado que não gerou - a chave privada não é dele -, por
-  isso não vale a pena procurar um botão que o faça.
+  Codemagic). Uma keystore diferente só entra depois de um *reset* da upload key na Play Console.
+  Exporta-se pelo `eas credentials` (Android → perfil → *credentials.json: Upload/Download
+  credentials* → *Download credentials from EAS*, que descarrega o `.jks` e as palavras-passe);
+- **iOS, a chave privada do certificado**: a variável `CERTIFICATE_PRIVATE_KEY` (grupo `code-signing`),
+  gerada na hora (`ssh-keygen -t rsa -b 2048 -m PEM -f ios_distribution_private_key -q -N ""`). A
+  partir dela e da API key, o workflow manda o Codemagic buscar o certificado e o perfil que
+  correspondem à chave - e **criá-los se não existirem**. Não se exporta o certificado do EAS: a
+  chave privada é dele e não sai de lá. Passa a haver dois certificados de distribuição (o do EAS e
+  este), e é por isso que o do EAS pode ser revogado quando o Codemagic for o único a construir;
+- **a integração Apple Developer Portal** (Team integrations → Developer Portal), com uma App Store
+  Connect API key de permissão *App Manager*, com o nome `INOVAPP` - é o nome que o workflow procura,
+  e serve o certificado, o perfil **e** o envio ao TestFlight.
 
-E, para o envio automático, mais duas:
-
-- **Android**: a variável `GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS` (grupo `play_credentials`), com o
-  conteúdo do JSON da service account que a Play autorizou - a mesma que o EAS já usava
-  (`firebase-adminsdk-fbsvc@inovapp-68021.iam.gserviceaccount.com`), e que **enquanto não for
-  convidada na consola** (Utilizadores e permissões → Lançar para faixas de teste + Lançar para
-  produção) faz falhar o passo de publicação. A falha acontece no fim, com o `.aab` já nos
-  artefactos, e não a meio do build;
-- **iOS**: a integração **Apple Developer Portal** (Team integrations), com uma App Store Connect API
-  key de permissão *App Manager*, com o nome `INOVAPP` - é esse o nome que o workflow procura.
+E, para o envio automático à Play, mais uma: a variável
+`GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS` (grupo `play_credentials`), com o conteúdo do JSON da
+service account que a Play autorizou - a mesma que o EAS já usava
+(`firebase-adminsdk-fbsvc@inovapp-68021.iam.gserviceaccount.com`), e que **enquanto não for convidada
+na consola** (Utilizadores e permissões → Lançar para faixas de teste + Lançar para produção) faz
+falhar o passo de publicação. A falha acontece no fim, com o `.aab` já nos artefactos, e não a meio do
+build.
 
 O envio é automático **para um estado reversível**, e é isso que o desenha assim: na Play o `.aab`
 entra como **rascunho no *track* de produção** (nada vai ao ar sem um "Iniciar lançamento" a sério,
