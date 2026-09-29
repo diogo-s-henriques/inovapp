@@ -46,13 +46,13 @@ export const SENHA_DE_TESTE = 'Password1!';
  * qualquer outro endereço entra como aluno (ver getAccountRole em src/constants/auth.ts).
  */
 export const CONTAS = {
-  /** Aluna que só aprende - o lado "Tutorando" dos fluxos. */
+  /** Aluna - o lado "Tutorando" dos fluxos. */
   aluna: 'ana.aluna@alunos.iseclisboa.pt',
-  /** Aluno que ensina - o lado "Mentor". */
-  alunoQueEnsina: 'bruno.aluno@alunos.iseclisboa.pt',
-  /** Professora - nunca é "Mentor", é "Tutor". */
+  /** Docente do ISEC - o lado "Tutor": é ele que recebe os pedidos e dá as sessões. */
+  professor: 'bruno.professor@iseclisboa.pt',
+  /** Segunda docente, para cenários com mais de um tutor na descoberta. */
   professora: 'carla.professora@iseclisboa.pt',
-  /** Aluno que também só aprende, para cenários de terceiro. */
+  /** Aluno que só aprende, para cenários de terceiro. */
   intruso: 'diogo.aluno@alunos.iseclisboa.pt',
 } as const;
 
@@ -171,13 +171,13 @@ export function esperarPor<T>(
 }
 
 export interface Cenario {
-  /** Aluna que só aprende. */
+  /** Aluna (Tutorando). */
   ana: string;
-  /** Aluno que ensina (mentor). */
+  /** Docente do ISEC (Tutor). */
   bruno: string;
-  /** Professora (tutor). */
+  /** Segunda docente (Tutor). */
   carla: string;
-  /** Outro aluno que só aprende, para cenários de terceiro. */
+  /** Aluno que só aprende, para cenários de terceiro. */
   diogo: string;
 }
 
@@ -188,15 +188,12 @@ export async function criarCenario(): Promise<Cenario> {
   const ana = await criarConta(CONTAS.aluna);
   await configurarPerfil(ana, {
     fullName: 'Ana Aluna',
-    participationMode: 'learn',
     learningSubjects: ['Matemática'],
-    availabilityModality: ['Online'],
   });
 
-  const bruno = await criarConta(CONTAS.alunoQueEnsina);
+  const bruno = await criarConta(CONTAS.professor);
   await configurarPerfil(bruno, {
-    fullName: 'Bruno Aluno',
-    participationMode: 'teach',
+    fullName: 'Bruno Professor',
     teachingSubjects: ['Matemática'],
     availabilityPeriods: ['Tardes'],
     availabilityModality: ['Online'],
@@ -205,14 +202,12 @@ export async function criarCenario(): Promise<Cenario> {
   const carla = await criarConta(CONTAS.professora);
   await configurarPerfil(carla, {
     fullName: 'Carla Professora',
-    participationMode: 'teach',
     teachingSubjects: ['Física'],
   });
 
   const diogo = await criarConta(CONTAS.intruso);
   await configurarPerfil(diogo, {
     fullName: 'Diogo Aluno',
-    participationMode: 'learn',
     learningSubjects: ['Física'],
   });
 

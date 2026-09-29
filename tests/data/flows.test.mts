@@ -31,10 +31,10 @@ import { auth, db } from '@/lib/firebase';
 import {
   connectionRequestId,
   fetchBlockedUsers,
-  fetchConnectedMentors,
+  fetchConnectedTutors,
   fetchConnectedTutees,
   fetchExcludedCandidateIds,
-  fetchMentorCandidates,
+  fetchTutorCandidates,
   hasConnections,
   matchId,
   sendConnectionRequest,
@@ -114,7 +114,7 @@ async function ligar(ana: string, bruno: string): Promise<string> {
   await sendConnectionRequest(ana, bruno);
 
   const requestId = connectionRequestId(ana, bruno);
-  await entrarComo(CONTAS.alunoQueEnsina);
+  await entrarComo(CONTAS.professor);
   await respondToConnectionRequest(requestId, ana, bruno, true);
 
   return requestId;
@@ -145,7 +145,7 @@ async function agendarSessao(ana: string, bruno: string): Promise<{ requestId: s
     message: DADOS_DA_SESSAO.message,
   };
 
-  await entrarComo(CONTAS.alunoQueEnsina);
+  await entrarComo(CONTAS.professor);
   await respondToSessionRequest(pedido, bruno, true);
 
   const sessao = (await sessoesDe(bruno))[0];
@@ -155,7 +155,7 @@ async function agendarSessao(ana: string, bruno: string): Promise<{ requestId: s
 /** Cenário completo até haver uma sessão terminada e por avaliar. */
 async function sessaoTerminada(ana: string, bruno: string): Promise<string> {
   const { sessionId } = await agendarSessao(ana, bruno);
-  await entrarComo(CONTAS.alunoQueEnsina);
+  await entrarComo(CONTAS.professor);
   await completeSession(sessionId);
   return sessionId;
 }
@@ -226,17 +226,17 @@ describe('criação de conta e entrada', () => {
 });
 
 describe('pedido de conexão', () => {
-  it('chega ao mentor com o perfil de quem o enviou', async () => {
+  it('chega ao tutor com o perfil de quem o enviou', async () => {
     await entrarComo(CONTAS.aluna);
     await sendConnectionRequest(cenario.ana, cenario.bruno);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     // A subscrição devolve o estado (a lista **e** se a leitura falhou), e não só a lista: o erro
     // era um canal que não existia, e uma leitura negada ficava igual a "não há pedidos".
     const pedidos = await esperarPor<ConnectionRequestsState>(
       (emitir) => subscribePendingConnectionRequests(cenario.bruno, emitir),
       (estado) => estado.requests.length === 1,
-      'o pedido de conexão a chegar ao mentor',
+      'o pedido de conexão a chegar ao tutor',
     );
 
     assert.equal(pedidos.error, false);
@@ -263,12 +263,12 @@ describe('pedido de conexão', () => {
     assert.equal(await conversationExists(cenario.bruno, cenario.ana), true);
   });
 
-  it('o mentor passa a ter a lista dos seus tutorandos', async () => {
+  it('o tutor passa a ter a lista dos seus tutorandos', async () => {
     await ligar(cenario.ana, cenario.bruno);
 
-    // A sessão ficou aberta como Bruno (o mentor) - é a leitura que a app dele faz. Este teste
-    // também fixa o sentido: um pedido vai sempre do Tutorando (`from`) para o Mentor (`to`),
-    // por isso a lista de tutorandos do mentor são os `from` - procurar os `from` do próprio
+    // A sessão ficou aberta como Bruno (o tutor) - é a leitura que a app dele faz. Este teste
+    // também fixa o sentido: um pedido vai sempre do Tutorando (`from`) para o Tutor (`to`),
+    // por isso a lista de tutorandos do tutor são os `from` - procurar os `from` do próprio
     // Bruno devolveria vazio e é isso que este teste apanha.
     const tutorandos = await fetchConnectedTutees(cenario.bruno);
     assert.deepEqual(tutorandos.map((tutorando) => tutorando.id), [cenario.ana]);
@@ -329,7 +329,7 @@ describe('pedido de conexão', () => {
     await entrarComo(CONTAS.aluna);
     await sendConnectionRequest(cenario.ana, cenario.bruno);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     assert.deepEqual(await fetchConnectedTutees(cenario.bruno), []);
   });
 
@@ -337,7 +337,7 @@ describe('pedido de conexão', () => {
     await entrarComo(CONTAS.aluna);
     await sendConnectionRequest(cenario.ana, cenario.bruno);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, false);
 
     assert.deepEqual(await fetchConnectedTutees(cenario.bruno), []);
@@ -350,7 +350,7 @@ describe('pedido de conexão', () => {
     await sendConnectionRequest(cenario.ana, cenario.bruno);
     assert.equal(await hasConnections(cenario.ana), false, 'um pedido pendente ainda não é ligação');
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, true);
 
     // Os dois lados: o Tutorando tem a ligação como "from" e o Mentor como "to".
@@ -370,7 +370,7 @@ describe('pedido de conexão', () => {
 
     // O sentido contrário também: quem foi bloqueado não pode continuar a ver o guia de quem tem
     // ligações por causa de uma ligação que já não é uma.
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     assert.equal(await hasConnections(cenario.bruno), false);
   });
 
@@ -381,7 +381,7 @@ describe('pedido de conexão', () => {
     assert.equal((await fetchExcludedCandidateIds(cenario.ana)).has(cenario.bruno), true);
 
     // O sentido contrário: quem foi bloqueado exclui o outro mesmo sem poder criar o bloqueio.
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     assert.equal((await fetchExcludedCandidateIds(cenario.bruno)).has(cenario.ana), true);
   });
 
@@ -392,9 +392,9 @@ describe('pedido de conexão', () => {
     await blockUser(cenario.ana, cenario.bruno);
 
     // A ligação continua aceite na base de dados - o que muda é deixar de ser apresentada.
-    assert.deepEqual(await fetchConnectedMentors(cenario.ana), []);
+    assert.deepEqual(await fetchConnectedTutors(cenario.ana), []);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     assert.deepEqual(await fetchConnectedTutees(cenario.bruno), []);
   });
 
@@ -439,7 +439,7 @@ describe('pedido de conexão', () => {
 
     // O Bruno foi bloqueado, mas não bloqueou ninguém: a lista dele tem de estar vazia (a lista
     // não pode transformar-se num aviso de "alguém te bloqueou").
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     assert.deepEqual(await fetchBlockedUsers(cenario.bruno), []);
     assert.equal(await hasBlocked(cenario.bruno, cenario.ana), false);
   });
@@ -449,7 +449,7 @@ describe('pedido de conexão', () => {
     await entrarComo(CONTAS.aluna);
     await sendConnectionRequest(cenario.ana, cenario.bruno);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, false);
 
     assert.equal((await lerDocumento(`connectionRequests/${connectionRequestId(cenario.ana, cenario.bruno)}`))?.status, 'declined');
@@ -508,7 +508,7 @@ describe('mensagens', () => {
     await entrarComo(CONTAS.aluna);
     await sendMessage(conversaId, cenario.ana, cenario.bruno, 'Olá!');
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     await markConversationRead(conversaId, cenario.bruno);
 
     assert.deepEqual((await lerDocumento(`conversations/${conversaId}`))?.unreadFor, []);
@@ -547,7 +547,7 @@ describe('lista de conversas ao vivo', () => {
 
     // A subscrição abre como o Bruno, o destinatário: o nome que ele tem de ver é o da Ana (o
     // "outro" participante), e não o dele próprio.
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     const estado = await esperarPor<ConversationsState>(
       (emitir) => subscribeToConversations(cenario.bruno, emitir),
       (atual) => atual.conversations.length === 1,
@@ -562,7 +562,7 @@ describe('lista de conversas ao vivo', () => {
   });
 
   it('quem entra depois recebe logo o que já se sabia', async () => {
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
 
     // A primeira "janela" - a barra de baixo, que está montada em toda a app - fica aberta.
     let daBarra: ConversationsState = { conversations: [], error: false };
@@ -587,7 +587,7 @@ describe('lista de conversas ao vivo', () => {
   });
 
   it('um bloqueio tira a conversa da lista que já estava aberta', async () => {
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
 
     const fecharPrimeira = subscribeToConversations(cenario.bruno, () => {});
 
@@ -627,7 +627,7 @@ describe('pedido de sessão', () => {
     );
   });
 
-  it('aceitar cria a sessão com quem pediu como tutorando e quem aceitou como mentor', async () => {
+  it('aceitar cria a sessão com quem pediu como tutorando e quem aceitou como tutor', async () => {
     await ligar(cenario.ana, cenario.bruno);
     const { requestId, sessionId } = await agendarSessao(cenario.ana, cenario.bruno);
 
@@ -643,14 +643,14 @@ describe('pedido de sessão', () => {
     assert.equal((await lerDocumento(`sessionRequests/${requestId}`))?.status, 'accepted');
   });
 
-  it('só o mentor termina a sessão', async () => {
+  it('só o tutor termina a sessão', async () => {
     await ligar(cenario.ana, cenario.bruno);
     const { sessionId } = await agendarSessao(cenario.ana, cenario.bruno);
 
     await entrarComo(CONTAS.aluna);
     await assert.rejects(() => completeSession(sessionId), semPermissao);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     await completeSession(sessionId);
 
     assert.equal((await lerDocumento(`sessions/${sessionId}`))?.status, 'completed');
@@ -660,11 +660,11 @@ describe('pedido de sessão', () => {
     await ligar(cenario.ana, cenario.bruno);
     await agendarSessao(cenario.ana, cenario.bruno);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     const doMentor = await esperarPor<AgendaSession[]>(
       (emitir) => subscribeToSessions(cenario.bruno, emitir),
       (sessoes) => sessoes.length === 1,
-      'a sessão a aparecer na agenda do mentor',
+      'a sessão a aparecer na agenda do tutor',
     );
 
     assert.equal(doMentor[0].role, 'mentor');
@@ -715,11 +715,11 @@ describe('avaliações', () => {
     assert.ok(!Object.values(avaliacao ?? {}).includes(cenario.ana));
   });
 
-  it('o mentor não se avalia a si próprio', async () => {
+  it('o tutor não se avalia a si próprio', async () => {
     await ligar(cenario.ana, cenario.bruno);
     const sessionId = await sessaoTerminada(cenario.ana, cenario.bruno);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     await assert.rejects(() => submitRating(sessionId, cenario.bruno, DADOS_DA_AVALIACAO), semPermissao);
   });
 
@@ -731,7 +731,7 @@ describe('avaliações', () => {
     await assert.rejects(() => submitRating(sessionId, cenario.bruno, DADOS_DA_AVALIACAO), semPermissao);
   });
 
-  it('não se avalia com o mentor de outra sessão', async () => {
+  it('não se avalia com o tutor de outra sessão', async () => {
     await ligar(cenario.ana, cenario.bruno);
     const sessionId = await sessaoTerminada(cenario.ana, cenario.bruno);
 
@@ -762,10 +762,10 @@ describe('avaliações', () => {
   });
 });
 
-describe('descoberta de mentores', () => {
+describe('descoberta de tutores', () => {
   it('só devolve quem pode ensinar, sem o próprio e por ordem de disciplinas em comum', async () => {
     await entrarComo(CONTAS.aluna);
-    const candidatos = await fetchMentorCandidates({
+    const candidatos = await fetchTutorCandidates({
       currentUid: cenario.ana,
       learningSubjects: ['Matemática'],
     });
@@ -787,22 +787,22 @@ describe('descoberta de mentores', () => {
     // de Ciências Naturais - a mesma da Física que também procuro -, e é isso que o põe à frente.
     // Este teste atravessa o caminho todo (Firestore → toCandidate → rankCandidates) de propósito:
     // é onde se vê que a ordenação usa as disciplinas **do perfil**, e não o que ia na consulta.
-    const soMatematica = await criarConta('pesquisa.so-matematica@alunos.iseclisboa.pt');
+    // Os dois são docentes (@iseclisboa.pt): é o papel que os põe na descoberta, e um aluno com
+    // disciplinas preenchidas não entra no deck por isso.
+    const soMatematica = await criarConta('pesquisa.so-matematica@iseclisboa.pt');
     await configurarPerfil(soMatematica, {
       fullName: 'Sofia Matemática',
-      participationMode: 'teach',
       teachingSubjects: ['Matemática', 'Programação'],
     });
 
-    const tambemCiencias = await criarConta('pesquisa.ciencias@alunos.iseclisboa.pt');
+    const tambemCiencias = await criarConta('pesquisa.ciencias@iseclisboa.pt');
     await configurarPerfil(tambemCiencias, {
       fullName: 'Tiago Ciências',
-      participationMode: 'teach',
       teachingSubjects: ['Matemática', 'Programação', 'Química'],
     });
 
     await entrarComo(CONTAS.aluna);
-    const candidatos = await fetchMentorCandidates({
+    const candidatos = await fetchTutorCandidates({
       currentUid: cenario.ana,
       learningSubjects: ['Matemática', 'Programação', 'Física'],
     });
@@ -830,7 +830,7 @@ describe('quem fica fora da descoberta', () => {
     await entrarComo(CONTAS.aluna);
     await sendConnectionRequest(cenario.ana, cenario.bruno);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     assert.ok((await fetchExcludedCandidateIds(cenario.bruno)).has(cenario.ana));
   });
 
@@ -838,7 +838,7 @@ describe('quem fica fora da descoberta', () => {
     await entrarComo(CONTAS.aluna);
     await sendConnectionRequest(cenario.ana, cenario.bruno);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     await respondToConnectionRequest(connectionRequestId(cenario.ana, cenario.bruno), cenario.ana, cenario.bruno, false);
     assert.ok(
       (await fetchExcludedCandidateIds(cenario.bruno)).has(cenario.ana),
@@ -856,27 +856,25 @@ describe('quem fica fora da descoberta', () => {
     );
   });
 
-  it('quem me pediu conexão não aparece no deck mesmo que ensine', async () => {
-    // Só quem aprende pode pedir, e só quem ensina entra no deck - é entre quem faz as duas
-    // coisas que o mesmo par podia acabar em cima (o pedido) e em baixo (o deck).
-    const elsa = await criarConta('elsa.ambos@alunos.iseclisboa.pt');
+  it('quem me pediu conexão não aparece no deck mesmo sendo um tutor', async () => {
+    // Um docente também pode pedir uma conexão a outro (faz-se pela pesquisa), e é isso que põe o
+    // mesmo par em cima (o pedido) e em baixo (o deck) ao mesmo tempo.
+    const elsa = await criarConta('elsa.professora@iseclisboa.pt');
     await configurarPerfil(elsa, {
-      fullName: 'Elsa Ambos',
-      participationMode: 'both',
+      fullName: 'Elsa Professora',
       teachingSubjects: ['Matemática'],
-      learningSubjects: ['Física'],
     });
 
     await sendConnectionRequest(elsa, cenario.bruno);
 
-    await entrarComo(CONTAS.alunoQueEnsina);
-    const semExclusao = await fetchMentorCandidates({ currentUid: cenario.bruno, learningSubjects: [] });
+    await entrarComo(CONTAS.professor);
+    const semExclusao = await fetchTutorCandidates({ currentUid: cenario.bruno, learningSubjects: [] });
     assert.ok(
       semExclusao.some((candidato) => candidato.id === elsa),
       'sem a exclusão a Elsa aparecia no deck, por isso este teste não prova nada',
     );
 
-    const comExclusao = await fetchMentorCandidates({
+    const comExclusao = await fetchTutorCandidates({
       currentUid: cenario.bruno,
       learningSubjects: [],
       excludeIds: await fetchExcludedCandidateIds(cenario.bruno),

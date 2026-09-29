@@ -92,6 +92,15 @@ no corpo da descrição. Duas notas honestas:
 - **o nome perde as palavras que davam busca** ("mentorias", "ISEC"). Compensam-se nas palavras-chave
   e na descrição, que é onde a Apple as lê de facto - mas é uma troca, e fica dito.
 
+**Nota de 29/09/2026 - o nome voltou a ficar desalinhado com a app.** Nesta versão o papel passou a
+vir do email (um `@iseclisboa.pt` é Tutor, tudo o resto é Tutorando) e deixou de haver mentoria entre
+pares: um aluno já não pode ensinar outro aluno. O nome ("INOVAPP: Mentoria entre pares"), o
+subtítulo e a descrição breve ("Mentoria entre estudantes e docentes do ensino superior") continuam a
+prometer o que a app fazia antes, e a descrição foi reescrita para não prometer o que ela já não faz.
+Reverter isto sem perder a função que torna a app útil fora do ISEC é uma decisão de produto, e é a
+que fica por tomar: manter "mentoria entre pares" como **escolha** de quem ensina (dois rótulos,
+Tutor e Tutorando, sem terceiro papel) devolvia o nome à verdade.
+
 ## Texto promocional (App Store, máx. 170)
 
 ```
@@ -105,15 +114,14 @@ leva os materiais contigo - tudo dentro da tua instituição.
 A INOVAPP liga quem quer aprender a quem pode ensinar, na tua instituição de ensino superior.
 
 Procurar quem te ajude numa disciplina não devia dar mais trabalho do que a própria disciplina.
-Aqui, quem precisa de apoio encontra quem já passou pela mesma unidade curricular - colegas mais
-avançados e docentes - e combina uma sessão em dois toques.
+Aqui, quem precisa de apoio encontra um docente que dá essa unidade curricular - e combina uma
+sessão em dois toques.
 
 O QUE PODE FAZER
 
-· Diz o que queres aprender e o que podes ensinar: a descoberta só te mostra quem procura o que tens
-  para dar.
+· Diz o que queres aprender: a descoberta mostra-te os tutores que dão essas disciplinas.
 · Procura por disciplina, curso e disponibilidade, e vê o perfil de quem está por trás de cada nome.
-· Pede conexão a um mentor ou tutor. Só se fala depois de o pedido ser aceite.
+· Pede conexão a um tutor. Só se fala depois de o pedido ser aceite.
 · Marca sessões de apoio com data, hora e modalidade - presencial ou online.
 · Troca mensagens e deixa os materiais da sessão na conversa, para não se perderem.
 · Acompanha o que tens marcado: sessões agendadas, dadas e recebidas.
@@ -125,9 +133,8 @@ Para quem quer aprender e para quem pode ensinar. Cria conta com o teu email - q
 confirma-o pelo link que te enviamos: não há convite, não há aprovação e não há pagamento.
 
 A INOVAPP é a app de mentoria do **consórcio INOVAPP**, usada pelas instituições de ensino superior
-que dele fazem parte. Quem entra com o email institucional de uma delas fica logo ligado à
-comunidade dessa instituição - alunos e docentes; todos os outros entram como alunos, e podem dar e
-receber apoio.
+que dele fazem parte. Quem entra com um email institucional de docente fica ligado à comunidade
+dessa instituição e aparece como Tutor; todos os outros entram como alunos, e são quem procura apoio.
 
 O QUE NÃO FAZ
 
@@ -147,15 +154,14 @@ inteiro e não por referência: é daqui que se cola):
 A INOVAPP liga quem quer aprender a quem pode ensinar, na tua instituição de ensino superior.
 
 Procurar quem te ajude numa disciplina não devia dar mais trabalho do que a própria disciplina.
-Aqui, quem precisa de apoio encontra quem já passou pela mesma unidade curricular - colegas mais
-avançados e docentes - e combina uma sessão em dois toques.
+Aqui, quem precisa de apoio encontra um docente que dá essa unidade curricular - e combina uma
+sessão em dois toques.
 
 O QUE PODE FAZER
 
-· Diz o que queres aprender e o que podes ensinar: a descoberta só te mostra quem procura o que tens
-  para dar.
+· Diz o que queres aprender: a descoberta mostra-te os tutores que dão essas disciplinas.
 · Procura por disciplina, curso e disponibilidade, e vê o perfil de quem está por trás de cada nome.
-· Pede conexão a um mentor ou tutor. Só se fala depois de o pedido ser aceite.
+· Pede conexão a um tutor. Só se fala depois de o pedido ser aceite.
 · Marca sessões de apoio com data, hora e modalidade - presencial ou online.
 · Troca mensagens e deixa os materiais da sessão na conversa, para não se perderem.
 · Acompanha o que tens marcado: sessões agendadas, dadas e recebidas.
@@ -167,9 +173,8 @@ Para quem quer aprender e para quem pode ensinar. Cria conta com o teu email - q
 confirma-o pelo link que te enviamos: não há convite, não há aprovação e não há pagamento.
 
 A INOVAPP é a app de mentoria do **consórcio INOVAPP**, usada pelas instituições de ensino superior
-que dele fazem parte. Quem entra com o email institucional de uma delas fica logo ligado à
-comunidade dessa instituição - alunos e docentes; todos os outros entram como alunos, e podem dar e
-receber apoio.
+que dele fazem parte. Quem entra com um email institucional de docente fica ligado à comunidade
+dessa instituição e aparece como Tutor; todos os outros entram como alunos, e são quem procura apoio.
 
 O QUE NÃO FAZ
 
@@ -292,9 +297,9 @@ Comece pela conta de **Aluno**, que é a que mostra a app inteira:
    Pede a palavra-passe antes de apagar, ou seja, as contas de demonstração podem ser usadas para o
    fluxo todo sem ficarem inutilizadas (basta não confirmar o último passo).
 
-E com a conta de **Tutor** vê-se o outro lado: no Match não há lista de mentores - quem ensina
-recebe pedidos, e são os Tutorandos que o encontram (é a app a funcionar como foi desenhada, não
-uma limitação da conta).
+E com a conta de **Tutor** vê-se o outro lado: no Match não há lista de tutores - quem ensina recebe
+pedidos, e são os Tutorandos que o encontram (é a app a funcionar como foi desenhada, não uma
+limitação da conta).
 
 > **Cuidado, e é uma armadilha real:** quem só ensina **e não tem nenhum pedido pendente** não vê
 > lista nenhuma - cai no `BlockedScreen`, com o título "Funcionalidade bloqueada". A conta de Tutor
@@ -302,7 +307,7 @@ uma limitação da conta).
 > não conta). Foi provavelmente isto que a revisão da 1.0 (10) leu como "não conseguimos verificar
 > todas as funcionalidades, como o Match". Duas saídas, nenhuma delas feita: dar a essa conta um
 > pedido pendente de outra pessoa, **ou** trocar o estado/texto desse ecrã na próxima versão - um
-> separador que anuncia "funcionalidade bloqueada" a um mentor novo não é só um problema de revisão.
+> separador que anuncia "funcionalidade bloqueada" a um tutor novo não é só um problema de revisão.
 
 Não há compras dentro da app e não há recolha de localização, contactos, câmara ou microfone.
 ```
@@ -318,12 +323,12 @@ npm run create:demo-account -- --apply --password=NovaPalavra1!
 ```
 
 A conta de **docente** mostra o outro lado da app: no separador *Match* não há deck de descoberta,
-porque um Tutor não procura mentores - quem procura são os Tutorandos, e são eles que lhe chegam
-como pedidos. A segunda conta de **aluno** (`aluno.demo@alunos.iseclisboa.pt`, criada com
-`--mode=both`) é a que tem o deck inteiro, e é por ela que a revisão deve começar:
+porque um Tutor não procura tutores - quem procura são os Tutorandos, e são eles que lhe chegam
+como pedidos. A segunda conta de **aluno** (`aluno.demo@alunos.iseclisboa.pt`) é a que tem o deck
+inteiro, e é por ela que a revisão deve começar:
 
 ```bash
-npm run create:demo-account -- --apply --email=aluno.demo@alunos.iseclisboa.pt --mode=both --password=OutraPalavra1!
+npm run create:demo-account -- --apply --email=aluno.demo@alunos.iseclisboa.pt --password=OutraPalavra1!
 ```
 
 **E a classificação etária:** no questionário da Apple e no IARC da Play, a app não tem conteúdo
@@ -662,9 +667,11 @@ Registration is now open to any email address:
    simply links the account to that school's community; it does not grant or restrict access.
 
 2. Is the app designed for use by a limited or specific group of companies or organizations? No.
-   It is a peer-mentoring app: people say what they want to learn and what they can teach, find
-   each other, request a connection, schedule sessions, share materials and chat. Nothing in it is
-   built around one organization's workflow, and no organization has to sign anything to use it.
+   It is a tutoring app: a member of the teaching staff makes their subjects available, a student
+   says what they want to learn, finds those teachers, requests a connection, schedules sessions,
+   shares materials and chats. Registration is open and the flow is the same for every user;
+   nothing in it is built around one organization's workflow, and no organization has to sign
+   anything to use it.
 
 3. What features in the app, if any, are intended for use by the general public? All of them. The
    app can be discovered and downloaded by anyone, with no invitation and no pre-approval, and
@@ -684,6 +691,12 @@ accurate description of it.
 
 ### O que fica por arrumar (a próxima versão)
 
+- **Quem ensina é só o corpo docente - e isso mexe outra vez na 3.2.** Desde esta versão o papel vem
+  do email e um aluno já não pode ensinar outro aluno: a função principal da app (encontrar quem
+  ensine) só tem gente de uma escola, numa app cujo registo é aberto a qualquer email. A resposta à
+  3.2 acima foi reescrita para dizer a verdade sobre a app, mas é este o terreno onde a Apple
+  levantou a 3.2 e a 4.2 da última vez - e é a decisão de produto que fica em aberto (ver a nota do
+  nome, acima).
 - **O ecrã do Match de quem só ensina.** O `BlockedScreen` com "Funcionalidade bloqueada" aparece a
   qualquer mentor novo que ainda não tenha recebido pedidos. Numa app aberta isso deixa de ser um
   problema de revisão e passa a ser o que um utilizador novo vê.

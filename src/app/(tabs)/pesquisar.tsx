@@ -6,7 +6,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Spacing } from '@/constants/theme';
 import { SUBJECT_OPTIONS } from '@/constants/profile';
 import { useAuthStore } from '@/auth/store';
-import { fetchExcludedCandidateIds, fetchMentorCandidates, sendConnectionRequest } from '@/lib/matching';
+import { fetchExcludedCandidateIds, fetchTutorCandidates, sendConnectionRequest } from '@/lib/matching';
 import { addRecentSearch, clearRecentSearches, getRecentSearches } from '@/lib/recent-searches';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,7 +23,7 @@ const RECENT_SAVE_DELAY_MS = 800;
 const RECENT_SAVE_MIN_LENGTH = 2;
 
 /**
- * Pesquisa de mentores com filtros, pesquisas recentes e resultados filtrados localmente.
+ * Pesquisa de tutores com filtros, pesquisas recentes e resultados filtrados localmente.
  *
  * O ecrã tem um esqueleto só para quatro estados (recentes, a ler, erro e resultados): o bloco do
  * cabeçalho, o campo de pesquisa e o que o estado tiver a dizer são o **cabeçalho da lista**, e a
@@ -43,7 +43,7 @@ export default function SearchScreen() {
     [i18n],
   );
 
-  const [mentors, setMentors] = useState<Student[] | null>(null);
+  const [tutors, setTutors] = useState<Student[] | null>(null);
   const [query, setQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>();
@@ -54,18 +54,18 @@ export default function SearchScreen() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const isSearching = query.trim().length > 0 || selectedTags.length > 0 || !!selectedCourse;
-  // `mentors === null` sozinho não chega para dizer "a carregar": quando a leitura falha ele fica
+  // `tutors === null` sozinho não chega para dizer "a carregar": quando a leitura falha ele fica
   // a null para sempre, e o ecrã passava a rodar sem fim - a pior das falhas, porque não parece uma.
-  const loading = isSearching && mentors === null && !loadError;
+  const loading = isSearching && tutors === null && !loadError;
 
   useEffect(() => {
     getRecentSearches().then(setRecentSearches);
   }, []);
 
-  // Só carrega mentores do Firestore quando há de facto uma pesquisa ativa (texto ou filtro),
+  // Só carrega tutores do Firestore quando há de facto uma pesquisa ativa (texto ou filtro),
   // não ao abrir o ecrã, para evitar leituras desnecessárias.
   useEffect(() => {
-    if (!user || !isSearching || mentors !== null) return;
+    if (!user || !isSearching || tutors !== null) return;
     let cancelled = false;
 
     (async () => {
@@ -76,9 +76,9 @@ export default function SearchScreen() {
         if (cancelled) return;
         setAddedIds((current) => Array.from(new Set([...current, ...excludeIds])));
 
-        const candidates = await fetchMentorCandidates({ currentUid: user.uid, learningSubjects });
+        const candidates = await fetchTutorCandidates({ currentUid: user.uid, learningSubjects });
         if (cancelled) return;
-        setMentors(
+        setTutors(
           candidates.map((candidate) => ({
             id: candidate.id,
             firstName: candidate.firstName,
@@ -99,7 +99,7 @@ export default function SearchScreen() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSearching, mentors, user?.uid, reloadToken]);
+  }, [isSearching, tutors, user?.uid, reloadToken]);
 
   // Guarda a pesquisa como recente só depois de o utilizador parar de escrever.
   useEffect(() => {
@@ -113,22 +113,22 @@ export default function SearchScreen() {
     return () => clearTimeout(handle);
   }, [query]);
 
-  // O curso é opcional no perfil (é a pessoa que decide preenchê-lo), por isso há mentores sem ele:
+  // O curso é opcional no perfil (é a pessoa que decide preenchê-lo), por isso há tutores sem ele:
   // sem o filtro, a lista de cursos abria com uma linha em branco que filtrava por "sem curso".
   const courses = useMemo(
-    () => Array.from(new Set((mentors ?? []).map((mentor) => mentor.course).filter(Boolean))),
-    [mentors],
+    () => Array.from(new Set((tutors ?? []).map((tutor) => tutor.course).filter(Boolean))),
+    [tutors],
   );
 
   const results = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return (mentors ?? []).filter((mentor) => {
-      const matchesQuery = `${mentor.firstName} ${mentor.lastName}`.toLowerCase().includes(normalizedQuery);
-      const matchesCourse = !selectedCourse || mentor.course === selectedCourse;
-      const matchesTags = selectedTags.every((tag) => mentor.tags.includes(tag));
+    return (tutors ?? []).filter((tutor) => {
+      const matchesQuery = `${tutor.firstName} ${tutor.lastName}`.toLowerCase().includes(normalizedQuery);
+      const matchesCourse = !selectedCourse || tutor.course === selectedCourse;
+      const matchesTags = selectedTags.every((tag) => tutor.tags.includes(tag));
       return matchesQuery && matchesCourse && matchesTags;
     });
-  }, [mentors, query, selectedCourse, selectedTags]);
+  }, [tutors, query, selectedCourse, selectedTags]);
 
   // Só trata o caso de "adicionar" - um pedido de conexão já enviado não pode ser desfeito
   // (allow delete: if false nas regras), por isso ignora tentativas de "remover".
@@ -161,7 +161,7 @@ export default function SearchScreen() {
     <SafeAreaView edges={['left', 'right', 'bottom']} style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={showResults ? results : []}
-        keyExtractor={(mentor) => mentor.id}
+        keyExtractor={(tutor) => tutor.id}
         // A cor por trás da lista é a do topo do gradiente (ver o mesmo raciocínio na Home, nos
         // Matches e no Chat): é o que aparece na faixa revelada ao puxar o conteúdo para baixo.
         style={[styles.scroll, { backgroundColor: theme.heroTop }]}

@@ -29,9 +29,10 @@
  *
  * O `--email` só é preciso para fazer uma segunda conta (ex.: uma de aluno, que vê o deck de
  * descoberta que um Tutor não vê). O papel deriva do domínio, como em src/constants/auth.ts - um
- * @iseclisboa.pt é Tutor, e **qualquer outro endereço é Tutorando**, que é o papel por omissão
- * desde que o registo abriu. E o modo de participação segue a regra da app: um docente ensina
- * (`teach`), porque é isso que o assistente de perfil escreve para ele (ver src/app/profile-setup.tsx).
+ * @iseclisboa.pt é **Tutor**, e **qualquer outro endereço é Tutorando** - e é ele que decide o que
+ * o perfil leva: um docente tem disciplinas que ensina e disponibilidade, um aluno tem as
+ * disciplinas que quer aprender (ver `roleLabel` em src/lib/roles.ts e o perfil em
+ * src/app/profile-setup.tsx).
  */
 const crypto = require('crypto');
 const fs = require('fs');
@@ -97,10 +98,9 @@ function gerarPalavraPasse() {
  * O perfil que a app desenha: os mesmos campos que `completeProfileSetup` escreve (ver
  * src/types/profile.ts), com o `profileCompleted: true` que faz a app saltar o assistente.
  */
-function perfil(email, papel, nome, modo, disciplinas) {
+function perfil(papel, nome, disciplinas) {
   const [firstName, ...resto] = nome.trim().split(' ');
-  const ensina = modo === 'teach' || modo === 'both';
-  const aprende = modo === 'learn' || modo === 'both';
+  const ensina = papel === 'professor';
 
   return {
     role: papel,
@@ -110,14 +110,17 @@ function perfil(email, papel, nome, modo, disciplinas) {
     // Nomear as lojas aqui foi o que fez a revisão da 1.0 (10) tropeçar na diretriz 2.3.10
     // ("information about third-party platforms"): um texto de bastidores não tem nada que fazer
     // à frente de quem usa a app. Fica a dizer o mesmo sem nomear plataforma nenhuma.
-    about: 'Perfil de demonstração da INOVAPP. Ensina Programação e Matemática a quem precisa.',
-    // Um docente não tem curso nem ano (a app mostra "Docente ISEC Lisboa" no lugar disso).
-    ...(papel === 'student' ? { course: { type: 'Licenciatura', name: 'Engenharia Informática' }, year: '3º ano' } : {}),
-    participationMode: modo,
+    about: ensina
+      ? 'Perfil de demonstração da INOVAPP. Ensina Programação e Matemática a quem precisa.'
+      : 'Perfil de demonstração da INOVAPP. Aluno à procura de apoio para estudar.',
+    // Um docente não tem curso nem ano (a app mostra o papel no lugar disso).
+    ...(ensina ? {} : { course: { type: 'Licenciatura', name: 'Engenharia Informática' }, year: '3º ano' }),
+    // As listas e a disponibilidade são de um lado só: quem ensina tem as disciplinas que dá e os
+    // horários em que está disponível; quem aprende tem as disciplinas que quer aprender.
     teachingSubjects: ensina ? disciplinas : [],
-    learningSubjects: aprende ? ['Inglês'] : [],
-    availabilityPeriods: ['Tardes'],
-    availabilityModality: ['Ambos'],
+    learningSubjects: ensina ? [] : ['Inglês'],
+    availabilityPeriods: ensina ? ['Tardes'] : [],
+    availabilityModality: ensina ? ['Ambos'] : [],
   };
 }
 
@@ -128,10 +131,6 @@ async function main() {
   const disciplinas = (argumento('subjects') ?? 'Programação,Matemática').split(',').map((s) => s.trim());
 
   const papel = papelDoEmail(email);
-
-  // Um docente ensina, sempre: é o que a app escreve para ele. Um aluno pode aprender, ensinar ou
-  // as duas coisas - e o modo 'both' é o que dá a um revisor o deck de descoberta inteiro.
-  const modo = papel === 'professor' ? 'teach' : (argumento('mode') ?? 'both');
   const palavraPasse = argumento('password') ?? gerarPalavraPasse();
   const passouAPalavraPasse = argumento('password') !== null;
 
@@ -151,11 +150,11 @@ async function main() {
     conta = null;
   }
 
-  const dados = perfil(email, papel, nome, modo, disciplinas);
+  const dados = perfil(papel, nome, disciplinas);
 
   console.log(`Projeto ${projectId}`);
   console.log(`  email      ${email}`);
-  console.log(`  papel      ${papel} · modo ${modo}`);
+  console.log(`  papel      ${papel}`);
   console.log(`  nome       ${dados.fullName}`);
   console.log(`  ensina     ${dados.teachingSubjects.join(', ') || '(nada)'}`);
   console.log(`  aprende    ${dados.learningSubjects.join(', ') || '(nada)'}`);

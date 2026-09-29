@@ -1,4 +1,3 @@
-import type { ParticipationMode } from '@/types/profile';
 
 // Contrato que todos os dicionários de tradução (pt, en) têm de cumprir.
 export interface Translations {
@@ -29,26 +28,11 @@ export interface Translations {
     starRating: (count: number) => string;
   };
   roles: {
+    /** Quem aprende - qualquer conta que não seja de docente do ISEC. */
     tutee: string;
-    mentor: string;
+    /** Quem ensina - só um docente do ISEC (ver `roleLabel` em src/lib/roles.ts). */
     tutor: string;
-    mentorAndTutee: string;
-    /** Junta um papel de quem ensina ao de tutorando (ex.: 'Mentor e Tutorando'). */
-    withTutee: (label: string) => string;
   };
-  participationModes: Record<
-    ParticipationMode,
-    {
-      /** Etiqueta curta para chips de seleção (ex.: "COMO QUERES PARTICIPAR"). */
-      chip: string;
-      /** Etiqueta descritiva para badges de papel só de leitura (ex.: cabeçalho do perfil). */
-      role: string;
-      /** Título do cartão no passo de participação da configuração inicial. */
-      setupTitle: string;
-      /** Subtítulo do cartão no passo de participação da configuração inicial. */
-      setupSubtitle: string;
-    }
-  >;
   auth: {
     welcomeTitle: string;
     welcomeSubtitle: string;
@@ -133,13 +117,7 @@ export interface Translations {
     learningGoalsSubtitle: string;
     professorSubjectsTitle: string;
     professorSubjectsSubtitle: string;
-    participationTitle: string;
-    participationSubtitle: string;
-    eligibilityHint: string;
-    teachingSubjectsTitle: string;
-    teachingSubjectsHint: string;
     availabilityTitle: string;
-    availabilityHint: string;
     professorAvailabilitySubtitle: string;
     skipForNow: string;
     finish: string;
@@ -278,8 +256,6 @@ export interface Translations {
     fullNameLabel: string;
     aboutLabel: string;
     yearLabel: string;
-    participationLabel: string;
-    eligibilityHint: string;
     teachesLabel: string;
     learningLabel: string;
     availabilityLabel: string;

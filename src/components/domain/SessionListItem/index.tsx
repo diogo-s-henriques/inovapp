@@ -25,7 +25,7 @@ export interface SessionListItemProps extends ViewProps {
 /**
  * Linha de sessão na agenda (src/app/sessions.tsx); o papel muda consoante quem vê o ecrã.
  *
- * A única ação é **Terminar**, e só de quem é Mentor/Tutor nessa sessão. Houve aqui um botão
+ * A única ação é **Terminar**, e só de quem é Tutor nessa sessão. Houve aqui um botão
  * "Entrar" que abria um aviso a prometer algo que a app não fazia. A app **não** faz chamadas: a
  * modalidade "Online" continua a existir (é como as pessoas combinam encontrar-se) e o sítio onde
  * isso se combina é o chat, que é onde a conversa já está. Depois de terminada, a linha passa a
@@ -47,7 +47,7 @@ export function SessionListItem({
 }: SessionListItemProps) {
   const theme = useTheme();
   const i18n = useI18n();
-  const roleLabel = sessionRole === 'student' ? i18n.roles.tutee : i18n.roles.mentor;
+  const roleLabel = sessionRole === 'student' ? i18n.roles.tutee : i18n.roles.tutor;
   const canComplete = sessionRole === 'mentor' && !!onPressComplete;
 
   return (

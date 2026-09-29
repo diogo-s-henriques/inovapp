@@ -470,7 +470,7 @@ Subtítulo      Mentoria no ensino superior (máx. 30 car.)
 Descrição
 A INOVAPP liga quem quer aprender a quem pode ensinar, na tua instituição de ensino superior.
 
-· Descobre mentores por disciplina, curso e disponibilidade
+· Descobre tutores por disciplina, curso e disponibilidade
 · Pede conexão e combina sessões de apoio em dois toques
 · Fala com quem te acompanha, com os materiais todos no mesmo sítio
 · Acompanha as tuas sessões (agendadas, dadas e recebidas)
@@ -478,6 +478,11 @@ A INOVAPP liga quem quer aprender a quem pode ensinar, na tua instituição de e
 Entra quem quiser, com qualquer email: o registo é aberto, e a conta só fica ativa depois de a
 confirmares.
 ```
+
+> **O nome e o subtítulo estão a rever.** "Mentoria entre pares" descreve a app de antes desta
+> mudança: o papel vem do email, e quem ensina é só o corpo docente. A ficha toda - nome, subtítulo,
+> palavras-chave e as duas primeiras linhas da descrição - precisa de ser revista antes da próxima
+> submissão; o raciocínio e o que está em jogo estão em `STORE.md`.
 
 > **Não prometer avisos no telemóvel nesta descrição** enquanto não existirem as Cloud Functions
 > que os enviam: a app já os sabe receber, mas ninguém os envia. É o primeiro sítio onde a revisão
@@ -590,7 +595,7 @@ src/app/
   profile-setup.tsx                  onboarding obrigatório após 1º login
   (tabs)/                            navegação principal, 5 separadores
     index.tsx                        Home
-    pesquisar.tsx                    Pesquisar mentores/tutorandos
+    pesquisar.tsx                    Pesquisar tutores/tutorandos
     matches.tsx                      Descoberta (lista) + pedidos de conexão
     chat.tsx                         Lista de conversas
     perfil.tsx                       Perfil próprio
@@ -654,9 +659,12 @@ O par está também do lado do servidor (`roleAllowedForEmail`, em `firestore.ru
 todos os endereços, docente só para aquele domínio. Sem essa metade, um cliente feito à mão escrevia
 `role: 'professor'` com um email qualquer e aparecia no diretório como docente.
 
-Um utilizador pode ainda escolher o seu `participationMode` no onboarding (`learn` / `teach` /
-`both`) - é isto que decide se aparece como Tutorando, Mentor, ou ambos, dentro da app; ser
-elegível a ensinar exige estar a partir do 2º ano (`isEligibleToTeach`).
+O papel não se escolhe e não muda: não há `participationMode`, nem uma segunda pergunta sobre o que
+a pessoa quer fazer na app. Um docente **ensina** e é o que aparece na descoberta; qualquer outro
+endereço **aprende** e é quem procura - é o que `canTeach`/`canLearn` (em `src/constants/auth.ts`)
+respondem a todos os ecrãs que precisam de saber de que lado está quem está a ver. Consequência
+assumida: já não há mentoria entre pares - um aluno não pode ensinar outro aluno -, que era
+exatamente o que o assistente de perfil perguntava até esta versão.
 
 O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no dispositivo
 (AsyncStorage), sendo retomado no arranque seguinte.
@@ -720,24 +728,25 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
   só ensina, o guia diz que são os tutorandos que o vêm procurar a ele, em vez de apontar para os
   Matches (fechados nesse caso). O guia **não aparece quando a leitura das ligações falhou**: das
   duas, "não tenho ligações" e "não sei as minhas ligações", só a primeira é que se pode dizer.
-- **As duas listas de ligações aceites** - "Tutores para ti" para quem aprende (os mentores com
+- **As duas listas de ligações aceites** - "Tutores para ti" para quem aprende (os tutores com
   quem já tem conexão aceite) e "Os teus tutorandos" para quem ensina (os alunos que aceitou).
   Viveram na Home e **saíram dela** (ver a conta de "cabe num ecrã"); o que ficou é a leitura que as
   alimentava, usada agora para decidir se a Home está vazia. São simétricas e vêm do mesmo
-  `connectionRequests`: como um pedido vai sempre do Tutorando (`from`) para o Mentor (`to`), a
-  lista de tutorandos de um mentor são os `from` dos pedidos de que ele é `to` - ver
-  `fetchConnectedMentors`/`fetchConnectedTutees` em `src/lib/matching.ts`. O sítio onde o mentor
+  `connectionRequests`: como um pedido vai sempre do Tutorando (`from`) para o Tutor (`to`), a
+  lista de tutorandos de um tutor são os `from` dos pedidos de que ele é `to` - ver
+  `fetchConnectedTutors`/`fetchConnectedTutees` em `src/lib/matching.ts`. O sítio onde o tutor
   revê o aluno que aceitou passou a ser o **Chat**, que tem uma conversa por cada ligação aceite
   (ver `connections` na entrada das secções da Home).
-- **Pesquisa de mentores/tutorandos** - por disciplina, com filtros; sem leitura ao Firestore ao
+- **Pesquisa de tutores/tutorandos** - por disciplina, com filtros; sem leitura ao Firestore ao
   abrir o ecrã, só disparada por query de texto ou filtro ativo. Mostra "Pesquisas recentes"
   (guardadas em AsyncStorage) quando não há pesquisa ativa.
 - **Matches / pedidos de conexão** - uma **lista** de candidatos (o mesmo cartão dos resultados da
   pesquisa, com as duas decisões dentro de cada linha: "Passar" e "Conectar"); "Conectar" envia um
-  **pedido de conexão** ao Mentor (não é match automático por like mútuo). Só o Tutorando inicia; o
-  Mentor nunca envia pedido a um Tutorando. Os pedidos recebidos **decidem-se no topo deste ecrã**,
-  com Aceitar/Recusar: quem só ensina não tem lista de candidatos (não procura mentor, é
-  encontrado), mas continua a ter aqui o que tem para decidir. Chegou a ser um cartão de ecrã
+  **pedido de conexão** ao Tutor (não é match automático por like mútuo). Quem inicia é quem procura
+  - um Tutorando -, e é a pesquisa que abre a única exceção: como lista tutores e é um ecrã de todos
+  os papéis, um tutor também pode pedir conexão a outro por ali. Os pedidos recebidos **decidem-se no
+  topo deste ecrã**, com Aceitar/Recusar: um docente não tem lista de candidatos (não procura tutor,
+  é encontrado), mas continua a ter aqui o que tem para decidir. Chegou a ser um cartão de ecrã
   inteiro que se vira, com uma bandeja de botões fixa em baixo - nenhum outro ecrã da app se parecia
   com aquilo, e o que esse cartão mostrava a mais (descrição e disponibilidade) vive no perfil de
   cada candidato, a um toque de distância.
@@ -748,7 +757,7 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
   a decisão se toma), um
   histórico "Recentes" derivado de pedidos já aceites e sessões de amanhã, e - no fim, porque é o
   menos urgente - até três **sugestões** do mesmo conjunto da descoberta
-  (`fetchExcludedCandidateIds` + `fetchMentorCandidates`), com "Ver todos" para os Matches. É o
+  (`fetchExcludedCandidateIds` + `fetchTutorCandidates`), com "Ver todos" para os Matches. É o
   único ecrã que faz a leitura do conjunto de candidatos por si (tecto de `CANDIDATE_POOL_LIMIT`
   perfis), e uma falha ali só faz desaparecer o bloco.
 - **Chat em tempo real** - só desbloqueado depois de um pedido de conexão aceite; mensagens via
@@ -757,7 +766,7 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
 - **Agenda / sessões** - calendário mensal + lista do dia; pedido de sessão
   (disciplina/data/hora/modalidade/mensagem) a partir do perfil do outro utilizador ou do chat.
   Ao contrário do pedido de conexão, o pedido de sessão pode partir de qualquer um dos dois lados
-  de uma ligação já aceite - e **quem aceita fica como Mentor dessa sessão**, sendo a única parte
+  de uma ligação já aceite - e **quem aceita fica como Tutor dessa sessão**, sendo a única parte
   que a pode terminar (ver [Decisões tomadas](#decisões-tomadas)).
 - **Materiais** - um material é um **link http/https partilhado dentro de uma conversa** (não há
   coleção `materials` nem upload de ficheiros). O ecrã de Materiais agrega, em tempo real, os
@@ -781,12 +790,12 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
 
 | coleção | descrição |
 |---|---|
-| `users/{uid}` | perfil **visível a quem tem sessão iniciada** (nome, foto base64, role, participationMode, disciplinas, disponibilidade…). Nunca contém dados privados da conta nem o token dos avisos. |
+| `users/{uid}` | perfil **visível a quem tem sessão iniciada** (nome, foto base64, role, disciplinas, disponibilidade…). Nunca contém dados privados da conta nem o token dos avisos. |
 | `users/{uid}/devices/{id}` | registo de **avisos push** deste dispositivo (`token`, `platform`, `updatedAt`); legível e escrevível **só pelo próprio** (ver "Avisos no telemóvel") |
 | `userAccounts/{uid}` | dados **privados** da conta: `email`, `lastLoginAt`, `rememberSession`. Legível só pelo próprio. |
-| `connectionRequests/{tutorandoUid_mentorUid}` | pedido de conexão Tutorando → Mentor; `status: pending\|accepted\|declined` |
+| `connectionRequests/{tutorandoUid_tutorUid}` | pedido de conexão Tutorando → Tutor; `status: pending\|accepted\|declined` |
 | `sessionRequests/{id}` (ID automático) | pedido de sessão entre dois utilizadores já ligados; qualquer um dos dois pode iniciar |
-| `sessions/{id}` | sessão agendada, criada ao aceitar um `sessionRequest`; guarda `sessionRequestId` para a regra de segurança conseguir validar a origem |
+| `sessions/{id}` | sessão agendada, criada ao aceitar um `sessionRequest`; guarda `sessionRequestId` para a regra de segurança conseguir validar a origem. O campo `mentorUid` (e o `SessionRole` `'mentor'`) mantém o nome antigo do papel: é quem dá a sessão, hoje o **Tutor** |
 | `conversations/{uidA_uidB}` (ID ordenado alfabeticamente) | conversa 1-para-1, criada só ao aceitar um `connectionRequest` |
 | `conversations/{id}/messages/{id}` | mensagens da conversa (e os anexos de links que alimentam os Materiais) |
 | `ratings/{sessionId}` (ID = ID da sessão) | avaliação anónima pós-sessão; nunca guarda quem avaliou |
@@ -816,8 +825,8 @@ depende só da UI**. Pontos a destacar:
   duas partes (verificado nos dois sentidos possíveis do ID, já que os dois documentos usam
   convenções de ID diferentes).
 - `sessions`: `create` exige um `sessionRequests` aceite por trás (via `sessionRequestId`
-  gravado na sessão) e que só o mentor que aceitou o pedido a possa criar. `update` só permite
-  passar de `scheduled` para `completed`, e só pelo mentor - nenhum outro campo pode mudar.
+  gravado na sessão) e que só o tutor que aceitou o pedido a possa criar. `update` só permite
+  passar de `scheduled` para `completed`, e só pelo tutor - nenhum outro campo pode mudar.
 - `ratings`: `create` confirma via `get()` que quem escreve é o `studentUid` da sessão, sem
   persistir essa relação no documento - garante o anonimato mesmo para quem lê a coleção depois.
 - `users/{uid}/devices`: `read`/`delete` só pelo próprio e `create`/`update` com validação mínima
@@ -829,7 +838,7 @@ depende só da UI**. Pontos a destacar:
   escreveu) e **apagar a conta**, onde quem participa de um pedido, de uma sessão ou de uma conversa
   a leva consigo. É o que a diretriz 5.1.1(v) da Apple obriga a existir dentro da app, e está
   fechado por identidade em todos os casos: ninguém apaga o perfil, os dados privados, o bloqueio ou
-  a mensagem de outra pessoa. As **avaliações** continuam sem `delete` - se um mentor as pudesse
+  a mensagem de outra pessoa. As **avaliações** continuam sem `delete` - se um tutor as pudesse
   apagar, o anonimato não valia nada (ver "Apagar a conta").
 
 Há testes destas invariantes em `tests/firestore-rules.test.mts`, que correm contra o emulador
@@ -1297,9 +1306,9 @@ parte da app.
   filtro ativo que já não se vê não se consegue tirar.
 - **Para criar o perfil, o nome e o ano - o curso não.** O nome é o que aparece em todos os cartões e
   no chat, e é pedido a toda a gente. O **ano** é pedido só a estudantes, e não é decorativo: é ele
-  que decide se a pessoa pode ser mentora (`isEligibleToTeach`, que exige o 2º ano ou acima) e é o
-  que dá sentido à escolha de modo no passo seguinte - sem ano, os modos "Mentor" e "Ambos" ficavam
-  bloqueados, e quem não o preenchesse ficava sem perceber porquê. O **curso** fica ao critério de
+  que diz que a pessoa é aluna da escola, e o papel (que vem do domínio do email - ver
+  `getAccountRole`) é o que decide de quantos passos é o assistente: dois para um aluno (perfil e
+  objetivos) e três para um docente (perfil, disciplinas e disponibilidade). O **curso** fica ao critério de
   quem o preenche (e um professor não tem curso nem ano: o fluxo dele nem mostra esses campos). As
   três decisões vivem em `src/lib/profile-form.ts` - funções puras chamadas pelo assistente de
   criação e pela edição, para que as regras não possam divergir entre os dois ecrãs, e testadas sem
@@ -1309,9 +1318,9 @@ parte da app.
   uma **vírgula solta** por baixo do nome. Passou a haver um sítio só a decidir a linha
   (`joinCourseAndYear`, em `src/constants/profile.ts`): sem curso e sem ano, a linha não existe.
 - **O match ordena por disciplinas e desempata por áreas - e mostra-o no cartão.** A descoberta
-  (`fetchMentorCandidates`) nunca excluiu ninguém por não partilhar nada: quem ensina aparece sempre,
+  (`fetchTutorCandidates`) nunca excluiu ninguém por não partilhar nada: quem ensina aparece sempre,
   ordenado pelo número de disciplinas que ensina que estão nas que eu procuro. Isso deixava um empate
-  frequente e mal resolvido - dois mentores que ensinam «Cálculo» ficavam por ordem de leitura, mesmo
+  frequente e mal resolvido - dois tutores que ensinam «Cálculo» ficavam por ordem de leitura, mesmo
   quando um deles ensinava outra coisa da área de que eu preciso. Agora o desempate é o número de
   **áreas** em comum, contando cada área uma só vez, e a decisão inteira é uma função pura e
   exportada (`rankCandidates`) precisamente por ser invisível: a lista continua a aparecer, só por
@@ -1454,7 +1463,8 @@ parte da app.
   os dois blocos são o mesmo bloco - e é isso que faz o alinhamento não depender de ninguém reparar
   nele.
 - **A segunda linha diz o papel - e o curso só a quem o tem** - um **professor** lê "Tutor" no
-  Perfil, como lê na Home (em `src/lib/roles.ts` um professor nunca é "Mentor"); um **aluno** lê o
+  Perfil, como lê na Home (em `src/lib/roles.ts` o docente é sempre "Tutor" e o aluno sempre
+  "Tutorando"); um **aluno** lê o
   curso com o ano, que é escolhido por si e muda de pessoa para pessoa (e que por isso cabe em duas
   linhas, `subtitleLines`). Antes era o contrário - o Perfil mostrava sempre o curso, e um professor
   lia "Docente ISEC Lisboa" enquanto a Home, com o mesmo nome por baixo da mesma fotografia, lhe
@@ -1570,9 +1580,9 @@ parte da app.
   utilizador; esquemas arbitrários (`intent://`, `file://`) seriam um caminho para lançar outra
   app. A validação está na escrita e na abertura.
 - **Rating não está ligado aos perfis** - a avaliação por estrelas fica isolada em
-  `ratings/{sessionId}` e não alimenta uma média visível no perfil do mentor. Ligar isto exigiria
+  `ratings/{sessionId}` e não alimenta uma média visível no perfil do tutor. Ligar isto exigiria
   abrir uma exceção na regra de `users/{userId}` para deixar outra pessoa (o aluno) escrever no
-  perfil do mentor - decisão de segurança deixada de fora, propositadamente.
+  perfil do tutor - decisão de segurança deixada de fora, propositadamente.
 - **Um pedido de conexão decide-se num sítio só** - aceitar/recusar vive numa lista, e as
   Notificações limitam-se a avisar que chegou um pedido (o mesmo raciocínio aplicado ao sino da
   Home, que deixou de contar pedidos de conexão para não apontar para um sítio onde já não se
@@ -1592,10 +1602,11 @@ parte da app.
   qualquer sentido e em qualquer estado: pendente, aceite ou recusado. Excluir apenas o sentido
   "eu pedi" deixava o mesmo par em cima do Matches (o pedido) e em baixo (o candidato), com o
   "Conectar" a criar um segundo pedido entre as mesmas duas pessoas.
-- **Quem aceita o pedido de sessão fica como Mentor dessa sessão** - o pedido pode partir de
+- **Quem aceita o pedido de sessão fica como Tutor dessa sessão** - o pedido pode partir de
   qualquer lado, mas só quem o aceita pode terminar a sessão e é essa parte que o ecrã de agenda
-  apresenta como Mentor. Consequência a rever: se um professor pedir a sessão a um aluno, é o
-  professor que aparece como "Tutorando" nessa sessão.
+  apresenta como Tutor (no documento o campo continua a chamar-se `mentorUid`, do tempo em que o
+  papel tinha esse nome). Consequência a rever: se um docente pedir a sessão a um aluno, é o docente
+  que aparece como "Tutorando" nessa sessão.
 - **Limites nas leituras** - nenhuma lista da app lê uma coleção inteira: o chat abre com 50
   mensagens (com "carregar anteriores"), os Materiais leem as últimas 50 mensagens de cada
   conversa, o feed de notificações está limitado e ordenado no servidor, e o conjunto de
@@ -1708,7 +1719,7 @@ parte da app.
   a partir de `sessions` (ver `subscribeToSessionStats`), mas no perfil de **outra pessoa** a linha
   das sessões continua a ser um placeholder (`sessionsGiven` em `matching.ts`): contá-la exigiria
   ler as sessões de quem não é parte delas, e a regra só as deixa ler a quem participou. Fazer isto
-  a sério é um contador no próprio perfil, escrito pelo mentor quando fecha a sessão.
+  a sério é um contador no próprio perfil, escrito pelo tutor quando fecha a sessão.
   `responseTime` dos cartões também é um placeholder; a app **não** faz videochamadas (a
   modalidade "Online" é só como a sessão é combinada, e o chat é onde se combina); disciplinas,
   modalidades e períodos de disponibilidade são guardados no Firestore como texto em português,
@@ -1801,7 +1812,7 @@ confirmado** e o **perfil completo** - para o revisor ver a app e não o assiste
 > não vê lista nenhuma: cai no `BlockedScreen`, com o título "Funcionalidade bloqueada". É o
 > candidato mais provável ao *"such as Matches"* que a revisão da 1.0 (10) devolveu. Ver o aviso
 > nas notas de revisão do `STORE.md` - e é coisa para arrumar na próxima versão, porque numa app
-> aberta este ecrã aparece a qualquer mentor novo.
+> aberta este ecrã aparece a qualquer tutor novo.
 
 **A palavra-passe não está aqui, e não pode estar**: este repositório é público. É a que foi passada
 em `--password` no dia em que cada conta nasceu, e escreve-se nos dois sítios onde os revisores a vão

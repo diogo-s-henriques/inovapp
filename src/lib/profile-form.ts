@@ -1,5 +1,3 @@
-import type { ParticipationMode } from '@/types/profile';
-
 /**
  * As regras de "posso avançar?" do assistente de perfil e de "posso guardar?" na edição, fora dos
  * ecrãs que as usam.
@@ -12,29 +10,45 @@ import type { ParticipationMode } from '@/types/profile';
  * O que é obrigatório, e porquê:
  *
  * - **Nome**, para toda a gente. É o que aparece em todos os cartões e no chat.
- * - **Ano**, só para estudantes. Não é decorativo: é ele que decide se a pessoa pode ser mentora
- *   (ver `isEligibleToTeach`) e é o que dá sentido à escolha de modo no passo 3.
- * - **Modo de participação**, no último passo dos estudantes: sem ele não se sabe se a pessoa quer
- *   ser acompanhada, acompanhar, ou as duas coisas.
+ * - **Ano**, só para estudantes. Não é decorativo: diz que a pessoa é aluna da escola, e é o papel
+ *   (docente do ISEC ou aluno) que decide de que lado da app ela fica - ver `getAccountRole` em
+ *   src/constants/auth.ts.
  * - **Curso**, ninguém: é opcional de propósito (quem o preenche aparece na pesquisa por curso).
+ *
+ * O assistente tem passos diferentes para cada papel - um professor tem três (perfil, disciplinas,
+ * disponibilidade) e um aluno tem dois (perfil, objetivos) -, mas só o primeiro tem campos
+ * obrigatórios: os outros têm "Saltar por agora" ou nada para preencher. É por isso que a única
+ * decisão aqui é sobre o passo 1.
  */
+/**
+ * Quantos passos tem o assistente de perfil, por papel.
+ *
+ * Um **aluno** tem dois (o perfil e os objetivos de aprendizagem) e um **docente** tem três (o
+ * perfil, as disciplinas que ensina e a disponibilidade): o terceiro passo só existe para quem
+ * aparece na descoberta, e quem procura não tem nada que responder lá. Era aqui que vivia o passo
+ * do modo de participação, que deixou de existir quando o papel passou a vir do email.
+ *
+ * Vive com as outras regras do assistente porque é a decisão que diz ao ecrã onde acaba o fluxo -
+ * uma troca destas não rebenta nada, deixa um passo a mais ou a menos (ver src/app/profile-setup.tsx).
+ */
+export function setupSteps(isProfessor: boolean): number {
+  return isProfessor ? 3 : 2;
+}
+
 export interface SetupStepParams {
   isProfessor: boolean;
   /** Passo em que o assistente está; acima do total é o ecrã final de conclusão. */
   step: number;
   fullName: string;
   year?: string;
-  participationMode?: ParticipationMode;
 }
 
-export function canContinueSetup({ isProfessor, step, fullName, year, participationMode }: SetupStepParams): boolean {
-  const hasName = fullName.trim().length > 0;
+/** A partir do passo 1 não se pede nada: os passos seguintes não têm campos obrigatórios. */
+export function canContinueSetup({ isProfessor, step, fullName, year }: SetupStepParams): boolean {
+  if (step === 1) return fullName.trim().length > 0 && (isProfessor || !!year);
 
-  if (step === 1) return hasName && (isProfessor || !!year);
-  if (step === 3) return isProfessor || !!participationMode;
-
-  // Passo 2 (as disciplinas que quer aprender) tem "Saltar por agora": nada ali é obrigatório. O
-  // ecrã final também passa por aqui - o botão que o desenha é o mesmo, a dizer "Concluir".
+  // Os passos seguintes (disciplinas e disponibilidade) não exigem nada, e o ecrã final usa o
+  // mesmo botão a dizer "Concluir".
   return true;
 }
 

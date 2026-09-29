@@ -102,10 +102,6 @@ describe('dicionários', () => {
 
     it(`${nome}: as funções usam os argumentos que recebem`, () => {
       assert.ok(
-        dicionario.roles.withTutee('ETIQUETA').includes('ETIQUETA'),
-        `${nome}.roles.withTutee ignora a etiqueta que recebe`,
-      );
-      assert.ok(
         dicionario.common.starRating(7).includes('7'),
         `${nome}.common.starRating ignora o número que recebe`,
       );

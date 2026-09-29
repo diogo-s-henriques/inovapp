@@ -11,24 +11,34 @@ import { ProgressSteps } from '@/components/domain/ProgressSteps';
 import { StepComplete } from '@/components/domain/ProfileSetup/StepComplete';
 import { StepCreateProfile } from '@/components/domain/ProfileSetup/StepCreateProfile';
 import { StepLearningGoals } from '@/components/domain/ProfileSetup/StepLearningGoals';
-import { StepParticipation } from '@/components/domain/ProfileSetup/StepParticipation';
 import { StepProfessorAvailability } from '@/components/domain/ProfileSetup/StepProfessorAvailability';
 import { StepProfessorProfile } from '@/components/domain/ProfileSetup/StepProfessorProfile';
 import { StepProfessorSubjects } from '@/components/domain/ProfileSetup/StepProfessorSubjects';
-import type { CourseSelection, ParticipationMode } from '@/types/profile';
+import type { CourseSelection } from '@/types/profile';
 import { useAuthStore } from '@/auth/store';
 import { completeProfileSetup } from '@/auth/actions';
-import { canContinueSetup } from '@/lib/profile-form';
+import { canContinueSetup, setupSteps } from '@/lib/profile-form';
 import { pickPreparedProfilePhoto } from '@/lib/storage';
 
-// Assistente de configuração inicial do perfil, com passos diferentes para professores.
+/**
+ * Assistente de configuração inicial do perfil.
+ *
+ * Os passos são diferentes para os dois papéis, e a diferença vem toda da mesma regra (ver
+ * `getAccountRole` em src/constants/auth.ts): um **docente** tem três passos - perfil, disciplinas
+ * que ensina e disponibilidade -, porque é ele que aparece na descoberta; um **aluno** tem dois -
+ * perfil e objetivos de aprendizagem -, porque é ele que procura, e não há mais nada para lhe
+ * perguntar. O passo em que se escolhia "quero aprender / quero ensinar" saiu: com o papel preso ao
+ * email, não havia escolha nenhuma para fazer.
+ */
 export default function ProfileSetupScreen() {
   const theme = useTheme();
   const i18n = useI18n();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const isProfessor = user?.role === 'professor';
-  const totalSteps = 3;
+  // Quantos passos tem este fluxo é uma decisão do papel, e vive em src/lib/profile-form.ts com as
+  // outras regras do assistente: um aluno tem dois (perfil e objetivos), um docente tem três.
+  const totalSteps = setupSteps(isProfessor);
 
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -39,7 +49,6 @@ export default function ProfileSetupScreen() {
   const [year, setYear] = useState<string>();
   const [about, setAbout] = useState('');
   const [learningSubjects, setLearningSubjects] = useState<string[]>([]);
-  const [participationMode, setParticipationMode] = useState<ParticipationMode>();
   const [teachingSubjects, setTeachingSubjects] = useState<string[]>([]);
   const [periods, setPeriods] = useState<string[]>([]);
   const [modality, setModality] = useState<string[]>([]);
@@ -67,7 +76,6 @@ export default function ProfileSetupScreen() {
         course: isProfessor ? undefined : course,
         year: isProfessor ? undefined : year,
         learningSubjects: isProfessor ? [] : learningSubjects,
-        participationMode: isProfessor ? 'teach' : participationMode,
         teachingSubjects,
         availabilityPeriods: periods,
         availabilityModality: modality,
@@ -78,9 +86,9 @@ export default function ProfileSetupScreen() {
     }
   };
 
-  // As regras de "posso avançar?" vivem em src/lib/profile-form.ts (nome e ano no passo 1, modo de
-  // participação no passo 3, curso nunca). Aqui só se junta o "e não está a guardar".
-  const canContinue = canContinueSetup({ isProfessor, step, fullName, year, participationMode });
+  // As regras de "posso avançar?" vivem em src/lib/profile-form.ts (nome no passo 1, e mais nada).
+  // Aqui só se junta o "e não está a guardar".
+  const canContinue = canContinueSetup({ isProfessor, step, fullName, year });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -129,19 +137,6 @@ export default function ProfileSetupScreen() {
                 />
               )}
               {step === 2 && <StepLearningGoals selected={learningSubjects} onChange={setLearningSubjects} />}
-              {step === 3 && (
-                <StepParticipation
-                  mode={participationMode}
-                  onChangeMode={setParticipationMode}
-                  year={year}
-                  teachingSubjects={teachingSubjects}
-                  onChangeTeachingSubjects={setTeachingSubjects}
-                  periods={periods}
-                  onChangePeriods={setPeriods}
-                  modality={modality}
-                  onChangeModality={setModality}
-                />
-              )}
             </>
           )}
         </ScrollView>

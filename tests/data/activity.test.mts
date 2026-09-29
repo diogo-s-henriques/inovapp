@@ -86,7 +86,7 @@ async function pedirSessao(date: string): Promise<string> {
 
 /** O Bruno aceita o pedido de sessão, o que cria a sessão na agenda de ambos. */
 async function aceitarSessao(requestId: string, date: string): Promise<void> {
-  await entrarComo(CONTAS.alunoQueEnsina);
+  await entrarComo(CONTAS.professor);
   await respondToSessionRequest(
     {
       id: requestId,
@@ -128,14 +128,14 @@ describe('activity - o histórico só tem o que aconteceu', () => {
     await sendConnectionRequest(cenario.ana, cenario.bruno);
 
     const requestId = connectionRequestId(cenario.ana, cenario.bruno);
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     await respondToConnectionRequest(requestId, cenario.ana, cenario.bruno, false);
 
     assert.deepEqual(await atividadeDaAna(), []);
   });
 
   it('um pedido de conexão aceite aparece, com quem aceitou e uma data válida', async () => {
-    await ligarCom({ email: CONTAS.alunoQueEnsina, uid: cenario.bruno });
+    await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
 
     const itens = await atividadeDaAna();
     assert.equal(itens.length, 1);
@@ -152,7 +152,7 @@ describe('activity - o histórico só tem o que aconteceu', () => {
   });
 
   it('um pedido de sessão aceite aparece, com a disciplina', async () => {
-    await ligarCom({ email: CONTAS.alunoQueEnsina, uid: cenario.bruno });
+    await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
     const requestId = await pedirSessao(amanha());
     await aceitarSessao(requestId, amanha());
 
@@ -167,7 +167,7 @@ describe('activity - o histórico só tem o que aconteceu', () => {
 
 describe('activity - a sessão de amanhã', () => {
   it('aparece com a disciplina, o outro participante e a hora', async () => {
-    await ligarCom({ email: CONTAS.alunoQueEnsina, uid: cenario.bruno });
+    await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
     const requestId = await pedirSessao(amanha());
     await aceitarSessao(requestId, amanha());
 
@@ -181,7 +181,7 @@ describe('activity - a sessão de amanhã', () => {
     // É esta a regressão da consulta: antes lia-se todas as sessões do utilizador e filtrava-se
     // as de amanhã no cliente; agora o filtro do dia vai na consulta. Se alguém tirar o
     // `where('date', '==', …)`, a sessão de outro dia volta a aparecer aqui.
-    await ligarCom({ email: CONTAS.alunoQueEnsina, uid: cenario.bruno });
+    await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
     const daquiATresDias = daquiA(3);
     const requestId = await pedirSessao(daquiATresDias);
     await aceitarSessao(requestId, daquiATresDias);
@@ -197,7 +197,7 @@ describe('activity - a sessão de amanhã', () => {
 describe('activity - limites e privacidade', () => {
   it('a atividade de outras pessoas não aparece', async () => {
     // O Bruno liga-se à Carla (duas contas sem nada a ver com a Ana) e aceitam.
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     await sendConnectionRequest(cenario.bruno, cenario.carla);
 
     const requestId = connectionRequestId(cenario.bruno, cenario.carla);
@@ -211,16 +211,16 @@ describe('activity - limites e privacidade', () => {
     // A consulta filtra por `from == uid`, por isso estas entradas são para quem PEDIU: quem
     // aceitou já sabe o que fez. É o contrato atual - se um dia passar a ser para os dois lados,
     // este teste é que tem de mudar.
-    await ligarCom({ email: CONTAS.alunoQueEnsina, uid: cenario.bruno });
+    await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
 
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     const doBruno = await fetchRecentActivity(cenario.bruno, pt);
     assert.ok(!doBruno.some((item) => item.kind === 'connection-accepted'));
   });
 
   it('nunca devolve mais de oito entradas', async () => {
     // Nove acontecimentos (três ligações aceites + seis sessões aceites) para exercitar o corte.
-    await ligarCom({ email: CONTAS.alunoQueEnsina, uid: cenario.bruno });
+    await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
     await ligarCom({ email: CONTAS.professora, uid: cenario.carla });
     await ligarCom({ email: CONTAS.intruso, uid: cenario.diogo });
 
@@ -237,7 +237,7 @@ describe('activity - limites e privacidade', () => {
   });
 
   it('vem ordenado do mais recente para o mais antigo', async () => {
-    await ligarCom({ email: CONTAS.alunoQueEnsina, uid: cenario.bruno });
+    await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
     await ligarCom({ email: CONTAS.professora, uid: cenario.carla });
     const requestId = await pedirSessao(amanha());
     await aceitarSessao(requestId, amanha());

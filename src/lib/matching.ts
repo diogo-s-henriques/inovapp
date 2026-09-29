@@ -5,9 +5,9 @@ import { getTranslations } from '@/i18n/store';
 import { db } from '@/lib/firebase';
 import { fetchBlockedPairs, fetchBlockedUids } from '@/lib/blocking';
 import { roleLabel } from '@/lib/roles';
-import type { AccountRole } from '@/constants/auth';
-import { canTeach, subjectAreaOf } from '@/constants/profile';
-import type { CourseSelection, ParticipationMode } from '@/types/profile';
+import { canTeach, type AccountRole } from '@/constants/auth';
+import { subjectAreaOf } from '@/constants/profile';
+import type { CourseSelection } from '@/types/profile';
 import type { MatchCandidate } from '@/types/match';
 
 const PLACEHOLDER_SESSIONS_GIVEN = 0;
@@ -22,20 +22,19 @@ const PASSED_STORAGE_KEY = 'inovapp:passedCandidates';
  */
 const CANDIDATE_POOL_LIMIT = 100;
 
-interface MentorProfileDoc {
+interface CandidateProfileDoc {
   fullName?: string;
   photoUri?: string;
   role?: AccountRole;
   course?: CourseSelection;
   year?: string;
   about?: string;
-  participationMode?: ParticipationMode;
   teachingSubjects?: string[];
   availabilityPeriods?: string[];
   availabilityModality?: string[];
 }
 
-function toCandidate(uid: string, data: MentorProfileDoc): MatchCandidate {
+function toCandidate(uid: string, data: CandidateProfileDoc): MatchCandidate {
   const i18n = getTranslations();
   const [firstName, ...rest] = (data.fullName ?? '').trim().split(' ');
   return {
@@ -44,10 +43,14 @@ function toCandidate(uid: string, data: MentorProfileDoc): MatchCandidate {
     lastName: rest.join(' '),
     // O rótulo vem de `roleLabel` (src/lib/roles.ts), que é também o que a Home usa por baixo do
     // nome: um sítio só a decidir como se chama o papel de cada um.
-    role: roleLabel(data.participationMode, data.role, i18n),
+    role: roleLabel(data.role, i18n),
     course: data.course?.name ?? '',
     year: data.year ?? '',
-    subjects: data.teachingSubjects ?? [],
+    // As disciplinas que ensina só são mostradas a um tutor: um perfil de aluno nunca as devia ter
+    // (não as edita - ver profile-edit.tsx), e contas anteriores a esta regra guardam-nas no
+    // Firestore. Esconder aqui é o que impede que apareçam como "Ensina" no perfil público e como
+    // sugestão de disciplina num pedido de sessão.
+    subjects: canTeach(data.role) ? (data.teachingSubjects ?? []) : [],
     availability: [...(data.availabilityPeriods ?? []), ...(data.availabilityModality ?? [])].join(' · '),
     availabilityPeriods: data.availabilityPeriods ?? [],
     availabilityModality: data.availabilityModality ?? [],
@@ -66,8 +69,8 @@ function overlapScore(candidate: MatchCandidate, learningSubjects: string[]): nu
  * Quantas **áreas** os dois têm em comum, contando cada área uma só vez.
  *
  * É o desempate do `rankCandidates`: quem ensina Matemática e Estatística e procura Cálculo tem 1
- * disciplina em comum com um mentor de Cálculo e 0 com um de Física, e isso decide a ordem. Mas
- * dois mentores de Cálculo empatam, e aí vale a pena subir quem está mais perto do que se procura - o
+ * disciplina em comum com um tutor de Cálculo e 0 com um de Física, e isso decide a ordem. Mas
+ * dois tutores de Cálculo empatam, e aí vale a pena subir quem está mais perto do que se procura - o
  * de Matemática e Estatística, não o de Física que por acaso também dá Cálculo.
  *
  * Disciplinas que já não estão na lista (perfis antigos) não contam para áreas - continuam a contar
@@ -100,8 +103,15 @@ export function rankCandidates(candidates: MatchCandidate[], learningSubjects: s
   });
 }
 
-/** Mentores (participationMode 'teach' ou 'both') com perfil completo, excluindo o próprio utilizador. */
-export async function fetchMentorCandidates(params: {
+/**
+ * Os **tutores** (docentes do ISEC - ver `canTeach` em src/constants/auth.ts) com perfil completo,
+ * excluindo o próprio utilizador.
+ *
+ * O filtro é o papel, e não uma escolha feita dentro da app: é isto que faz do deck de descoberta a
+ * lista de quem pode ensinar. Quem não é docente nunca entra, mesmo que tenha disciplinas
+ * preenchidas de antes.
+ */
+export async function fetchTutorCandidates(params: {
   currentUid: string;
   learningSubjects: string[];
   excludeIds?: Set<string>;
@@ -116,8 +126,8 @@ export async function fetchMentorCandidates(params: {
 
   const candidates = snapshot.docs
     .filter((docSnap) => docSnap.id !== params.currentUid && !params.excludeIds?.has(docSnap.id))
-    .map((docSnap) => ({ uid: docSnap.id, data: docSnap.data() as MentorProfileDoc }))
-    .filter(({ data }) => canTeach(data.participationMode))
+    .map((docSnap) => ({ uid: docSnap.id, data: docSnap.data() as CandidateProfileDoc }))
+    .filter(({ data }) => canTeach(data.role))
     .map(({ uid, data }) => toCandidate(uid, data));
 
   return rankCandidates(candidates, params.learningSubjects);
@@ -126,12 +136,12 @@ export async function fetchMentorCandidates(params: {
 export async function fetchCandidateById(uid: string): Promise<MatchCandidate | null> {
   const snapshot = await getDoc(doc(db, 'users', uid));
   if (!snapshot.exists()) return null;
-  return toCandidate(uid, snapshot.data() as MentorProfileDoc);
+  return toCandidate(uid, snapshot.data() as CandidateProfileDoc);
 }
 
-/** Mentores com quem o utilizador (Tutorando) já tem uma conexão aceite - usados na secção
- * "Mentores para ti" da home, distinta do deck de descoberta em Matches. */
-export async function fetchConnectedMentors(uid: string): Promise<MatchCandidate[]> {
+/** Tutores com quem o utilizador (Tutorando) já tem uma conexão aceite - a lista de quem o
+ * acompanha, distinta do deck de descoberta em Matches. */
+export async function fetchConnectedTutors(uid: string): Promise<MatchCandidate[]> {
   const [snapshot, bloqueados] = await Promise.all([
     getDocs(query(collection(db, 'connectionRequests'), where('from', '==', uid), where('status', '==', 'accepted'))),
     fetchBlockedPairs(uid),
@@ -142,14 +152,14 @@ export async function fetchConnectedMentors(uid: string): Promise<MatchCandidate
 }
 
 /**
- * Tutorandos com quem o utilizador (Mentor) já tem uma conexão aceite - a lista de quem
- * acompanha. É o simétrico de `fetchConnectedMentors`: um pedido de conexão vai sempre do
- * Tutorando para o Mentor (ver `sendConnectionRequest`), por isso quem ensina é o `to` e a sua
+ * Tutorandos com quem o utilizador (Tutor) já tem uma conexão aceite - a lista de quem
+ * acompanha. É o simétrico de `fetchConnectedTutors`: um pedido de conexão vai sempre do
+ * Tutorando para o Tutor (ver `sendConnectionRequest`), por isso quem ensina é o `to` e a sua
  * lista de tutorandos são os `from` aceites.
  *
- * Sem isto, aceitar um pedido não dava ao mentor nenhum sítio onde voltasse a ver o aluno: ele
+ * Sem isto, aceitar um pedido não dava ao tutor nenhum sítio onde voltasse a ver o aluno: ele
  * desaparecia da descoberta (é isso que `fetchExcludedCandidateIds` garante) e só voltava a
- * existir se o mentor se lembrasse de abrir uma conversa que talvez nunca tivesse começado.
+ * existir se o tutor se lembrasse de abrir uma conversa que talvez nunca tivesse começado.
  */
 export async function fetchConnectedTutees(uid: string): Promise<MatchCandidate[]> {
   const [snapshot, bloqueados] = await Promise.all([
@@ -174,7 +184,7 @@ export async function fetchConnectedTutees(uid: string): Promise<MatchCandidate[
  * é a resposta certa. No caso comum (sem bloqueios) nunca se chega lá.
  */
 export async function hasConnections(uid: string): Promise<boolean> {
-  const [comoAluno, comoMentor, bloqueados] = await Promise.all([
+  const [comoTutorando, comoTutor, bloqueados] = await Promise.all([
     getDocs(
       query(
         collection(db, 'connectionRequests'),
@@ -194,7 +204,7 @@ export async function hasConnections(uid: string): Promise<boolean> {
     fetchBlockedPairs(uid),
   ]);
 
-  const candidatos = [...comoAluno.docs, ...comoMentor.docs];
+  const candidatos = [...comoTutorando.docs, ...comoTutor.docs];
   const desbloqueadas = candidatos.filter((docSnap) => {
     const data = docSnap.data();
     const outro = data.from === uid ? data.to : data.from;
@@ -205,8 +215,8 @@ export async function hasConnections(uid: string): Promise<boolean> {
   if (candidatos.length === 0) return false;
 
   // Todos os que apareceram estão bloqueados: só uma leitura completa sabe se há mais.
-  const [mentores, tutorandos] = await Promise.all([fetchConnectedMentors(uid), fetchConnectedTutees(uid)]);
-  return mentores.length + tutorandos.length > 0;
+  const [tutores, tutorandos] = await Promise.all([fetchConnectedTutors(uid), fetchConnectedTutees(uid)]);
+  return tutores.length + tutorandos.length > 0;
 }
 
 /**
@@ -233,7 +243,7 @@ export function matchId(uidA: string, uidB: string): string {
   return [uidA, uidB].sort().join('_');
 }
 
-/** Envia um pedido de conexão (Tutorando -> Mentor/Tutor). O mentor aceita/recusa nas notificações. */
+/** Envia um pedido de conexão (Tutorando -> Tutor). O tutor aceita/recusa nos Matches. */
 export async function sendConnectionRequest(fromUid: string, toUid: string): Promise<void> {
   await setDoc(doc(db, 'connectionRequests', connectionRequestId(fromUid, toUid)), {
     from: fromUid,
@@ -250,9 +260,9 @@ export async function sendConnectionRequest(fromUid: string, toUid: string): Pro
  *
  * Nos dois sentidos porque os pedidos que eu recebi estão em cima do Matches à espera da minha
  * decisão: sem isto, a mesma pessoa aparecia em cima (o pedido) e em baixo (o deck), e "Conectar"
- * criava um segundo pedido entre as mesmas duas pessoas, no sentido contrário. Só acontece entre
- * quem ensina e aprende ao mesmo tempo, porque é quem aprende que pede e só quem ensina entra no
- * deck.
+ * criava um segundo pedido entre as mesmas duas pessoas, no sentido contrário. O caso típico é
+ * entre quem ensina e quem aprende - é quem aprende que pede, e só quem ensina entra no deck -, mas
+ * não é o único: um tutor também pode pedir uma conexão a outro tutor a partir da pesquisa.
  *
  * Em qualquer estado porque recusar também é uma decisão: um pedido recusado não deve voltar a
  * bater à porta pelo outro lado.

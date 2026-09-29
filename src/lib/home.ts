@@ -62,7 +62,7 @@ export function toAttentionItems(counts: Record<AttentionKind, number>): Attenti
 export interface HomeFill {
   /** Sessões marcadas e ainda por acontecer. */
   sessions: number;
-  /** Ligações aceites, nos dois sentidos (mentores e tutorandos). */
+  /** Ligações aceites, nos dois sentidos (tutores e tutorandos). */
   connections: number;
   /** Pendências - o que `toAttentionItems` devolveu, já contado. */
   attention: number;

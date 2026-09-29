@@ -66,8 +66,8 @@ export default function ProfileScreen() {
   // A saudação da Home, aqui também: o bloco é o mesmo e a linha de cima é a mesma - ver
   // `greetingLabel` em src/lib/home.ts.
   const greeting = greetingLabel(greetingPeriod(new Date()), i18n);
-  // A segunda linha do bloco: o **papel** para um professor ("Tutor" - em src/lib/roles.ts um
-  // professor nunca é "Mentor") e o **curso com o ano** para um aluno.
+  // A segunda linha do bloco: o **papel** para um professor ("Tutor" - em src/lib/roles.ts o
+  // docente é sempre "Tutor", e o aluno sempre "Tutorando") e o **curso com o ano** para um aluno.
   //
   // Foi ao contrário - a linha era sempre o curso, e um professor lia "Docente ISEC Lisboa" -, e a
   // troca não é só de palavras: o papel é uma palavra fixa (cabe numa linha, nunca trunca) e é o
@@ -75,7 +75,7 @@ export default function ProfileScreen() {
   // cabeçalho é que não. O curso de um aluno fica, esse é escolhido por quem o tem e muda de pessoa
   // para pessoa - e o "Editar" está ao lado dele para quem o quiser corrigir.
   const subtitle = isProfessor
-    ? roleLabel(profile.participationMode, profile.role, i18n)
+    ? roleLabel(profile.role, i18n)
     : formatCourseAndYear(profile.course, profile.year);
 
   return (

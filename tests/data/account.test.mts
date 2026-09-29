@@ -128,7 +128,7 @@ async function montarConta() {
   await entrarComo(CONTAS.aluna);
   await sendConnectionRequest(ana, bruno);
 
-  await entrarComo(CONTAS.alunoQueEnsina);
+  await entrarComo(CONTAS.professor);
   await respondToConnectionRequest(pedidoConexao, ana, bruno, true);
   // A mensagem de quem fica: é ela que não pode desaparecer com a conta da outra pessoa.
   await sendMessage(conversa, bruno, ana, 'Olá, boa tarde.');
@@ -149,7 +149,7 @@ async function montarConta() {
     message: DADOS_DA_SESSAO.message,
   };
 
-  await entrarComo(CONTAS.alunoQueEnsina);
+  await entrarComo(CONTAS.professor);
   await respondToSessionRequest(pedido, bruno, true);
   const sessao = (await sessoesDe())[0];
   await completeSession(sessao.id);
@@ -225,7 +225,7 @@ describe('apagar os dados da conta', () => {
     assert.equal(await documentosNoEmulador(`conversations/${conversa}`), 0);
 
     // Do lado de quem fica, a conversa desapareceu da lista (é o que ele vê).
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     assert.equal(await conversationExists(bruno, ana), false);
   });
 
@@ -288,7 +288,7 @@ describe('apagar a conta (com a conta do Auth)', () => {
     );
 
     // E os dados também foram com ela.
-    await entrarComo(CONTAS.alunoQueEnsina);
+    await entrarComo(CONTAS.professor);
     assert.equal(await lerDocumento(`users/${ana}`), null);
     assert.equal(await conversationExists(cenario.bruno, ana), false);
   });

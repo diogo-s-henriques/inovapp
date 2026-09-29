@@ -8,7 +8,7 @@
  *    alguém mudar estas funções, a app deixa de conseguir escrever - e as regras são o único
  *    sítio onde isso se nota, em produção.
  * 2. A cache de perfis, cujo tempo de vida é o de UMA subscrição (ver o comentário no código).
- * 3. A tradução dos campos: foi um bug corrigido, o de os rótulos ("Mentor", "Utilizador") estarem
+ * 3. A tradução dos campos: foi um bug corrigido, o de os rótulos ("Tutorando", "Utilizador") estarem
  *    escritos em português dentro da camada de dados e ficarem em português no modo inglês.
  * 4. `matchesView`, a decisão de qual vista o ecrã dos Matches mostra. O primeiro caso aqui em
  *    baixo é um ecrã que ficou preso a girar: quem só ensina não carrega lista nenhuma, o efeito
@@ -60,7 +60,7 @@ beforeEach(() => {
 describe('connectionRequestId - formato que as regras de segurança exigem', () => {
   it('junta o remetente e o destinatário por esta ordem', () => {
     // firestore.rules: requestId == request.resource.data.from + '_' + request.resource.data.to
-    assert.equal(connectionRequestId('aluno-1', 'mentor-2'), 'aluno-1_mentor-2');
+    assert.equal(connectionRequestId('aluno-1', 'tutor-2'), 'aluno-1_tutor-2');
   });
 
   it('é direcional: a ordem dos argumentos muda o ID', () => {
@@ -186,45 +186,43 @@ describe('perfil → candidato', () => {
     assert.equal((await candidatoDe({ fullName: '   ' }))?.firstName, pt.common.user);
   });
 
-  it('um aluno que ensina é Mentor', async () => {
-    const candidato = await candidatoDe({ participationMode: 'teach', role: 'student' });
+  it('um aluno é Tutorando', async () => {
+    const candidato = await candidatoDe({ role: 'student' });
 
-    assert.equal(candidato?.role, pt.roles.mentor);
+    assert.equal(candidato?.role, pt.roles.tutee);
     assert.notEqual(candidato?.role, pt.roles.tutor);
   });
 
-  it('um professor que ensina é Tutor, não Mentor', async () => {
-    // "Mentor" na app é sempre um aluno que ensina outro aluno; um docente é "Tutor".
-    const candidato = await candidatoDe({ participationMode: 'teach', role: 'professor' });
+  it('um docente do ISEC é Tutor', async () => {
+    // O papel vem do domínio do email (ver src/constants/auth.ts) e o rótulo é a tradução dele.
+    const candidato = await candidatoDe({ role: 'professor' });
 
     assert.equal(candidato?.role, pt.roles.tutor);
   });
 
-  it('quem ensina e aprende junta os dois papéis', async () => {
-    const aluno = await candidatoDe({ participationMode: 'both', role: 'student' });
-
-    assert.equal(aluno?.role, pt.roles.withTutee(pt.roles.mentor));
-
-    const professor = await candidatoDe({ participationMode: 'both', role: 'professor' });
-
-    assert.equal(professor?.role, pt.roles.withTutee(pt.roles.tutor));
-  });
-
-  it('quem só aprende é Tutorando', async () => {
-    assert.equal((await candidatoDe({ participationMode: 'learn' }))?.role, pt.roles.tutee);
-  });
-
-  it('sem modo de participação definido é Tutorando', async () => {
+  it('sem papel definido é Tutorando', async () => {
     assert.equal((await candidatoDe({}))?.role, pt.roles.tutee);
   });
 
   it('as disciplinas vêm das que ensina, não das que quer aprender', async () => {
     const candidato = await candidatoDe({
+      role: 'professor',
       teachingSubjects: ['Matemática', 'Física'],
       learningSubjects: ['Programação'],
     });
 
     assert.deepEqual(candidato?.subjects, ['Matemática', 'Física']);
+  });
+
+  it('um aluno não mostra disciplinas que ensina - não as pode ter', async () => {
+    // Contas anteriores a esta regra ainda as guardam no Firestore; o que se lê no perfil é o que
+    // o papel permite, não o que está escrito no documento.
+    const candidato = await candidatoDe({
+      role: 'student',
+      teachingSubjects: ['Matemática', 'Física'],
+    });
+
+    assert.deepEqual(candidato?.subjects, []);
   });
 
   it('junta períodos e modalidades numa só linha de disponibilidade', async () => {
@@ -261,27 +259,16 @@ describe('perfil → candidato', () => {
 
 describe('i18n na camada de dados', () => {
   it('os papéis seguem o idioma escolhido', async () => {
-    // "Tutorando"/"Tutee" é o caso que mostra a mudança: "Mentor" escreve-se igual nos dois
+    // "Tutorando"/"Tutee" é o caso que mostra a mudança: "Tutor" escreve-se igual nos dois
     // idiomas, por isso serviria de teste sem provar nada.
-    const emPortugues = await candidatoDe({ participationMode: 'learn' });
+    const emPortugues = await candidatoDe({ role: 'student' });
 
     useLocaleStore.getState().setLocale('en');
-    const emIngles = await candidatoDe({ participationMode: 'learn' });
+    const emIngles = await candidatoDe({ role: 'student' });
 
     assert.equal(emPortugues?.role, pt.roles.tutee);
     assert.equal(emIngles?.role, en.roles.tutee);
     assert.notEqual(pt.roles.tutee, en.roles.tutee);
-  });
-
-  it('a composição de dois papéis segue o idioma', async () => {
-    const emPortugues = await candidatoDe({ participationMode: 'both', role: 'student' });
-
-    useLocaleStore.getState().setLocale('en');
-    const emIngles = await candidatoDe({ participationMode: 'both', role: 'student' });
-
-    assert.equal(emPortugues?.role, pt.roles.withTutee(pt.roles.mentor));
-    assert.equal(emIngles?.role, en.roles.withTutee(en.roles.mentor));
-    assert.notEqual(emPortugues?.role, emIngles?.role);
   });
 
   it('a etiqueta de perfil novo segue o idioma', async () => {
@@ -334,7 +321,7 @@ describe('candidatos passados - guardados só no dispositivo', () => {
 });
 
 describe('matchesView - o que o ecrã dos Matches mostra', () => {
-  /** Quem só ensina (não pode aprender): sem lista de candidatos para ler. */
+  /** Um docente (não procura tutor): sem lista de candidatos para ler. */
   const SO_ENSINA = { canLearn: false };
   const APRENDE = { canLearn: true };
 
@@ -376,7 +363,7 @@ function candidato(id: string, subjects: string[]): MatchCandidate {
     id,
     firstName: id,
     lastName: '',
-    role: 'Mentor',
+    role: 'Tutorando',
     course: '',
     year: '',
     subjects,

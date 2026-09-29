@@ -26,7 +26,7 @@ import { db } from '@/lib/firebase';
  *
  * **O que fica de fora, e porquê:** as avaliações (`ratings/{sessionId}`). São anónimas, não têm
  * autor nenhum dentro do documento, e a chave é a sessão - apagada a sessão, ninguém lá chega. Abrir
- * `delete` nos ratings para as levar atrás da conta seria dar a um mentor a possibilidade de apagar
+ * `delete` nos ratings para as levar atrás da conta seria dar a um tutor a possibilidade de apagar
  * as avaliações más que recebeu, que é precisamente o que o anonimato existe para impedir.
  * As **mensagens que a outra pessoa escreveu** também ficam: não são dela, e ficam inalcançáveis
  * assim que a conversa desaparece (as regras exigem a conversa para se ler dentro dela).

@@ -4,12 +4,12 @@ import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
-import { canLearn } from '@/constants/profile';
+import { canLearn } from '@/constants/auth';
 import { useI18n } from '@/hooks/use-i18n';
 import { useAuthStore } from '@/auth/store';
 import {
   fetchExcludedCandidateIds,
-  fetchMentorCandidates,
+  fetchTutorCandidates,
   getPassedCandidateIds,
   matchesView,
   passCandidate,
@@ -32,8 +32,8 @@ import type { MatchCandidate } from '@/types/match';
 /**
  * Ecrã de descoberta e de decisão. Em cima, os pedidos de conexão que chegaram (aceitar/recusar
  * acontece aqui, não nas Notificações: um pedido decide-se num sítio só); por baixo, os candidatos
- * que ainda não são nada para nós. Quem só ensina não tem lista de candidatos - não procura mentor,
- * são os Tutorandos que o encontram - mas vê na mesma os pedidos.
+ * que ainda não são nada para nós. Um docente não tem lista de candidatos - não procura tutor, são
+ * os Tutorandos que o encontram - mas vê na mesma os pedidos.
  *
  * A lista de candidatos é uma **lista**, e não um cartão de ecrã inteiro que se vira: era um deck
  * com uma bandeja de botões fixa em baixo, e nenhum outro ecrã da app se parecia com aquilo. Agora
@@ -59,11 +59,11 @@ export default function MatchesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const participationMode = useAuthStore((state) => state.profile?.participationMode);
+  const role = useAuthStore((state) => state.profile?.role);
   const learningSubjects = useAuthStore((state) => state.profile?.learningSubjects ?? []);
-  // Match serve para procurar mentor; quem está definido só como Mentor (não Tutorando) não
-  // tem uso para esta funcionalidade - são os Tutorandos que os encontram, não o contrário.
-  const blocked = !canLearn(participationMode);
+  // O Match serve para procurar tutor; um docente não tem uso para esta funcionalidade - são os
+  // Tutorandos que o encontram, não o contrário - e por isso vê a vista de bloqueado.
+  const blocked = !canLearn(role);
 
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,7 @@ export default function MatchesScreen() {
         // passados neste dispositivo (local), para nenhum voltar a aparecer.
         const [excludeIds, passedIds] = await Promise.all([fetchExcludedCandidateIds(user.uid), getPassedCandidateIds()]);
         passedIds.forEach((id) => excludeIds.add(id));
-        const results = await fetchMentorCandidates({ currentUid: user.uid, learningSubjects, excludeIds });
+        const results = await fetchTutorCandidates({ currentUid: user.uid, learningSubjects, excludeIds });
         if (cancelled) return;
         setCandidates(results);
         setLoadError(false);

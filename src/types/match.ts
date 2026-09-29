@@ -1,4 +1,4 @@
-// Representa um estudante sugerido no ecrã de correspondência (match) entre mentores e tutorandos.
+// Representa um docente sugerido no ecrã de correspondência (match) entre tutores e tutorandos.
 export interface MatchCandidate {
   id: string;
   firstName: string;
@@ -11,7 +11,7 @@ export interface MatchCandidate {
   availabilityPeriods: string[];
   availabilityModality: string[];
   description: string;
-  // Número de sessões já dadas como mentor; usado como indicador de experiência.
+  // Número de sessões já dadas como tutor; usado como indicador de experiência.
   sessionsGiven: number;
   responseTime: string;
   image?: string;

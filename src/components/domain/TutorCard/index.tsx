@@ -23,7 +23,7 @@ export interface TutorCardProps extends Omit<PressableProps, 'style'> {
 }
 
 /**
- * Cartão de uma pessoa nas listagens de conexões - o mentor em "Tutores para ti" e o tutorando
+ * Cartão de uma pessoa nas listagens de conexões - o tutor em "Tutores para ti" e o tutorando
  * em "Os teus tutorandos". A avaliação por estrelas é interna (ver ratings) e não é para ser
  * mostrada publicamente.
  *

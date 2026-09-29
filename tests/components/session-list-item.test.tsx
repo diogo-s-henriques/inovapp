@@ -1,12 +1,13 @@
 /**
  * Testes de `SessionListItem` - a linha de sessão na agenda.
  *
- * O que aqui se fixa é uma regra de domínio que já foi um bug: só quem é Mentor/Tutor *nessa*
- * sessão pode terminá-la. A decisão era tomada comparando o texto de um rótulo ('Tutorando'),
- * o que partia assim que a interface fosse traduzida - hoje é o campo `role` tipado
- * (ver src/types/session.ts) e o botão é escolhido a partir dele.
+ * O que aqui se fixa é uma regra de domínio que já foi um bug: só quem é Tutor *nessa* sessão pode
+ * terminá-la. A decisão era tomada comparando o texto de um rótulo ('Tutorando'), o que partia
+ * assim que a interface fosse traduzida - hoje é o campo `role` tipado (ver src/types/session.ts) e
+ * o botão é escolhido a partir dele.
  *
- * A app não faz chamadas: a linha de sessão só tem a ação de terminar (e só para o mentor).
+ * A app não faz chamadas: a linha de sessão só tem a ação de terminar (e só para quem dá a sessão,
+ * que é o Tutor - o campo continua a chamar-se `mentor` no documento).
  *
  * Nota sobre a API: a partir do `@testing-library/react-native` v14, `render`, `fireEvent` e
  * `unmount` são assíncronos (o React 19 deixou de suportar o `react-test-renderer`, que era
@@ -58,10 +59,10 @@ describe('papel do utilizador na sessão', () => {
     expect(getByText(pt.sessions.asRole(pt.roles.tutee))).toBeTruthy();
   });
 
-  it('quem é mentor aparece como mentor', async () => {
+  it('quem é tutor aparece como tutor', async () => {
     const { getByText } = await render(<SessionListItem {...BASE} sessionRole="mentor" />);
 
-    expect(getByText(pt.sessions.asRole(pt.roles.mentor))).toBeTruthy();
+    expect(getByText(pt.sessions.asRole(pt.roles.tutor))).toBeTruthy();
   });
 
   it('o rótulo do papel segue o idioma escolhido', async () => {
@@ -75,7 +76,7 @@ describe('papel do utilizador na sessão', () => {
 });
 
 describe('quem pode terminar a sessão', () => {
-  it('o mentor vê "Terminar" e o botão avisa o ecrã', async () => {
+  it('o tutor vê "Terminar" e o botão avisa o ecrã', async () => {
     const onPressComplete = jest.fn();
     const { getByLabelText } = await render(
       <SessionListItem {...BASE} sessionRole="mentor" onPressComplete={onPressComplete} />,
@@ -98,7 +99,7 @@ describe('quem pode terminar a sessão', () => {
     expect(onPressComplete).not.toHaveBeenCalled();
   });
 
-  it('o mentor sem handler de terminar não mostra ação nenhuma', async () => {
+  it('o tutor sem handler de terminar não mostra ação nenhuma', async () => {
     const { queryByLabelText } = await render(<SessionListItem {...BASE} sessionRole="mentor" />);
 
     expect(queryByLabelText(pt.sessions.complete)).toBeNull();

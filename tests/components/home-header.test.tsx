@@ -39,7 +39,7 @@ const SUBTITLE = 18;
 const BASE = {
   name: 'Ana Silva',
   period: 'morning' as const,
-  roleLabel: pt.roles.mentor,
+  roleLabel: pt.roles.tutor,
 };
 
 beforeEach(() => {
@@ -132,7 +132,7 @@ describe('<HomeHeader /> - a introdução', () => {
   it('sem papel, a linha não é desenhada', async () => {
     const { queryByText } = await render(<HomeHeader {...BASE} roleLabel="" />);
 
-    expect(queryByText(pt.roles.mentor)).toBeNull();
+    expect(queryByText(pt.roles.tutor)).toBeNull();
   });
 });
 

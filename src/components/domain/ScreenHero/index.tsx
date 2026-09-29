@@ -45,8 +45,8 @@ export interface ScreenHeroProps extends ViewProps {
   /**
    * Quantas linhas a segunda linha pode ocupar.
    *
-   * Uma por omissão, e é a regra da Home: o papel é uma palavra fixa ("Tutorando", "Mentor e
-   * Tutorando") e uma linha a mais era altura que saía de um ecrã desenhado para não rolar. O
+   * Uma por omissão, e é a regra da Home: o papel é uma palavra fixa ("Tutor" ou "Tutorando") e
+   * uma linha a mais era altura que saía de um ecrã desenhado para não rolar. O
    * Perfil passa **2** para o curso de um aluno, porque a linha de lá é um dado escolhido pela
    * pessoa ("Engenharia Informática e Computadores, 3º ano") e não se pode truncar por causa de uma
    * fotografia ao lado; para um professor passa **1**, porque a linha é o papel ("Tutor") - o mesmo

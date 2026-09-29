@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
-import { PARTICIPATION_MODES, YEAR_OPTIONS, canTeach, isEligibleToTeach } from '@/constants/profile';
+import { YEAR_OPTIONS } from '@/constants/profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/auth/store';
 import { completeProfileSetup } from '@/auth/actions';
@@ -21,7 +21,7 @@ import { PhotoPicker } from '@/components/ui/PhotoPicker';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { TextField } from '@/components/ui/TextField';
 import { ThemedText } from '@/components/ui/ThemedText';
-import type { CourseSelection, ParticipationMode } from '@/types/profile';
+import type { CourseSelection } from '@/types/profile';
 
 function sameCourse(a?: CourseSelection, b?: CourseSelection): boolean {
   return a?.name === b?.name && a?.type === b?.type;
@@ -41,7 +41,6 @@ export default function ProfileEditScreen() {
   const [course, setCourse] = useState<CourseSelection | undefined>(profile?.course);
   const [year, setYear] = useState<string | undefined>(profile?.year);
   const [about, setAbout] = useState(profile?.about ?? '');
-  const [participationMode, setParticipationMode] = useState(profile?.participationMode);
   const [teachingSubjects, setTeachingSubjects] = useState<string[]>(profile?.teachingSubjects ?? []);
   const [learningSubjects, setLearningSubjects] = useState<string[]>(profile?.learningSubjects ?? []);
   const [periods, setPeriods] = useState<string[]>(profile?.availabilityPeriods ?? []);
@@ -49,17 +48,6 @@ export default function ProfileEditScreen() {
   const [saving, setSaving] = useState(false);
 
   if (!profile || !user) return null;
-
-  const eligibleToTeach = isEligibleToTeach(year);
-  const availableModes = PARTICIPATION_MODES.filter((option) => eligibleToTeach || option.mode === 'learn');
-
-  const handleChangeYear = (nextYear: string) => {
-    setYear(nextYear);
-    // Se o novo ano deixa de ser elegível para ensinar, força o modo para "aprender".
-    if (!isEligibleToTeach(nextYear) && participationMode !== 'learn') {
-      setParticipationMode('learn' as ParticipationMode);
-    }
-  };
 
   const sameSet = (a: string[], b: string[]) => {
     if (a.length !== b.length) return false;
@@ -74,7 +62,6 @@ export default function ProfileEditScreen() {
     !sameCourse(course, profile.course) ||
     year !== profile.year ||
     about !== (profile.about ?? '') ||
-    participationMode !== profile.participationMode ||
     !sameSet(teachingSubjects, profile.teachingSubjects ?? []) ||
     !sameSet(learningSubjects, profile.learningSubjects ?? []) ||
     !sameSet(periods, profile.availabilityPeriods ?? []) ||
@@ -109,8 +96,10 @@ export default function ProfileEditScreen() {
         course: isProfessor ? undefined : course,
         year: isProfessor ? undefined : year,
         about,
-        participationMode,
-        teachingSubjects,
+        // As disciplinas que se ensinam são de um professor, e só dele: um aluno que tenha ficado
+        // com elas de antes (de quando ensinar era uma escolha) vê-as apagadas ao guardar - o
+        // perfil dele é o de quem procura apoio, e estas disciplinas não têm onde aparecer.
+        teachingSubjects: isProfessor ? teachingSubjects : [],
         learningSubjects: isProfessor ? [] : learningSubjects,
         availabilityPeriods: periods,
         availabilityModality: modality,
@@ -166,7 +155,7 @@ export default function ProfileEditScreen() {
                 <ChipGroup
                   options={YEAR_OPTIONS}
                   selected={year ? [year] : []}
-                  onChange={(next) => next[0] && handleChangeYear(next[0])}
+                  onChange={(next) => next[0] && setYear(next[0])}
                   multiple={false}
                 />
               </View>
@@ -182,40 +171,21 @@ export default function ProfileEditScreen() {
           />
         </SectionCard>
 
-        {!isProfessor && (
-          <View style={styles.section}>
-            <ThemedText type="small" themeColor="textMuted">
-              {i18n.profileEdit.participationLabel}
-            </ThemedText>
-            <ChipGroup
-              options={availableModes.map((option) => i18n.participationModes[option.mode].chip)}
-              selected={[participationMode ? i18n.participationModes[participationMode].chip : '']}
-              onChange={(next) => {
-                const picked = availableModes.find((option) => i18n.participationModes[option.mode].chip === next[0]);
-                if (picked) setParticipationMode(picked.mode);
-              }}
-              multiple={false}
-            />
-            {!eligibleToTeach && (
-              <ThemedText type="small" themeColor="textMuted" style={styles.eligibilityHint}>
-                {i18n.profileEdit.eligibilityHint}
-              </ThemedText>
-            )}
-          </View>
-        )}
-
-        {canTeach(participationMode) && (
+        {/* As disciplinas são de um lado só: um professor mostra o que ensina (é o que o põe na
+            descoberta) e um aluno mostra o que quer aprender. */}
+        {isProfessor ? (
           <SectionCard label={i18n.profileEdit.teachesLabel}>
             <SubjectsField selected={teachingSubjects} onChange={setTeachingSubjects} />
           </SectionCard>
-        )}
-
-        {!isProfessor && (
+        ) : (
           <SectionCard label={i18n.profileEdit.learningLabel}>
             <SubjectsField selected={learningSubjects} onChange={setLearningSubjects} />
           </SectionCard>
         )}
 
+        {/* A disponibilidade fica com os dois papéis: é a do tutor que aparece no perfil e que quem
+            procura vê, mas quem pede uma sessão também conta - as horas e a modalidade sugeridas no
+            pedido olham para os dois perfis (ver src/app/session-request.tsx). */}
         <SectionCard label={i18n.profileEdit.availabilityLabel}>
           <AvailabilityFields
             periods={periods}
@@ -258,8 +228,5 @@ const styles = StyleSheet.create({
   },
   yearField: {
     gap: Spacing.two,
-  },
-  eligibilityHint: {
-    marginTop: -Spacing.one,
   },
 });

@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { setStatusBarStyle } from 'expo-status-bar';
 
 import { Spacing } from '@/constants/theme';
-import { canLearn, canTeach } from '@/constants/profile';
+import { canLearn } from '@/constants/auth';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/auth/store';
@@ -89,12 +89,12 @@ export default function HomeScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const profile = useAuthStore((state) => state.profile);
-  const participationMode = profile?.participationMode;
+  const role = profile?.role;
   const fullName = user?.fullName?.trim() ?? '';
   const initials = getInitials(fullName);
-  // O papel de quem está a ver o ecrã ("Tutor", "Mentor", "Mentor e Tutorando", "Tutorando"):
-  // depende do modo de participação e de ser professor (@iseclisboa.pt). Ver src/lib/roles.ts.
-  const viewerRole = roleLabel(profile?.participationMode, profile?.role, i18n);
+  // O papel de quem está a ver o ecrã ("Tutor" para um docente, "Tutorando" para um aluno):
+  // depende só do domínio do email (@iseclisboa.pt). Ver src/lib/roles.ts.
+  const viewerRole = roleLabel(profile?.role, i18n);
   const [sessions, setSessions] = useState<AgendaSession[]>([]);
   const [pendingRating, setPendingRating] = useState<AgendaSession | null>(null);
   // `null` enquanto a leitura não respondeu - e é de propósito que não é `false`. Mostrar o guia de
@@ -106,9 +106,8 @@ export default function HomeScreen() {
   const [connectionsError, setConnectionsError] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
 
-  const canBrowse = canLearn(participationMode);
-  // Quem não ensina nem aprende não tem ligações para reler: puxar o ecrã não faria nada.
-  const canRefresh = canBrowse || canTeach(participationMode);
+  // Quem procura é o aluno; um docente é procurado, e por isso não tem deck de descoberta.
+  const canBrowse = canLearn(role);
   const [refreshing, setRefreshing] = useState(false);
 
   // O cabeçalho deste ecrã é claro (ver `heroTop`/`heroBottom`), por isso os ícones da barra de
@@ -133,7 +132,6 @@ export default function HomeScreen() {
   // passou meses por "ecrã sem dados".
   useEffect(() => {
     if (!user) return;
-    if (!canLearn(participationMode) && !canTeach(participationMode)) return;
 
     let cancelled = false;
 
@@ -154,7 +152,7 @@ export default function HomeScreen() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, participationMode, reloadToken]);
+  }, [user?.uid, reloadToken]);
 
   // As duas contagens vêm das leituras partilhadas (ver `useConnectionRequests`): os pedidos de
   // conexão entram aqui porque a secção "Novidades" é um aviso e não uma decisão - quem aceita ou
@@ -201,7 +199,7 @@ export default function HomeScreen() {
 
   // Procura, entre as sessões passadas em que o utilizador foi tutorando, a mais antiga
   // que ainda não foi avaliada nem dispensada, para pedir a avaliação ao abrir o ecrã. Conta
-  // tanto as que já passaram da hora agendada como as que o mentor terminou manualmente antes
+  // tanto as que já passaram da hora agendada como as que o tutor terminou manualmente antes
   // disso (status 'completed').
   useEffect(() => {
     if (!user) return;
@@ -265,7 +263,7 @@ export default function HomeScreen() {
   };
 
   const nowKey = toSessionKey();
-  // Uma sessão terminada pelo mentor antes da hora marcada deixa de contar como agendada, mesmo que
+  // Uma sessão terminada pelo tutor antes da hora marcada deixa de contar como agendada, mesmo que
   // a hora marcada ainda não tenha passado. É este número que decide se a Home está vazia; o que
   // **não** se faz com ele é escolher a "próxima sessão" para destacar aqui - esse cartão saiu, e o
   // quando das sessões é agora o calendário abaixo (ver o comentário da secção da agenda).
@@ -280,10 +278,8 @@ export default function HomeScreen() {
   // forma de tirar o aviso de erro do ecrã sem o fechar).
   //
   // O indicador é apagado no fim da leitura (o `finally` do efeito acima), e não aqui: se a leitura
-  // for negada ou falhar, tem de parar na mesma. E só se põe a rodar quando essa leitura existe -
-  // sem ligações para ler, ficava a rodar sobre nada.
+  // for negada ou falhar, tem de parar na mesma.
   const handleRefresh = () => {
-    if (!canRefresh) return;
     setRefreshing(true);
     setReloadToken((token) => token + 1);
   };
@@ -297,7 +293,7 @@ export default function HomeScreen() {
   //
   // O `!connectionsError` não é detalhe: as ligações deixaram de estar à vista neste ecrã, e uma
   // leitura que falhou devolve zero em `connections` - sem esta linha, quem tem ligações e uma
-  // leitura negada via o guia de quem ainda não tem nada, a dizer-lhe para encontrar um mentor que
+  // leitura negada via o guia de quem ainda não tem nada, a dizer-lhe para encontrar um tutor que
   // já tem. É a diferença entre "não tenho ligações" e "não sei as minhas ligações".
   const showFirstSteps =
     hasAnyConnection === false &&
@@ -368,7 +364,7 @@ export default function HomeScreen() {
               label={canBrowse ? i18n.home.firstStepsCtaLearn : i18n.home.firstStepsCtaTeach}
               icon={canBrowse ? 'people-outline' : 'create-outline'}
               onPress={() => {
-                // Para quem só ensina, o Match está fechado (é lá que se procura mentor) e o passo
+                // Para um docente, o Match está fechado (é lá que se procura tutor) e o passo
                 // seguinte é o perfil por que vai ser encontrado.
                 if (canBrowse) {
                   router.push('/matches');
@@ -421,9 +417,9 @@ export default function HomeScreen() {
         <EvaluationModal
           key={pendingRating.id}
           visible
-          mentorFirstName={pendingRating.firstName}
-          mentorLastName={pendingRating.lastName}
-          mentorImage={pendingRating.image}
+          tutorFirstName={pendingRating.firstName}
+          tutorLastName={pendingRating.lastName}
+          tutorImage={pendingRating.image}
           subject={pendingRating.subject}
           scheduleLabel={formatScheduleLabel(pendingRating.date, pendingRating.time, i18n, locale)}
           onSubmit={handleSubmitRating}

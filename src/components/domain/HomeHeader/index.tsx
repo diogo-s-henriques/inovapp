@@ -10,7 +10,7 @@ import { greetingLabel, type GreetingPeriod } from '@/lib/home';
  *
  * **O desenho vive no `ScreenHero`** - o mesmo bloco que abre o Matches, o Chat, o Pesquisar e o
  * Perfil. Este componente só diz o que a Home lhe põe dentro: a saudação (que mais nenhum ecrã
- * tem), o nome completo, o papel (Tutor, Mentor ou Tutorando; ver `roleLabel` em
+ * tem), o nome completo, o papel (Tutor ou Tutorando; ver `roleLabel` em
  * src/lib/roles.ts) e o sino. O curso e o ano nunca estiveram aqui: é informação do perfil, e o
  * cabeçalho diz quem és, não o que estudas.
  *

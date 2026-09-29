@@ -16,9 +16,9 @@ import type { NewRatingData } from '@/types/rating';
 
 export interface EvaluationModalProps {
   visible: boolean;
-  mentorFirstName: string;
-  mentorLastName: string;
-  mentorImage?: string;
+  tutorFirstName: string;
+  tutorLastName: string;
+  tutorImage?: string;
   subject: string;
   scheduleLabel: string;
   onSubmit: (data: NewRatingData) => void | Promise<void>;
@@ -29,9 +29,9 @@ export interface EvaluationModalProps {
  * instância nova (ex. via `key={session.id}`) por cada sessão a avaliar. */
 export function EvaluationModal({
   visible,
-  mentorFirstName,
-  mentorLastName,
-  mentorImage,
+  tutorFirstName,
+  tutorLastName,
+  tutorImage,
   subject,
   scheduleLabel,
   onSubmit,
@@ -72,15 +72,15 @@ export function EvaluationModal({
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled">
             <ProfilePicCard
-              firstName={mentorFirstName}
-              lastName={mentorLastName}
-              image={mentorImage}
+              firstName={tutorFirstName}
+              lastName={tutorLastName}
+              image={tutorImage}
               size="lg"
               style={styles.avatar}
             />
 
             <ThemedText type="subtitle" style={styles.question}>
-              {i18n.evaluation.question(mentorFirstName)}
+              {i18n.evaluation.question(tutorFirstName)}
             </ThemedText>
             <ThemedText type="small" themeColor="textMuted" style={styles.schedule}>
               {subject} · {scheduleLabel}
@@ -105,7 +105,7 @@ export function EvaluationModal({
               variant="filled"
               multiline
               maxLength={200}
-              placeholder={i18n.evaluation.commentPlaceholder(mentorFirstName)}
+              placeholder={i18n.evaluation.commentPlaceholder(tutorFirstName)}
               value={comment}
               onChangeText={setComment}
             />

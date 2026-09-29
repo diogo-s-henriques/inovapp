@@ -1,7 +1,5 @@
 import type { AccountRole } from '@/constants/auth';
 
-export type ParticipationMode = 'learn' | 'teach' | 'both';
-
 export type CourseType = 'CTeSP' | 'Licenciatura' | 'Mestrado' | 'Pós-Graduação';
 
 export interface CourseSelection {
@@ -20,7 +18,6 @@ export interface ProfileSetupData {
   year?: string;
   about: string;
   learningSubjects: string[];
-  participationMode?: ParticipationMode;
   teachingSubjects: string[];
   availabilityPeriods: string[];
   availabilityModality: string[];

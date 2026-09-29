@@ -47,17 +47,17 @@ para venda, e não se recolhe localização, contactos, microfone, câmara nem d
 
 **Da conta**
 
-- email institucional (`@alunos.iseclisboa.pt` ou `@iseclisboa.pt`), que é também o que determina o
-  papel na aplicação (Tutorando ou Tutor/Mentor);
+- email, que é também o que determina o papel na aplicação (um endereço `@iseclisboa.pt` é Tutor;
+  qualquer outro é Tutorando);
 - data e hora da última entrada e se a sessão deve ser prolongada;
 - data de criação da conta.
 
 **Do perfil (visível para quem tem sessão iniciada na aplicação)**
 
 - nome completo, fotografia (opcional), curso e ano, texto de apresentação (opcional);
-- disciplinas/interesses que a pessoa pode ensinar ou quer aprender;
-- disponibilidade (períodos do dia e modalidade);
-- papel (Tutorando / Tutor / Mentor).
+- disciplinas que ensina (Tutor) ou que quer aprender (Tutorando);
+- disponibilidade (períodos do dia e modalidade), preenchida por quem ensina;
+- papel (Tutorando ou Tutor).
 
 **Da atividade na aplicação**
 

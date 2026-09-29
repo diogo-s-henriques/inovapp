@@ -59,8 +59,9 @@ export interface SessionStats {
 }
 
 /** Pedido de sessão: ao contrário do pedido de conexão, qualquer um dos dois lados de uma
- * ligação já aceite pode pedir (perfil do mentor ou "Marcar sessão" no chat). Quem pede fica
- * "Tutorando" nessa sessão específica; quem recebe fica "Mentor". */
+ * ligação já aceite pode pedir (perfil do tutor ou "Marcar sessão" no chat). Quem pede fica
+ * "Tutorando" nessa sessão específica; quem recebe fica "Tutor" - no documento, o campo continua a
+ * chamar-se `mentorUid`, do tempo em que o papel se chamava assim. */
 export async function sendSessionRequest(fromUid: string, toUid: string, data: NewSessionRequestData): Promise<string> {
   const ref = await addDoc(collection(db, 'sessionRequests'), {
     from: fromUid,
@@ -185,7 +186,7 @@ export async function respondToSessionRequest(request: SessionRequest, toUid: st
   await batch.commit();
 }
 
-/** Só o mentor pode terminar a sessão (ver firestore.rules) - marca-a como concluída, o que
+/** Só o tutor pode terminar a sessão (ver firestore.rules) - marca-a como concluída, o que
  * também dispara de imediato o pedido de avaliação ao Tutorando, sem esperar pela hora agendada. */
 export async function completeSession(sessionId: string): Promise<void> {
   await updateDoc(doc(db, 'sessions', sessionId), {
@@ -238,7 +239,7 @@ export function subscribeToSessions(uid: string, onChange: (sessions: AgendaSess
 /**
  * Conta as sessões de um utilizador a partir dos documentos crus.
  *
- * O que vale a pena fixar aqui: "dada" é uma sessão **concluída** em que eu era o mentor. Uma
+ * O que vale a pena fixar aqui: "dada" é uma sessão **concluída** em que eu era o tutor. Uma
  * sessão marcada e ainda por acontecer não é uma sessão dada - é uma sessão por vir, e tem o seu
  * próprio número. Sem esta distinção, o número de cima mentiria sempre que alguém marcasse uma
  * aula. Sessões antigas, sem o campo `status`, contam como marcadas, tal como em

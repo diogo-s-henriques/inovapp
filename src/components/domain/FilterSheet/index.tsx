@@ -28,7 +28,7 @@ export interface FilterSheetProps {
   onClear: () => void;
 }
 
-/** Painel inferior (bottom sheet) com os filtros de pesquisa de mentores: etiquetas e curso. */
+/** Painel inferior (bottom sheet) com os filtros de pesquisa de tutores: etiquetas e curso. */
 export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(function FilterSheet(
   { groups, courses, selectedTags, selectedCourse, onChangeSelectedTags, onChangeSelectedCourse, onApply, onClear },
   ref,

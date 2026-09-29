@@ -109,7 +109,6 @@ export function useAuthSync(): void {
                 year: data.year,
                 about: data.about ?? '',
                 photoUri: data.photoUri,
-                participationMode: data.participationMode,
                 teachingSubjects: data.teachingSubjects ?? [],
                 learningSubjects: data.learningSubjects ?? [],
                 availabilityPeriods: data.availabilityPeriods ?? [],

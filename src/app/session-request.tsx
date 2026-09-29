@@ -52,7 +52,7 @@ function prioritizeBy<T>(options: T[], score: (option: T) => number): T[] {
     .map((entry) => entry.option);
 }
 
-// Pedido de sessão a um mentor/tutorando específico; ao ser aceite, aparece na agenda.
+// Pedido de sessão a um tutor/tutorando específico; ao ser aceite, aparece na agenda.
 export default function SessionRequestScreen() {
   const theme = useTheme();
   const i18n = useI18n();

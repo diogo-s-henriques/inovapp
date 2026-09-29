@@ -24,7 +24,7 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { ThemedText } from '@/components/ui/ThemedText';
 import type { MatchCandidate } from '@/types/match';
 
-// Perfil público de outro utilizador (mentor/tutorando), visto a partir de matches, pesquisa ou chat.
+// Perfil público de outro utilizador (tutor ou tutorando), visto a partir de matches, pesquisa ou chat.
 export default function OtherUserProfileScreen() {
   const theme = useTheme();
   const i18n = useI18n();
@@ -104,7 +104,10 @@ export default function OtherUserProfileScreen() {
     );
   }
 
-  const availabilityItems = candidate.availability.split(' · ');
+  // As duas listas de baixo são do papel de quem está a ser visto: as disciplinas só existem num
+  // docente (é o que ensina) e a disponibilidade só faz sentido para ele também. Sem estes
+  // filtros, o perfil de um aluno abria dois títulos sem nada por baixo.
+  const availabilityItems = candidate.availability.split(' · ').filter(Boolean);
 
   // O curso é opcional (e um professor não tem curso nem ano): a linha só existe quando há o que
   // mostrar, em vez de deixar um separador órfão por baixo do nome.
@@ -227,15 +230,19 @@ export default function OtherUserProfileScreen() {
             </View>
           </View>
 
-          <View style={styles.section}>
-            <ThemedText type="bodyBold">{i18n.otherProfile.teaches}</ThemedText>
-            <TagList items={candidate.subjects} />
-          </View>
+          {candidate.subjects.length > 0 && (
+            <View style={styles.section}>
+              <ThemedText type="bodyBold">{i18n.otherProfile.teaches}</ThemedText>
+              <TagList items={candidate.subjects} />
+            </View>
+          )}
 
-          <View style={styles.section}>
-            <ThemedText type="bodyBold">{i18n.otherProfile.availabilityLabel}</ThemedText>
-            <AvailabilityChips items={availabilityItems} />
-          </View>
+          {availabilityItems.length > 0 && (
+            <View style={styles.section}>
+              <ThemedText type="bodyBold">{i18n.otherProfile.availabilityLabel}</ThemedText>
+              <AvailabilityChips items={availabilityItems} />
+            </View>
+          )}
 
           <SectionCard label={i18n.otherProfile.aboutLabel}>
             <ThemedText type="body">{candidate.description}</ThemedText>

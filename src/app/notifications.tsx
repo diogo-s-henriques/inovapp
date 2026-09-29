@@ -4,11 +4,11 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
-import { canLearn } from '@/constants/profile';
+import { canLearn } from '@/constants/auth';
 import { useAuthStore } from '@/auth/store';
 import { fetchRecentActivity } from '@/lib/activity';
 import { retryConversations } from '@/lib/chat';
-import { fetchExcludedCandidateIds, fetchMentorCandidates } from '@/lib/matching';
+import { fetchExcludedCandidateIds, fetchTutorCandidates } from '@/lib/matching';
 import { subscribeToSharedMaterials } from '@/lib/materials';
 import { goBack } from '@/lib/navigation';
 import { dateLocaleTag, formatTimeAgo } from '@/lib/time';
@@ -53,7 +53,7 @@ export default function NotificationsScreen() {
   const locale = useLocaleStore((state) => state.locale);
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const participationMode = useAuthStore((state) => state.profile?.participationMode);
+  const role = useAuthStore((state) => state.profile?.role);
   const learningSubjects = useAuthStore((state) => state.profile?.learningSubjects ?? []);
   const [suggestions, setSuggestions] = useState<MatchCandidate[]>([]);
   const { requests: connectionRequests, error: connectionRequestsError } = useConnectionRequests();
@@ -91,14 +91,14 @@ export default function NotificationsScreen() {
   // bloqueio não aparece), e uma falha aqui não pode estragar o resto: este ecrã é feito de avisos
   // e um aviso a menos é melhor do que um ecrã de erro.
   useEffect(() => {
-    if (!user || !canLearn(participationMode)) return;
+    if (!user || !canLearn(role)) return;
     let cancelled = false;
 
     (async () => {
       try {
         const excludeIds = await fetchExcludedCandidateIds(user.uid);
         if (cancelled) return;
-        const candidates = await fetchMentorCandidates({ currentUid: user.uid, learningSubjects, excludeIds });
+        const candidates = await fetchTutorCandidates({ currentUid: user.uid, learningSubjects, excludeIds });
         if (!cancelled) setSuggestions(candidates.slice(0, SUGGESTIONS_LIMIT));
       } catch {
         if (!cancelled) setSuggestions([]);
@@ -109,7 +109,7 @@ export default function NotificationsScreen() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, participationMode]);
+  }, [user?.uid, role]);
 
   const unreadConversations = conversations.filter((conversation) => conversation.unread);
 

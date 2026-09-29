@@ -39,3 +39,21 @@ function getEmailDomain(email: string): string {
 export function getAccountRole(email: string): AccountRole {
   return getEmailDomain(email) === PROFESSOR_EMAIL_DOMAIN ? 'professor' : DEFAULT_ACCOUNT_ROLE;
 }
+
+/**
+ * Quem ensina, a partir do papel: só um docente do ISEC.
+ *
+ * O outro lado da moeda é o `canLearn`. Os dois juntos são a regra toda da app - quem ensina
+ * aparece na descoberta (é o que os Matches e a pesquisa listam) e quem aprende é quem procura, e
+ * ambos vêm do **papel**, que por sua vez vem do domínio do email (`getAccountRole`). Deixou de
+ * haver um terceiro caso: ensinar não é uma escolha feita no assistente de perfil, e por isso não
+ * há contas que façam as duas coisas ao mesmo tempo.
+ */
+export function canTeach(role?: AccountRole): boolean {
+  return role === 'professor';
+}
+
+/** Quem aprende, a partir do papel: qualquer conta que não seja de docente (ver `canTeach`). */
+export function canLearn(role?: AccountRole): boolean {
+  return role === DEFAULT_ACCOUNT_ROLE;
+}
