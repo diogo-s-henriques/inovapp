@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { fetchBlockedPairs, fetchBlockedUids } from '@/lib/blocking';
 import { roleLabel } from '@/lib/roles';
 import type { AccountRole } from '@/constants/auth';
-import { canTeach } from '@/constants/profile';
+import { canTeach, subjectAreaOf } from '@/constants/profile';
 import type { CourseSelection, ParticipationMode } from '@/types/profile';
 import type { MatchCandidate } from '@/types/match';
 
@@ -62,6 +62,44 @@ function overlapScore(candidate: MatchCandidate, learningSubjects: string[]): nu
   return candidate.subjects.filter((subject) => learningSubjects.includes(subject)).length;
 }
 
+/**
+ * Quantas **áreas** os dois têm em comum, contando cada área uma só vez.
+ *
+ * É o desempate do `rankCandidates`: quem ensina Matemática e Estatística e procura Cálculo tem 1
+ * disciplina em comum com um mentor de Cálculo e 0 com um de Física, e isso decide a ordem. Mas
+ * dois mentores de Cálculo empatam, e aí vale a pena subir quem está mais perto do que se procura - o
+ * de Matemática e Estatística, não o de Física que por acaso também dá Cálculo.
+ *
+ * Disciplinas que já não estão na lista (perfis antigos) não contam para áreas - continuam a contar
+ * para a disciplina, que é informação exata.
+ */
+function areaOverlapScore(candidate: MatchCandidate, learningSubjects: string[]): number {
+  const minhasAreas = new Set(
+    learningSubjects.map(subjectAreaOf).flatMap((area) => (area ? [area.id] : [])),
+  );
+  const areasDoCandidato = new Set(candidate.subjects.map(subjectAreaOf).flatMap((area) => (area ? [area.id] : [])));
+
+  let comuns = 0;
+  areasDoCandidato.forEach((id) => {
+    if (minhasAreas.has(id)) comuns += 1;
+  });
+  return comuns;
+}
+
+/**
+ * A ordem do deck de descoberta: primeiro quem partilha mais disciplinas, depois quem partilha mais
+ * áreas. Ninguém é excluído por não partilhar nada - quem ensina aparece sempre, só que em baixo.
+ *
+ * É uma função pura (e exportada) para poder ser testada sem Firestore: a ordenação é o sinal de
+ * match todo, e uma troca de critérios aqui é invisível (lista continua a aparecer, por outra ordem).
+ */
+export function rankCandidates(candidates: MatchCandidate[], learningSubjects: string[]): MatchCandidate[] {
+  return [...candidates].sort((a, b) => {
+    const porDisciplina = overlapScore(b, learningSubjects) - overlapScore(a, learningSubjects);
+    return porDisciplina !== 0 ? porDisciplina : areaOverlapScore(b, learningSubjects) - areaOverlapScore(a, learningSubjects);
+  });
+}
+
 /** Mentores (participationMode 'teach' ou 'both') com perfil completo, excluindo o próprio utilizador. */
 export async function fetchMentorCandidates(params: {
   currentUid: string;
@@ -82,7 +120,7 @@ export async function fetchMentorCandidates(params: {
     .filter(({ data }) => canTeach(data.participationMode))
     .map(({ uid, data }) => toCandidate(uid, data));
 
-  return candidates.sort((a, b) => overlapScore(b, params.learningSubjects) - overlapScore(a, params.learningSubjects));
+  return rankCandidates(candidates, params.learningSubjects);
 }
 
 export async function fetchCandidateById(uid: string): Promise<MatchCandidate | null> {

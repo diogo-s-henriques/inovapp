@@ -31,6 +31,7 @@ import {
   matchId,
   matchesView,
   passCandidate,
+  rankCandidates,
 } from '@/lib/matching';
 import type { MatchCandidate } from '@/types/match';
 import AsyncStorage from '../doubles/async-storage.mjs';
@@ -366,5 +367,87 @@ describe('matchesView - o que o ecrã dos Matches mostra', () => {
     // O "Tentar outra vez" põe os dois a true ao mesmo tempo: o que se está a ver é a leitura em
     // curso, e não o erro que já foi despachado.
     assert.equal(matchesView({ ...APRENDE, loading: true, loadError: true, requestCount: 0 }), 'loading');
+  });
+});
+
+/** Um candidato do deck, só com o que a ordenação olha: as disciplinas que ensina. */
+function candidato(id: string, subjects: string[]): MatchCandidate {
+  return {
+    id,
+    firstName: id,
+    lastName: '',
+    role: 'Mentor',
+    course: '',
+    year: '',
+    subjects,
+    availability: '',
+    availabilityPeriods: [],
+    availabilityModality: [],
+    description: '',
+    sessionsGiven: 0,
+    responseTime: 'Novo',
+  };
+}
+
+const ids = (candidatos: MatchCandidate[]) => candidatos.map((c) => c.id);
+
+describe('rankCandidates - a ordem do deck de descoberta', () => {
+  it('quem partilha mais disciplinas vem primeiro', () => {
+    const candidatos = [candidato('fisica', ['Física']), candidato('mat', ['Matemática']), candidato('ambos', ['Matemática', 'Estatística'])];
+
+    assert.deepEqual(ids(rankCandidates(candidatos, ['Matemática', 'Estatística'])), ['ambos', 'mat', 'fisica']);
+  });
+
+  it('empatados nas disciplinas, ganha quem está mais perto pela área', () => {
+    // Os dois ensinam as duas disciplinas que procuro; um deles tem ainda Química, que é da área
+    // de Ciências Naturais - a mesma da Física que eu procuro. É o desempate por áreas a decidir.
+    const eu = ['Matemática', 'Programação', 'Física'];
+    const candidatos = [
+      candidato('so-matematica', ['Matemática', 'Programação']),
+      candidato('tambem-ciencias', ['Matemática', 'Programação', 'Química']),
+    ];
+
+    assert.deepEqual(ids(rankCandidates(candidatos, eu)), ['tambem-ciencias', 'so-matematica']);
+  });
+
+  it('conta cada área uma só vez, por muitas disciplinas dela que sejam partilhadas', () => {
+    // O primeiro partilha comigo DUAS disciplinas da mesma área (Matemática e Cálculo) e o segundo
+    // uma de matemática e uma de programação: em disciplinas empatam, em áreas não - e é a área que
+    // diz quem está mais perto do que eu procuro.
+    const eu = ['Matemática', 'Cálculo', 'Programação'];
+    const candidatos = [
+      candidato('so-uma-area', ['Matemática', 'Cálculo']),
+      candidato('duas-areas', ['Matemática', 'Programação']),
+    ];
+
+    assert.deepEqual(ids(rankCandidates(candidatos, eu)), ['duas-areas', 'so-uma-area']);
+  });
+
+  it('não exclui ninguém: quem não partilha nada fica no fim', () => {
+    const candidatos = [candidato('nada', ['Direito']), candidato('algo', ['Matemática'])];
+
+    assert.deepEqual(ids(rankCandidates(candidatos, ['Matemática'])), ['algo', 'nada']);
+  });
+
+  it('não rebenta com disciplinas que já não estão na lista', () => {
+    // Perfis antigos podem ter nomes que saíram da lista: continuam a contar para a disciplina
+    // (informação exata, e por isso o «antigo» fica à frente de quem não partilha nada) e
+    // simplesmente não têm área, logo não ganham o desempate.
+    const eu = ['Investigação Operacional', 'Matemática'];
+    const candidatos = [
+      candidato('antigo', ['Investigação Operacional']),
+      candidato('novo', ['Matemática']),
+      candidato('nada', ['Direito']),
+    ];
+
+    assert.deepEqual(ids(rankCandidates(candidatos, eu)), ['novo', 'antigo', 'nada']);
+  });
+
+  it('não muda a lista que recebe', () => {
+    const candidatos = [candidato('fisica', ['Física']), candidato('mat', ['Matemática'])];
+
+    rankCandidates(candidatos, ['Matemática']);
+
+    assert.deepEqual(ids(candidatos), ['fisica', 'mat']);
   });
 });

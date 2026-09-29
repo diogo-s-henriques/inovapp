@@ -113,7 +113,12 @@ export default function SearchScreen() {
     return () => clearTimeout(handle);
   }, [query]);
 
-  const courses = useMemo(() => Array.from(new Set((mentors ?? []).map((mentor) => mentor.course))), [mentors]);
+  // O curso é opcional no perfil (é a pessoa que decide preenchê-lo), por isso há mentores sem ele:
+  // sem o filtro, a lista de cursos abria com uma linha em branco que filtrava por "sem curso".
+  const courses = useMemo(
+    () => Array.from(new Set((mentors ?? []).map((mentor) => mentor.course).filter(Boolean))),
+    [mentors],
+  );
 
   const results = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -235,6 +240,7 @@ export default function SearchScreen() {
             course={item.course}
             year={item.year}
             tags={item.tags}
+            highlight={learningSubjects}
             image={item.image}
             added={addedIds.includes(item.id)}
             onToggleAdded={(added) => handleToggleAdded(item.id, added)}

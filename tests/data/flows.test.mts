@@ -781,6 +781,39 @@ describe('descoberta de mentores', () => {
     // por isso o Bruno vem primeiro.
     assert.equal(candidatos[0].subjects[0], 'Matemática');
   });
+
+  it('empatados nas disciplinas, desempata pela área', async () => {
+    // Os dois ensinam as duas disciplinas que procuro. O segundo ensina ainda Química, que é da área
+    // de Ciências Naturais - a mesma da Física que também procuro -, e é isso que o põe à frente.
+    // Este teste atravessa o caminho todo (Firestore → toCandidate → rankCandidates) de propósito:
+    // é onde se vê que a ordenação usa as disciplinas **do perfil**, e não o que ia na consulta.
+    const soMatematica = await criarConta('pesquisa.so-matematica@alunos.iseclisboa.pt');
+    await configurarPerfil(soMatematica, {
+      fullName: 'Sofia Matemática',
+      participationMode: 'teach',
+      teachingSubjects: ['Matemática', 'Programação'],
+    });
+
+    const tambemCiencias = await criarConta('pesquisa.ciencias@alunos.iseclisboa.pt');
+    await configurarPerfil(tambemCiencias, {
+      fullName: 'Tiago Ciências',
+      participationMode: 'teach',
+      teachingSubjects: ['Matemática', 'Programação', 'Química'],
+    });
+
+    await entrarComo(CONTAS.aluna);
+    const candidatos = await fetchMentorCandidates({
+      currentUid: cenario.ana,
+      learningSubjects: ['Matemática', 'Programação', 'Física'],
+    });
+
+    const ids = candidatos.map((candidato) => candidato.id);
+    assert.ok(ids.includes(soMatematica) && ids.includes(tambemCiencias), 'os dois têm de aparecer no deck');
+    assert.ok(
+      ids.indexOf(tambemCiencias) < ids.indexOf(soMatematica),
+      'quem partilha mais áreas tem de vir primeiro quando as disciplinas empatam',
+    );
+  });
 });
 
 describe('quem fica fora da descoberta', () => {

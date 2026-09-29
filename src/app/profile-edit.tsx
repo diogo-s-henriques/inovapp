@@ -8,6 +8,7 @@ import { PARTICIPATION_MODES, YEAR_OPTIONS, canTeach, isEligibleToTeach } from '
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/auth/store';
 import { completeProfileSetup } from '@/auth/actions';
+import { canSaveProfile } from '@/lib/profile-form';
 import { useI18n } from '@/hooks/use-i18n';
 import { getInitials } from '@/lib/initials';
 import { goBack } from '@/lib/navigation';
@@ -79,7 +80,9 @@ export default function ProfileEditScreen() {
     !sameSet(periods, profile.availabilityPeriods ?? []) ||
     !sameSet(modality, profile.availabilityModality ?? []);
 
-  const saveDisabled = saving || fullName.trim().length === 0 || !hasChanges;
+  // O que tem de estar preenchido para guardar está em src/lib/profile-form.ts, junto das mesmas
+  // regras do assistente de criação (nome sempre, ano para estudantes, curso nunca).
+  const saveDisabled = !canSaveProfile({ saving, isProfessor, fullName, year, hasChanges });
 
   // A fotografia vem daqui já redimensionada e comprimida (ver src/lib/storage.ts): é isso que faz
   // a pré-visualização aparecer de imediato e o "Guardar" não ter trabalho nenhum de imagem pela
@@ -203,13 +206,13 @@ export default function ProfileEditScreen() {
 
         {canTeach(participationMode) && (
           <SectionCard label={i18n.profileEdit.teachesLabel}>
-            <SubjectsField selected={teachingSubjects} onChange={setTeachingSubjects} variant="picker" />
+            <SubjectsField selected={teachingSubjects} onChange={setTeachingSubjects} />
           </SectionCard>
         )}
 
         {!isProfessor && (
           <SectionCard label={i18n.profileEdit.learningLabel}>
-            <SubjectsField selected={learningSubjects} onChange={setLearningSubjects} variant="picker" />
+            <SubjectsField selected={learningSubjects} onChange={setLearningSubjects} />
           </SectionCard>
         )}
 

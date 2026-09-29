@@ -49,6 +49,9 @@ example
 # definições locais do editor/agente (o settings.json partilhado fica versionado)
 .claude/settings.local.json
 
+# estado local da ferramenta de agente (o project-id é desta máquina)
+.freebuff/
+
 # generated native folders
 /ios
 /android

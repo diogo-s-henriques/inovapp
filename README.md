@@ -225,6 +225,36 @@ testar: `npx eas-cli build --profile development --platform ios`.
   é preciso uma build nova a partir deste commit, além das credenciais FCM (ver **Avisos no
   telemóvel**, acima).
 
+### O R8 ligado no Android, e o aviso do Play
+
+O Play Console passou a avisar `DEX code optimisation is below our threshold`: a obfuscação estava em
+**2%**, e o limiar é 25%. Não é uma recusa - é um aviso com prazo, que pode mexer com a visibilidade
+da app na loja. A causa não era código: o **R8 estava desligado** nas builds de release, que é o valor
+por omissão.
+
+Quem o liga é o `expo-build-properties`, no `app.json`:
+
+```json
+"android": { "enableMinifyInReleaseBuilds": true }
+```
+
+O nome que se vê por aí (`android.enableProguardInReleaseBuilds`) é o **antigo**: na versão 57 a opção
+da documentação é esta, e é esta que o plugin escreve no `gradle.properties` gerado. Isto confirma-se
+sem gastar build nenhuma - `npx expo prebuild --platform android --no-install` e depois
+`grep -i minify android/gradle.properties`. (Atenção: o prebuild reescreve os scripts `android`/`ios`
+do `package.json` para `expo run:*`; repor e apagar o `android/` no fim.)
+
+**O que isto ofusca - e o que não ofusca.** O R8 trabalha sobre o código Java/Kotlin (as bibliotecas
+nativas e o arranque). O bundle JavaScript, esse, já vem minificado do Metro para dentro do binário:
+não é isto que o toca. O `enableShrinkResourcesInReleaseBuilds` (que remove recursos não usados) **não**
+ficou ligado: o aviso do Play é sobre obfuscação, e remover recursos é um risco diferente - pode levar
+um ícone ou um *drawable* referido por nome.
+
+**O que isto obriga a testar.** Obfuscação parte código que se procura por nome (reflexão), e uma
+falha dessas **só aparece em build de release**. O `preview` serve exactamente para isso: sai como APK
+com a variante de release, por isso tem o R8 ligado, e instala-se sem passar pela loja. Testar aí
+antes de subir à Play.
+
 ### Publicar nas lojas (Apple e Google)
 
 **O identificador é `com.diyogo.inovapp`** (Android `package` e iOS `bundleIdentifier`) e fica
@@ -1182,6 +1212,49 @@ parte da app.
 
 ## Decisões tomadas
 
+- **As disciplinas passaram a ser áreas, e o campo das disciplinas passou a ter pesquisa.** Doze
+  nomes soltos davam um ecrã de etiquetas; ~80 não dão - e era isso que o passo das disciplinas ia
+  ser depois de a lista crescer. Agora há `SUBJECT_AREAS` em `src/constants/profile.ts`: doze áreas
+  (as da oferta real da escola - aeronáutica, proteção civil, ótica, gestão, educação, comunicação e
+  design) e, dentro de cada uma, as disciplinas que se pedem para estudar. Três consequências que
+  valem mais do que a lista em si: **`SUBJECT_OPTIONS` é derivado** (achatado, pela ordem das áreas),
+  por isso não há duas listas para manter em sincronia; **uma disciplina pertence a uma só área**, o
+  que é o que permite contar áreas no match (ver a entrada seguinte) e garante que a lista achatada
+  não tem duplicados; e **`subjectAreaOf` não encontra nada** para uma disciplina que já saiu da
+  lista, porque há perfis gravados com nomes antigos - esses continuam a contar para a disciplina, e
+  só não têm área para desempatar nada. As doze disciplinas antigas ficaram todas (as contas de
+  demonstração ensinam "Programação" e "Matemática"). O campo (`SubjectsField`) passou a ter **uma
+  só** forma de escolher - as escolhidas como etiquetas removíveis mais um "Adicionar" que abre o
+  seletor com pesquisa e cabeçalhos de área -, e a variante que mostrava as opções todas lado a lado
+  saiu: com 80 etiquetas à vista, isso eram três ecrãs de scroll e nenhuma forma de procurar. O
+  mesmo seletor serve o passo de criação e a edição do perfil, até aqui diferentes. A pesquisa é a
+  mesma do seletor de cursos (`normalizeForSearch` em `src/lib/text.ts`, partilhada pelos três sítios
+  com pesquisa) e a disciplina **escolhida** nunca desaparece de um filtro por causa da pesquisa - um
+  filtro ativo que já não se vê não se consegue tirar.
+- **Para criar o perfil, o nome e o ano - o curso não.** O nome é o que aparece em todos os cartões e
+  no chat, e é pedido a toda a gente. O **ano** é pedido só a estudantes, e não é decorativo: é ele
+  que decide se a pessoa pode ser mentora (`isEligibleToTeach`, que exige o 2º ano ou acima) e é o
+  que dá sentido à escolha de modo no passo seguinte - sem ano, os modos "Mentor" e "Ambos" ficavam
+  bloqueados, e quem não o preenchesse ficava sem perceber porquê. O **curso** fica ao critério de
+  quem o preenche (e um professor não tem curso nem ano: o fluxo dele nem mostra esses campos). As
+  três decisões vivem em `src/lib/profile-form.ts` - funções puras chamadas pelo assistente de
+  criação e pela edição, para que as regras não possam divergir entre os dois ecrãs, e testadas sem
+  React nem base de dados (`tests/lib/profile-form.test.mts`). Foi também ali que se viu o que faltava
+  no ecrã do perfil de outra pessoa: `PersonalCardInfo` já tratava curso/ano vazios, mas o cabeçalho
+  do perfil (`src/app/profile/[id].tsx`) desenhava `{course}, {year}` sempre, e um tutor aparecia com
+  uma **vírgula solta** por baixo do nome. Passou a haver um sítio só a decidir a linha
+  (`joinCourseAndYear`, em `src/constants/profile.ts`): sem curso e sem ano, a linha não existe.
+- **O match ordena por disciplinas e desempata por áreas - e mostra-o no cartão.** A descoberta
+  (`fetchMentorCandidates`) nunca excluiu ninguém por não partilhar nada: quem ensina aparece sempre,
+  ordenado pelo número de disciplinas que ensina que estão nas que eu procuro. Isso deixava um empate
+  frequente e mal resolvido - dois mentores que ensinam «Cálculo» ficavam por ordem de leitura, mesmo
+  quando um deles ensinava outra coisa da área de que eu preciso. Agora o desempate é o número de
+  **áreas** em comum, contando cada área uma só vez, e a decisão inteira é uma função pura e
+  exportada (`rankCandidates`) precisamente por ser invisível: a lista continua a aparecer, só por
+  outra ordem. E porque a ordem não chega para quem olha para um cartão, as disciplinas que eu
+  procuro ficam **destacadas e à frente** das outras em `CandidateCard`/`StudentCard` (via
+  `highlight`, o novo modo não interativo do `TagProfile`): nas duas que cabem, podem ser justamente
+  as que não me dizem nada.
 - **Entrar tem de ser um `fade` com os dois ecrãs à vista - e isso dependia de não desmontar a
   navegação.** Entre o `signIn` e a resposta sobre o perfil há uma espera, e ela era `loading` - o
   mesmo estágio do arranque. Só que `loading` põe o `isReady` a falso, e `isReady` a falso quer dizer

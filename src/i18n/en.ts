@@ -103,6 +103,8 @@ export const en: Translations = {
   filterSheet: {
     title: 'Filters',
     subjectsGroupTitle: 'Subjects',
+    searchSubjects: 'Search subject...',
+    noSubjectsFound: 'No subject found.',
     coursePlaceholder: 'Course',
     allCourses: 'All courses',
     clear: 'Clear',
@@ -256,6 +258,8 @@ export const en: Translations = {
     coursePickerEmpty: 'No course found.',
     subjectPickerTitle: 'Subjects',
     subjectPickerSubtitle: 'Choose the subjects you want to add.',
+    subjectPickerSearchPlaceholder: 'Search subject...',
+    subjectPickerEmpty: 'No subject found.',
     done: 'Done',
     periodsLabel: 'PERIODS',
     modalityLabel: 'MODALITY',

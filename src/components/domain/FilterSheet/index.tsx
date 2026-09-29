@@ -8,9 +8,11 @@ import {
 } from '@gorhom/bottom-sheet';
 
 import { Spacing } from '@/constants/theme';
+import { normalizeForSearch } from '@/lib/text';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/Button';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { TagProfile } from '@/components/ui/TagProfile';
 import { ThemedText } from '@/components/ui/ThemedText';
 import type { FilterGroup } from '@/types/student';
@@ -34,9 +36,29 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
   const theme = useTheme();
   const i18n = useI18n();
   const [courseOpen, setCourseOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const snapPoints = useMemo(() => ['75%'], []);
   // Contagem de filtros ativos, mostrada no botão de aplicar.
   const appliedCount = selectedTags.length + (selectedCourse ? 1 : 0);
+
+  /**
+   * As disciplinas de cada grupo que a pesquisa deixa passar.
+   *
+   * Uma disciplina **escolhida** fica sempre visível, mesmo que não corresponda à pesquisa: se
+   * desaparecesse enquanto se procura outra, ficava um filtro ativo que já não se conseguia tirar
+   * sem limpar tudo.
+   */
+  const visibleGroups = useMemo(() => {
+    const needle = normalizeForSearch(query.trim());
+    return groups.map((group) => ({
+      ...group,
+      options: needle
+        ? group.options.filter(
+            (option) => selectedTags.includes(option) || normalizeForSearch(option).includes(needle),
+          )
+        : group.options,
+    }));
+  }, [groups, query, selectedTags]);
 
   const toggleTag = (tag: string) => {
     onChangeSelectedTags(selectedTags.includes(tag) ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag]);
@@ -54,7 +76,19 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
       <BottomSheetScrollView contentContainerStyle={styles.content}>
         <ThemedText type="subtitle">{i18n.filterSheet.title}</ThemedText>
 
-        {groups.map((group) => (
+        <SearchInput
+          placeholder={i18n.filterSheet.searchSubjects}
+          value={query}
+          onChangeText={setQuery}
+        />
+
+        {visibleGroups.length > 0 && visibleGroups.every((group) => group.options.length === 0) && (
+          <ThemedText type="small" themeColor="textMuted">
+            {i18n.filterSheet.noSubjectsFound}
+          </ThemedText>
+        )}
+
+        {visibleGroups.map((group) => (
           <View key={group.id} style={styles.group}>
             <ThemedText type="smallBold" themeColor="textMuted">
               {group.title}

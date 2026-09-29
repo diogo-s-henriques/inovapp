@@ -13,6 +13,11 @@ export interface StudentCardProps extends ViewProps {
   course: string;
   year: string;
   tags: string[];
+  /**
+   * As disciplinas de quem está a ver: as que coincidem com as etiquetas ficam destacadas **e à
+   * frente** (ver a nota no `CandidateCard`), para se ver de longe o que a pessoa tem a ver connosco.
+   */
+  highlight?: string[];
   image?: string;
   maxVisibleTags?: number;
   added?: boolean;
@@ -27,6 +32,7 @@ export function StudentCard({
   course,
   year,
   tags,
+  highlight,
   image,
   maxVisibleTags = 2,
   added,
@@ -37,8 +43,11 @@ export function StudentCard({
 }: StudentCardProps) {
   const theme = useTheme();
   // mostra só as primeiras N tags e resume o resto num chip "+X"
-  const visibleTags = tags.slice(0, maxVisibleTags);
-  const overflowCount = tags.length - visibleTags.length;
+  const orderedTags = highlight?.length
+    ? [...tags].sort((a, b) => Number(highlight.includes(b)) - Number(highlight.includes(a)))
+    : tags;
+  const visibleTags = orderedTags.slice(0, maxVisibleTags);
+  const overflowCount = orderedTags.length - visibleTags.length;
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }, style]} {...rest}>
@@ -47,7 +56,13 @@ export function StudentCard({
         <PersonalCardInfo name={`${firstName} ${lastName}`} course={course} year={year} />
         <View style={styles.tags}>
           {visibleTags.map((tag, index) => (
-            <TagProfile key={`${tag}-${index}`} title={tag} interactive={false} style={styles.tag} />
+            <TagProfile
+              key={`${tag}-${index}`}
+              title={tag}
+              interactive={false}
+              highlight={highlight?.includes(tag)}
+              style={styles.tag}
+            />
           ))}
           {overflowCount > 0 && <TagProfile title={`+${overflowCount}`} interactive={false} style={styles.overflowTag} />}
         </View>

@@ -18,6 +18,7 @@ import { StepProfessorSubjects } from '@/components/domain/ProfileSetup/StepProf
 import type { CourseSelection, ParticipationMode } from '@/types/profile';
 import { useAuthStore } from '@/auth/store';
 import { completeProfileSetup } from '@/auth/actions';
+import { canContinueSetup } from '@/lib/profile-form';
 import { pickPreparedProfilePhoto } from '@/lib/storage';
 
 // Assistente de configuração inicial do perfil, com passos diferentes para professores.
@@ -77,12 +78,9 @@ export default function ProfileSetupScreen() {
     }
   };
 
-  // Nome é obrigatório no passo 1; modo de participação é obrigatório no passo 3 (só para estudantes).
-  const canContinue =
-    !saving &&
-    (isProfessor
-      ? step !== 1 || fullName.trim().length > 0
-      : (step !== 1 || fullName.trim().length > 0) && (step !== 3 || !!participationMode));
+  // As regras de "posso avançar?" vivem em src/lib/profile-form.ts (nome e ano no passo 1, modo de
+  // participação no passo 3, curso nunca). Aqui só se junta o "e não está a guardar".
+  const canContinue = canContinueSetup({ isProfessor, step, fullName, year, participationMode });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -154,7 +152,7 @@ export default function ProfileSetupScreen() {
           label={isComplete ? (saving ? i18n.profileSetup.finishing : i18n.profileSetup.finish) : i18n.common.continue}
           variant="primary"
           onPress={isComplete ? goFinish : goNext}
-          disabled={!canContinue}
+          disabled={!canContinue || saving}
         />
         {step === 2 && <Button label={i18n.profileSetup.skipForNow} variant="link" onPress={goNext} />}
       </View>

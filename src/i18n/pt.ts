@@ -103,6 +103,8 @@ export const pt: Translations = {
   filterSheet: {
     title: 'Filtros',
     subjectsGroupTitle: 'Disciplinas',
+    searchSubjects: 'Pesquisar disciplina...',
+    noSubjectsFound: 'Nenhuma disciplina encontrada.',
     coursePlaceholder: 'Curso',
     allCourses: 'Todos os cursos',
     clear: 'Limpar',
@@ -256,6 +258,8 @@ export const pt: Translations = {
     coursePickerEmpty: 'Nenhum curso encontrado.',
     subjectPickerTitle: 'Disciplinas',
     subjectPickerSubtitle: 'Escolhe as disciplinas que queres adicionar.',
+    subjectPickerSearchPlaceholder: 'Pesquisar disciplina...',
+    subjectPickerEmpty: 'Nenhuma disciplina encontrada.',
     done: 'Concluído',
     periodsLabel: 'PERÍODOS',
     modalityLabel: 'MODALIDADE',

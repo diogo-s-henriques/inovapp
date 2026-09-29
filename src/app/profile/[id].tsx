@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { joinCourseAndYear } from '@/constants/profile';
 import { Spacing } from '@/constants/theme';
 import { useAuthStore } from '@/auth/store';
 import { conversationExists } from '@/lib/chat';
@@ -105,6 +106,10 @@ export default function OtherUserProfileScreen() {
 
   const availabilityItems = candidate.availability.split(' · ');
 
+  // O curso é opcional (e um professor não tem curso nem ano): a linha só existe quando há o que
+  // mostrar, em vez de deixar um separador órfão por baixo do nome.
+  const details = joinCourseAndYear(candidate.course, candidate.year);
+
   // Bloquear corta a ligação toda (o chat fica inacessível para os dois), por isso o ecrã tem de
   // reflectir isso de imediato - deixar "Chat" clicável depois de bloquear seria mentira.
   const handleBlock = async () => {
@@ -169,9 +174,11 @@ export default function OtherUserProfileScreen() {
             <ThemedText type="subtitle" themeColor="onPrimary" style={styles.name}>
               {candidate.firstName} {candidate.lastName}
             </ThemedText>
-            <ThemedText type="small" style={styles.details}>
-              {candidate.course}, {candidate.year}
-            </ThemedText>
+            {details.length > 0 && (
+              <ThemedText type="small" style={styles.details}>
+                {details}
+              </ThemedText>
+            )}
           </LinearGradient>
         </View>
 

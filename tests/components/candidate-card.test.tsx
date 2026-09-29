@@ -46,6 +46,41 @@ describe('<CandidateCard /> - quem é', () => {
   });
 });
 
+describe('<CandidateCard /> - o que tem a ver comigo', () => {
+  const COM_TERCEIRA = { ...BASE, subjects: ['Física', 'Programação', 'Matemática'] };
+
+  it('põe à frente as disciplinas que eu procuro', async () => {
+    // As duas etiquetas que cabem passam a ser as que interessam: sem isto, quem procura Matemática
+    // podia só ver "Física" e "+1" e passar à frente de quem a ensina.
+    const { getByText, queryByText } = await render(
+      <CandidateCard
+        {...COM_TERCEIRA}
+        highlight={['Matemática']}
+        onPass={jest.fn()}
+        onConnect={jest.fn()}
+        onPressProfile={jest.fn()}
+      />,
+    );
+
+    expect(getByText('Matemática')).toBeTruthy();
+    expect(getByText('Física')).toBeTruthy();
+    expect(getByText('+1')).toBeTruthy();
+    expect(queryByText('Programação')).toBeNull();
+  });
+
+  it('sem nada em comum, mantém a ordem do perfil', async () => {
+    // Perfis antigos (sem disciplinas escolhidas) não podem ver as etiquetas mexidas: se a ordem
+    // mudasse sozinha, a lista parecia aleatória.
+    const { getByText, queryByText } = await render(
+      <CandidateCard {...COM_TERCEIRA} onPass={jest.fn()} onConnect={jest.fn()} onPressProfile={jest.fn()} />,
+    );
+
+    expect(getByText('Física')).toBeTruthy();
+    expect(getByText('Programação')).toBeTruthy();
+    expect(queryByText('Matemática')).toBeNull();
+  });
+});
+
 describe('<CandidateCard /> - os três toques', () => {
   it('tocar no cartão abre o perfil', async () => {
     const onPressProfile = jest.fn();

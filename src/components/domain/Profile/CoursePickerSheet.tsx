@@ -9,6 +9,7 @@ import {
 
 import { Spacing } from '@/constants/theme';
 import { COURSES_BY_TYPE } from '@/constants/profile';
+import { normalizeForSearch } from '@/lib/text';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -22,15 +23,6 @@ export interface CoursePickerSheetProps {
   snapPoints: (string | number)[];
 }
 
-// Remove acentuação e ignora maiúsculas/minúsculas para a pesquisa encontrar cursos
-// independentemente de como o utilizador escreve (ex. "gestao" encontra "Gestão").
-function normalize(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase();
-}
-
 export const CoursePickerSheet = forwardRef<BottomSheetModal, CoursePickerSheetProps>(function CoursePickerSheet(
   { selected, onChange, snapPoints },
   ref,
@@ -42,11 +34,11 @@ export const CoursePickerSheet = forwardRef<BottomSheetModal, CoursePickerSheetP
   useImperativeHandle(ref, () => localRef.current as BottomSheetModal, []);
 
   const groups = useMemo(() => {
-    const needle = normalize(query.trim());
+    const needle = normalizeForSearch(query.trim());
     return (Object.entries(COURSES_BY_TYPE) as [CourseType, string[]][])
       .map(([type, names]) => ({
         type,
-        names: needle ? names.filter((name) => normalize(name).includes(needle)) : names,
+        names: needle ? names.filter((name) => normalizeForSearch(name).includes(needle)) : names,
       }))
       .filter((group) => group.names.length > 0);
   }, [query]);

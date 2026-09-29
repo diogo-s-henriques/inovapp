@@ -99,6 +99,9 @@ export interface Translations {
   filterSheet: {
     title: string;
     subjectsGroupTitle: string;
+    /** Pesquisa dentro das disciplinas a filtrar (~80 opções não se percorrem a olho). */
+    searchSubjects: string;
+    noSubjectsFound: string;
     coursePlaceholder: string;
     allCourses: string;
     clear: string;
@@ -260,6 +263,8 @@ export interface Translations {
     coursePickerEmpty: string;
     subjectPickerTitle: string;
     subjectPickerSubtitle: string;
+    subjectPickerSearchPlaceholder: string;
+    subjectPickerEmpty: string;
     done: string;
     periodsLabel: string;
     modalityLabel: string;

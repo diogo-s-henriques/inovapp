@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, type ViewProps } from 'react-native';
 
+import { joinCourseAndYear } from '@/constants/profile';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -12,8 +13,9 @@ export interface PersonalCardInfoProps extends ViewProps {
 
 export function PersonalCardInfo({ name, course, year, style, ...rest }: PersonalCardInfoProps) {
   const theme = useTheme();
-  // Sem isto, curso/ano vazios mostravam um "·" solto (ex.: perfis ainda sem curso definido).
-  const details = [course, year].filter(Boolean).join(' · ');
+  // Curso/ano vazios mostravam um "·" solto (ex.: perfis ainda sem curso definido) - agora é o
+  // `joinCourseAndYear` que decide, para o mesmo cuidado valer em todo o lado.
+  const details = joinCourseAndYear(course, year);
 
   return (
     <View style={[styles.container, style]} {...rest}>

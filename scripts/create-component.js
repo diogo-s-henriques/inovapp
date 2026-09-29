@@ -9,7 +9,9 @@ const rl = readline.createInterface({
 
 const askQuestion = (query) => new Promise((resolve) => rl.question(query, resolve));
 
-const KNOWN_CATEGORIES = ['ui', 'layout', 'features'];
+// As duas pastas que existem em src/components (ver a "Estrutura do projeto" no README):
+// `ui` para as peças sem domínio e `domain` para as que falam de sessões, pedidos ou perfis.
+const KNOWN_CATEGORIES = ['ui', 'domain'];
 
 function toPascalCase(rawName) {
   const cleaned = rawName.trim().replace(/[^a-zA-Z0-9]/g, '');
@@ -53,15 +55,16 @@ async function createComponent() {
     fs.mkdirSync(componentDir, { recursive: true });
 
     // 5. Templates - alinhados com os tokens reais do design system (@/constants/theme, useTheme)
-    const indexTsxTemplate = `import { StyleSheet, Text, View, type ViewProps } from 'react-native';
+    const indexTsxTemplate = `import { StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Spacing, type ThemeColor } from '@/constants/theme';
+import { Spacing, type ColorToken } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { ThemedText } from '@/components/ui/ThemedText';
 
 export interface ${componentName}Props extends ViewProps {
   title: string;
   subtitle?: string;
-  themeColor?: ThemeColor;
+  themeColor?: ColorToken;
 }
 
 export function ${componentName}({ title, subtitle, themeColor, style, ...rest }: ${componentName}Props) {
@@ -71,8 +74,8 @@ export function ${componentName}({ title, subtitle, themeColor, style, ...rest }
     <View
       style={[styles.container, { backgroundColor: theme[themeColor ?? 'surfaceAlt'] }, style]}
       {...rest}>
-      <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
-      {subtitle && <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text>}
+      <ThemedText type="bodyBold">{title}</ThemedText>
+      {subtitle && <ThemedText type="small" themeColor="textMuted">{subtitle}</ThemedText>}
     </View>
   );
 }
@@ -81,14 +84,6 @@ const styles = StyleSheet.create({
   container: {
     padding: Spacing.three,
     borderRadius: Spacing.two,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '400',
   },
 });
 `;

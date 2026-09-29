@@ -3,10 +3,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { IconSize, Spacing } from '@/constants/theme';
-import { SUBJECT_OPTIONS } from '@/constants/profile';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
-import { ChipGroup } from '@/components/ui/ChipGroup';
 import { TagProfile } from '@/components/ui/TagProfile';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { SubjectPickerSheet } from '@/components/domain/Profile/SubjectPickerSheet';
@@ -17,55 +15,28 @@ export interface SubjectsFieldProps {
   onChange: (next: string[]) => void;
   hint?: string;
   showCount?: boolean;
-  /** 'grid' mostra todas as opções lado a lado (passos de configuração); 'picker' mostra só as
-   * disciplinas selecionadas mais um botão "adicionar" que abre um menu deslizante. */
-  variant?: 'grid' | 'picker';
   style?: StyleProp<ViewStyle>;
 }
 
-export function SubjectsField({ selected, onChange, hint, showCount, variant = 'grid', style }: SubjectsFieldProps) {
+/**
+ * Campo de disciplinas: as escolhidas como etiquetas removíveis e um "Adicionar" que abre o
+ * seletor (com pesquisa, agrupado por área).
+ *
+ * Havia aqui uma segunda variante que mostrava as ~80 disciplinas todas em etiquetas à vista, e era
+ * essa que os passos de configuração usavam. Com 12 opções isso era um ecrã; com 80 era uma parede
+ * de etiquetas em três ecrãs de scroll, sem forma de procurar. Ficou um só caminho - o mesmo da
+ * edição do perfil - para que criar o perfil e corrigi-lo depois se façam da mesma maneira.
+ *
+ * O que se perdeu: ver todas as opções de uma vez. O que se ganhou: pesquisar (sem acentos, ver
+ * src/lib/text.ts) e escolher de uma área sem percorrer as outras onze.
+ */
+export function SubjectsField({ selected, onChange, hint, showCount, style }: SubjectsFieldProps) {
   const theme = useTheme();
   const i18n = useI18n();
   const sheetRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ['60%'], []);
+  const snapPoints = useMemo(() => ['85%'], []);
 
   const removeSubject = (subject: string) => onChange(selected.filter((value) => value !== subject));
-
-  if (variant === 'picker') {
-    return (
-      <View style={[styles.container, style]}>
-        {hint && (
-          <ThemedText type="small" themeColor="textMuted" style={styles.hint}>
-            {hint}
-          </ThemedText>
-        )}
-
-        <View style={styles.row}>
-          {selected.map((subject) => (
-            <TagProfile key={subject} title={subject} onRemove={() => removeSubject(subject)} />
-          ))}
-          <Pressable
-            onPress={() => sheetRef.current?.present()}
-            accessibilityRole="button"
-            accessibilityLabel={i18n.profileFields.addSubject}
-            style={[styles.addButton, { borderColor: theme.border }]}>
-            <Ionicons name="add-outline" size={IconSize.ui} color={theme.textPrimary} />
-            <ThemedText type="smallBold" themeColor="textPrimary">
-              {i18n.profileFields.add}
-            </ThemedText>
-          </Pressable>
-        </View>
-
-        {showCount && (
-          <ThemedText type="smallBold" themeColor="textMuted" style={styles.count}>
-            {i18n.profileFields.subjectsSelectedCount(selected.length)}
-          </ThemedText>
-        )}
-
-        <SubjectPickerSheet ref={sheetRef} snapPoints={snapPoints} selected={selected} onChange={onChange} />
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.container, style]}>
@@ -75,13 +46,29 @@ export function SubjectsField({ selected, onChange, hint, showCount, variant = '
         </ThemedText>
       )}
 
-      <ChipGroup options={SUBJECT_OPTIONS} selected={selected} onChange={onChange} />
+      <View style={styles.row}>
+        {selected.map((subject) => (
+          <TagProfile key={subject} title={subject} onRemove={() => removeSubject(subject)} />
+        ))}
+        <Pressable
+          onPress={() => sheetRef.current?.present()}
+          accessibilityRole="button"
+          accessibilityLabel={i18n.profileFields.addSubject}
+          style={[styles.addButton, { borderColor: theme.border }]}>
+          <Ionicons name="add-outline" size={IconSize.ui} color={theme.textPrimary} />
+          <ThemedText type="smallBold" themeColor="textPrimary">
+            {i18n.profileFields.add}
+          </ThemedText>
+        </Pressable>
+      </View>
 
       {showCount && (
         <ThemedText type="smallBold" themeColor="textMuted" style={styles.count}>
           {i18n.profileFields.subjectsSelectedCount(selected.length)}
         </ThemedText>
       )}
+
+      <SubjectPickerSheet ref={sheetRef} snapPoints={snapPoints} selected={selected} onChange={onChange} />
     </View>
   );
 }

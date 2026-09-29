@@ -15,6 +15,11 @@ export interface TagProfileProps extends ViewProps {
   onToggle?: (selected: boolean) => void;
   interactive?: boolean;
   onRemove?: () => void;
+  /**
+   * Etiqueta destacada sem ser interactiva: usada nos cartões para marcar o que tem a ver com quem
+   * está a ver (as disciplinas em comum), sem a transformar num botão que não faz nada.
+   */
+  highlight?: boolean;
 }
 
 export function TagProfile({
@@ -24,16 +29,20 @@ export function TagProfile({
   onToggle,
   interactive = true,
   onRemove,
+  highlight,
   style,
   ...rest
 }: TagProfileProps) {
   const theme = useTheme();
   const [isToggled, toggleSelected] = useToggleState(selected, defaultSelected, onToggle);
   const isSelected = interactive && isToggled;
+  // O destaque e a escolha dão o mesmo aspecto de propósito: num cartão, "isto é teu" e numa
+  // lista, "isto está escolhido" são a mesma ideia - o que é meu (ver a nota no comentário acima).
+  const isEmphasized = isSelected || !!highlight;
 
   const tagStyle = [
     styles.tag,
-    isSelected
+    isEmphasized
       ? { backgroundColor: theme.primary, borderColor: theme.primary }
       : { backgroundColor: theme.surface, borderColor: theme.border },
     style,
@@ -54,7 +63,7 @@ export function TagProfile({
   }
 
   const label = (
-    <Text numberOfLines={1} style={[styles.label, { color: isSelected ? theme.onPrimary : theme.textPrimary }]}>
+    <Text numberOfLines={1} style={[styles.label, { color: isEmphasized ? theme.onPrimary : theme.textPrimary }]}>
       {title}
       {isSelected ? ' ✓' : ''}
     </Text>

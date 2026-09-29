@@ -14,6 +14,12 @@ export interface CandidateCardProps extends ViewProps {
   year: string;
   subjects: string[];
   image?: string;
+  /**
+   * As disciplinas de quem está a ver (as que procura aprender). As que coincidem com as do
+   * candidato ficam destacadas **e à frente**: era a informação que faltava para decidir sem abrir o
+   * perfil, e as duas primeiras etiquetas podem ser justamente as que não interessam a ninguém.
+   */
+  highlight?: string[];
   /** Rótulo do botão de decisão (\"Passar\"), já traduzido. */
   passLabel: string;
   /** Rótulo do botão de pedido de ligação (\"Conectar\"), já traduzido. */
@@ -46,6 +52,7 @@ export function CandidateCard({
   year,
   subjects,
   image,
+  highlight,
   passLabel,
   connectLabel,
   busy,
@@ -57,8 +64,12 @@ export function CandidateCard({
 }: CandidateCardProps) {
   const theme = useTheme();
   const name = `${firstName} ${lastName}`;
-  const visibleSubjects = subjects.slice(0, 2);
-  const overflow = subjects.length - visibleSubjects.length;
+  // Destacadas à frente, com a ordem original dentro de cada grupo (o `sort` é estável).
+  const orderedSubjects = highlight?.length
+    ? [...subjects].sort((a, b) => Number(highlight.includes(b)) - Number(highlight.includes(a)))
+    : subjects;
+  const visibleSubjects = orderedSubjects.slice(0, 2);
+  const overflow = orderedSubjects.length - visibleSubjects.length;
 
   return (
     <Pressable
@@ -78,6 +89,7 @@ export function CandidateCard({
                   key={`${subject}-${index}`}
                   title={subject}
                   interactive={false}
+                  highlight={highlight?.includes(subject)}
                   style={styles.tag}
                 />
               ))}

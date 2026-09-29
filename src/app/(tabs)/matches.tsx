@@ -240,6 +240,7 @@ export default function MatchesScreen() {
               year={item.year}
               subjects={item.subjects}
               image={item.image}
+              highlight={learningSubjects}
               passLabel={i18n.matches.pass}
               connectLabel={i18n.matches.connect}
               busy={connectingId === item.id}
