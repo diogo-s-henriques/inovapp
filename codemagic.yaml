@@ -35,7 +35,7 @@
 #
 # ## As versões
 #
-# Vêm do `app.json` (`1.0.1`, iOS build 12, Android versionCode 11) e o `eas.json` está em
+# Vêm do `app.json` (`1.0.1`, iOS build 13, Android versionCode 12) e o `eas.json` está em
 # `appVersionSource: local`. **Sobe o número da loja antes de cada envio**: nem o EAS nem a Codemagic
 # inventam um número por ti, e um `versionCode` repetido é recusado na Play sem apagar nada.
 

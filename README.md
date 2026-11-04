@@ -376,8 +376,8 @@ construtores (EAS e CI) as vão ler, e é onde se vê o que está publicado:
 
 ```
 version             1.0.1     # versão de marketing (as duas lojas)
-ios.buildNumber     "12"      # a seguir ao 11, que é o que está no App Store Connect
-android.versionCode 11        # a seguir ao 10, que é o que está na Play
+ios.buildNumber     "13"      # a seguir ao 12, que é o que já está no App Store Connect
+android.versionCode 12        # a seguir ao 11, que é o que já está na Play
 ```
 
 Antes de cada envio, sobe-se o número da loja que vai receber o bundle - e o `eas.json` passou a

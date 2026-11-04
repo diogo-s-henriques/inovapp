@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.diyogo.inovapp",
-      "buildNumber": "12",
+      "buildNumber": "13",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -26,7 +26,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.diyogo.inovapp",
-      "versionCode": 11,
+      "versionCode": 12,
       "googleServicesFile": "./google-services.json"
     },
     "web": {
