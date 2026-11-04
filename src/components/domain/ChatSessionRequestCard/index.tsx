@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
@@ -7,6 +8,7 @@ import { respondToSessionRequest, subscribeToSessionRequestStatus } from '@/lib/
 import { dateLocaleTag } from '@/lib/time';
 import { useLocaleStore } from '@/i18n/store';
 import { RequestCard, type RequestCardStatus } from '@/components/domain/RequestCard';
+import { Button } from '@/components/ui/Button';
 import { ThemedText } from '@/components/ui/ThemedText';
 import type { ChatSessionRequestInfo } from '@/types/chat';
 import type { SessionModality } from '@/types/session';
@@ -14,6 +16,11 @@ import type { SessionModality } from '@/types/session';
 function formatDateShort(dateKey: string, locale: 'pt' | 'en'): string {
   const date = new Date(`${dateKey}T00:00:00`);
   return date.toLocaleDateString(dateLocaleTag(locale), { day: '2-digit', month: 'short' });
+}
+
+function formatSubtitle(subject: string | undefined, date: string, time: string, modality: string, locale: 'pt' | 'en'): string {
+  const when = `${formatDateShort(date, locale)}, ${time}`;
+  return subject ? `${subject} · ${when} · ${modality}` : `${when} · ${modality}`;
 }
 
 export interface ChatSessionRequestCardProps {
@@ -39,6 +46,7 @@ export function ChatSessionRequestCard({
   otherImage,
 }: ChatSessionRequestCardProps) {
   const i18n = useI18n();
+  const router = useRouter();
   const locale = useLocaleStore((state) => state.locale);
   const [status, setStatus] = useState<RequestCardStatus>('pending');
   const [responding, setResponding] = useState(false);
@@ -78,7 +86,7 @@ export function ChatSessionRequestCard({
         firstName={otherFirstName}
         lastName={otherLastName}
         image={otherImage}
-        subtitle={`${info.subject} · ${formatDateShort(info.date, locale)}, ${info.time} · ${info.modality}`}
+        subtitle={formatSubtitle(info.subject, info.date, info.time, info.modality, locale)}
         message={info.message}
         busy={responding}
         // Quem pediu só vê o estado; quem recebeu só vê os botões enquanto pendente.
@@ -87,6 +95,15 @@ export function ChatSessionRequestCard({
         onDecline={() => handleRespond(false)}
         style={styles.card}
       />
+      {status === 'accepted' && (
+        <Button
+          label={i18n.chat.viewCalendar}
+          variant="link"
+          icon="calendar-outline"
+          onPress={() => router.push({ pathname: '/sessions', params: { date: info.date } })}
+          style={styles.calendarLink}
+        />
+      )}
       {error && (
         <ThemedText type="small" themeColor="danger" style={styles.error}>
           {i18n.chat.respondError}
@@ -108,6 +125,9 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '85%',
+  },
+  calendarLink: {
+    alignSelf: 'flex-start',
   },
   error: {
     marginTop: Spacing.one,

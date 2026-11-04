@@ -302,12 +302,12 @@ pedidos, e são os Tutorandos que o encontram (é a app a funcionar como foi des
 limitação da conta).
 
 > **Cuidado, e é uma armadilha real:** quem só ensina **e não tem nenhum pedido pendente** não vê
-> lista nenhuma - cai no `BlockedScreen`, com o título "Funcionalidade bloqueada". A conta de Tutor
-> de demonstração está exatamente nesse estado (o único pedido que tem está `accepted`, e um aceite
+> lista nenhuma - o separador mostra o estado "Não há matches por aceitar". A conta de Tutor de
+> demonstração está exatamente nesse estado (o único pedido que tem está `accepted`, e um aceite
 > não conta). Foi provavelmente isto que a revisão da 1.0 (10) leu como "não conseguimos verificar
-> todas as funcionalidades, como o Match". Duas saídas, nenhuma delas feita: dar a essa conta um
-> pedido pendente de outra pessoa, **ou** trocar o estado/texto desse ecrã na próxima versão - um
-> separador que anuncia "funcionalidade bloqueada" a um tutor novo não é só um problema de revisão.
+> todas as funcionalidades, como o Match". O texto já não anuncia uma funcionalidade bloqueada; o
+> que falta é dar a essa conta um pedido pendente de outra pessoa, para o revisor ver a lista
+> preenchida em vez do estado vazio.
 
 Não há compras dentro da app e não há recolha de localização, contactos, câmara ou microfone.
 ```
@@ -401,15 +401,18 @@ fornecedores de serviço que processam os dados em nosso nome está fora do âmb
 | Fotografia | sim | **não** | Funcionalidade da app (perfil) | não |
 | Outras informações (curso, ano, apresentação, disciplinas, disponibilidade) | sim | sim | Funcionalidade da app | não |
 | Mensagens na app | sim | não | Funcionalidade da app | não |
+| Ficheiros e documentos (anexos das conversas, até 10 MB) | sim | não | Funcionalidade da app | não |
 | Outro conteúdo do utilizador (avaliações de sessões, ligações partilhadas na conversa) | sim | não | Funcionalidade da app | não |
 | Atividade na app (pedidos de conexão, sessões, bloqueios) | sim | sim | Funcionalidade da app | não |
 | IDs de dispositivo ou outros (token dos avisos + identificador da instalação) | sim | não (só com avisos aceites) | Funcionalidade da app (avisos) | não |
 | Informações e desempenho → Diagnósticos (erros e tempos de arranque, sem dados pessoais, via EAS Observe) | sim | sim | Análise · Funcionalidade da app | não |
 
 Responde-se **"não"** a tudo o resto, e não é por simpatia: localização, contactos, calendário,
-saúde e fitness, informação financeira, histórico de pesquisa e de navegação, e ficheiros ou
-documentos. **Não há upload de ficheiros** - o que se partilha numa conversa é texto e ligações, e os
-materiais vivem dentro das mensagens (é isso que `src/lib/materials.ts` lê).
+saúde e fitness, informação financeira, e histórico de pesquisa e de navegação. **Não há upload para
+armazenamento externo**: um documento escolhido do telemóvel (até 10 MB) é guardado em blocos de
+700 KB na subcoleção da conversa, e só os dois participantes o conseguem ler; acima desse tamanho,
+o que se partilha é um link. O ecrã de Materiais lê os metadados dos anexos a partir das mensagens
+(`src/lib/materials.ts`), não os ficheiros.
 
 Mais três respostas fixas: os dados são **cifrados em trânsito** (sim - tudo passa por HTTPS/TLS do
 Firebase); o utilizador **pode pedir a eliminação dos dados** (sim) - dentro da app em *Perfil →
@@ -596,8 +599,9 @@ possíveis, e nenhuma precisa de build:
    lados (quem procura e quem ensina), que são duas contas diferentes. Faltando uma, falta metade
    da app.
 2. **O ecrã do Match da conta de Tutor** (ver o aviso nas notas de revisão): quem só ensina e não
-   tem pedidos pendentes cai em "Funcionalidade bloqueada". É o candidato mais provável ao
-   *"such as Matches"* da Apple.
+   tem pedidos pendentes vê o estado vazio "Não há matches por aceitar" (na 1.0 (10) ainda dizia
+   "Funcionalidade bloqueada"). É o candidato mais provável ao *"such as Matches"* da Apple, e a
+   lista só aparece com um pedido pendente.
 
 ### 3.2 - a decisão: abrir o registo, e continuar a distribuir publicamente
 
@@ -697,9 +701,10 @@ accurate description of it.
   3.2 acima foi reescrita para dizer a verdade sobre a app, mas é este o terreno onde a Apple
   levantou a 3.2 e a 4.2 da última vez - e é a decisão de produto que fica em aberto (ver a nota do
   nome, acima).
-- **O ecrã do Match de quem só ensina.** O `BlockedScreen` com "Funcionalidade bloqueada" aparece a
-  qualquer mentor novo que ainda não tenha recebido pedidos. Numa app aberta isso deixa de ser um
-  problema de revisão e passa a ser o que um utilizador novo vê.
+- **O ecrã do Match de quem só ensina.** Já não anuncia "Funcionalidade bloqueada": o estado vazio
+  diz "Não há matches por aceitar". Mesmo assim, qualquer mentor novo que ainda não tenha recebido
+  pedidos vê um separador sem lista nenhuma - numa app aberta isso continua a ser o que um
+  utilizador novo encontra, e merece uma explicação melhor do fluxo numa próxima versão.
 - **O catálogo de cursos é só do ISEC** (`COURSES_BY_TYPE`): um aluno de outra instituição do
   consórcio tem de escolher um curso do ISEC. Não trava nada, mas é o mesmo género de incoerência que
   a 3.2 - uma app que diz servir todos e que só conhece uma escola. Cada universidade que adira ao

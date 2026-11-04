@@ -151,7 +151,7 @@ describe('activity - o histórico só tem o que aconteceu', () => {
     assert.ok(Number.isFinite(itens[0].timestamp.getTime()));
   });
 
-  it('um pedido de sessão aceite aparece, com a disciplina', async () => {
+  it('um pedido de sessão aceite aparece, sem disciplina', async () => {
     await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
     const requestId = await pedirSessao(amanha());
     await aceitarSessao(requestId, amanha());
@@ -161,12 +161,40 @@ describe('activity - o histórico só tem o que aconteceu', () => {
 
     const aceite = (await atividadeDaAna()).find((item) => item.kind === 'session-accepted');
     assert.ok(aceite);
-    assert.equal(aceite.description, pt.notifications.sessionAccepted('Bruno', DISCIPLINA));
+    assert.equal(aceite.description, pt.notifications.sessionAccepted('Bruno'));
+  });
+});
+
+describe('activity - a resposta ao pedido de sessão', () => {
+  it('uma recusa aparece no histórico, com quem recusou', async () => {
+    await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
+    const requestId = await pedirSessao(amanha());
+
+    await entrarComo(CONTAS.professor);
+    await respondToSessionRequest(
+      {
+        id: requestId,
+        fromUid: cenario.ana,
+        firstName: 'Ana',
+        lastName: 'Aluna',
+        date: amanha(),
+        time: HORA,
+        modality: 'Online',
+        message: '',
+      },
+      cenario.bruno,
+      false,
+    );
+
+    const item = (await atividadeDaAna()).find((entrada) => entrada.kind === 'session-declined');
+    assert.ok(item, 'a recusa devia aparecer no histórico');
+    assert.equal(item.title, pt.notifications.sessionDeclinedTitle);
+    assert.equal(item.description, pt.notifications.sessionDeclined('Bruno'));
   });
 });
 
 describe('activity - a sessão de amanhã', () => {
-  it('aparece com a disciplina, o outro participante e a hora', async () => {
+  it('aparece com o outro participante e a hora', async () => {
     await ligarCom({ email: CONTAS.professor, uid: cenario.bruno });
     const requestId = await pedirSessao(amanha());
     await aceitarSessao(requestId, amanha());
@@ -174,7 +202,7 @@ describe('activity - a sessão de amanhã', () => {
     const item = (await atividadeDaAna()).find((entrada) => entrada.kind === 'session-tomorrow');
     assert.ok(item, 'a sessão de amanhã devia aparecer no histórico');
     assert.equal(item.title, pt.notifications.sessionTomorrowTitle);
-    assert.equal(item.description, pt.notifications.sessionTomorrow(DISCIPLINA, 'Bruno', HORA));
+    assert.equal(item.description, pt.notifications.sessionTomorrow('Bruno', HORA));
   });
 
   it('NÃO aparece se for para outro dia', async () => {

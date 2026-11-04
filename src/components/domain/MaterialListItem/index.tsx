@@ -12,7 +12,7 @@ export interface MaterialListItemProps extends ViewProps {
   onPressOpen: () => void;
 }
 
-/** Linha de material partilhado (anexo de chat) - sempre um link, sem upload real. */
+/** Linha de material partilhado (anexo de chat) - um link ou um documento da conversa. */
 export function MaterialListItem({ title, subtitle, onPressOpen, style, ...rest }: MaterialListItemProps) {
   const theme = useTheme();
   const i18n = useI18n();

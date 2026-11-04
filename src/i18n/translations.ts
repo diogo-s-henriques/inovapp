@@ -164,7 +164,9 @@ export interface Translations {
   };
   matches: {
     title: string;
-    blockedTitle: string;
+    /** Quem só ensina, sem pedidos de conexão por decidir (não é um bloqueio de funcionalidade). */
+    noRequestsTitle: string;
+    noRequestsDescription: string;
     pass: string;
     connect: string;
     connectError: string;
@@ -208,6 +210,7 @@ export interface Translations {
     defaultLastMessage: string;
     back: string;
     scheduleSession: string;
+    viewCalendar: string;
     material: string;
     inputPlaceholder: string;
     sendMessage: string;
@@ -219,6 +222,20 @@ export interface Translations {
   attachFile: {
     title: string;
     description: string;
+    fileTab: string;
+    linkTab: string;
+    chooseFile: string;
+    changeFile: string;
+    /** Enquanto o ficheiro escolhido é lido do telemóvel. */
+    fileLoading: string;
+    fileLabel: string;
+    fileHint: (max: string) => string;
+    noFile: string;
+    fileTooLarge: (max: string) => string;
+    fileReadError: string;
+    fileUploadError: string;
+    /** Falha ao enviar um anexo por link. */
+    sendError: string;
     fileNameLabel: string;
     fileNamePlaceholder: string;
     linkLabel: string;
@@ -301,9 +318,11 @@ export interface Translations {
     connectionRequestAnnouncement: (name: string) => string;
     connectionRequestHint: string;
     connectionAccepted: (name: string) => string;
-    sessionAccepted: (name: string, subject: string) => string;
+    sessionAccepted: (name: string) => string;
     sessionTomorrowTitle: string;
-    sessionTomorrow: (subject: string, name: string, time: string) => string;
+    sessionTomorrow: (name: string, time: string) => string;
+    sessionDeclinedTitle: string;
+    sessionDeclined: (name: string) => string;
     newMaterialTitle: string;
     materialReceived: (name: string, fileName: string) => string;
   };
@@ -328,9 +347,12 @@ export interface Translations {
   sessionRequest: {
     title: string;
     requestingFrom: (name: string) => string;
-    subjectLabel: string;
     dateLabel: string;
     timeLabel: string;
+    timePlaceholder: string;
+    timePickerTitle: string;
+    timePickerDone: string;
+    timeInPast: string;
     modalityLabel: string;
     messageLabel: string;
     messagePlaceholder: string;
@@ -411,6 +433,8 @@ export interface Translations {
     empty: string;
     open: (fileName: string) => string;
     invalidLink: string;
+    /** Falha ao abrir um documento guardado (link inválido tem mensagem própria). */
+    openError: string;
   };
   presence: {
     online: string;

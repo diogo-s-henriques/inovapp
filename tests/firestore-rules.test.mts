@@ -859,6 +859,102 @@ describe('conversations - só existem depois de a conexão ser aceite', () => {
   });
 });
 
+describe('attachments - documentos partilhados na conversa', () => {
+  const ATTACHMENT = {
+    senderId: ALUNO.uid,
+    fileName: 'apontamentos.pdf',
+    mimeType: 'application/pdf',
+    size: 1024,
+    contentBase64: 'JVBERi0xLjQ=',
+    createdAt: 1,
+  };
+
+  const HEADER = {
+    senderId: ALUNO.uid,
+    fileName: 'grande.pdf',
+    mimeType: 'application/pdf',
+    size: 10 * 1024 * 1024,
+    chunkCount: 20,
+    createdAt: 1,
+  };
+
+  const CHUNK = {
+    senderId: ALUNO.uid,
+    attachmentId: 'a1',
+    chunkIndex: 0,
+    contentBase64: 'JVBERi0xLjQ=',
+    createdAt: 1,
+  };
+
+  beforeEach(async () => {
+    await seed(`conversations/${CONVERSATION_ID}`, {
+      participants: [ALUNO.uid, PROFESSOR.uid].sort(),
+    });
+  });
+
+  it('um participante anexa um documento de 10 MB e o outro lê', async () => {
+    const db = dbAs(ALUNO);
+    const reference = doc(collection(db, 'conversations', CONVERSATION_ID, 'attachments'));
+
+    await assertSucceeds(setDoc(reference, HEADER));
+    await assertSucceeds(
+      getDoc(doc(dbAs(PROFESSOR), 'conversations', CONVERSATION_ID, 'attachments', reference.id)),
+    );
+  });
+
+  it('os blocos do documento são aceites e lidos pelo outro participante', async () => {
+    const db = dbAs(ALUNO);
+    const reference = doc(collection(db, 'conversations', CONVERSATION_ID, 'attachments'));
+
+    await assertSucceeds(setDoc(reference, CHUNK));
+    await assertSucceeds(
+      getDoc(doc(dbAs(PROFESSOR), 'conversations', CONVERSATION_ID, 'attachments', reference.id)),
+    );
+  });
+
+  it('um terceiro NÃO lê nem escreve os documentos', async () => {
+    await seed(`conversations/${CONVERSATION_ID}/attachments/a1`, ATTACHMENT);
+    const db = dbAs(ALUNO_B);
+
+    await assertFails(getDoc(doc(db, 'conversations', CONVERSATION_ID, 'attachments', 'a1')));
+    await assertFails(
+      addDoc(collection(db, 'conversations', CONVERSATION_ID, 'attachments'), {
+        ...HEADER,
+        senderId: ALUNO_B.uid,
+      }),
+    );
+  });
+
+  it('NÃO entra um documento acima de 10 MB nem um bloco acima do limite', async () => {
+    // Os limites também existem no cliente (src/lib/attachment-chunks.ts); aqui é o que impede
+    // um cliente alterado de encher o Firestore.
+    const db = dbAs(ALUNO);
+    await assertFails(
+      addDoc(collection(db, 'conversations', CONVERSATION_ID, 'attachments'), {
+        ...HEADER,
+        size: 10 * 1024 * 1024 + 1,
+      }),
+    );
+    await assertFails(
+      addDoc(collection(db, 'conversations', CONVERSATION_ID, 'attachments'), {
+        ...CHUNK,
+        contentBase64: 'A'.repeat(720_001),
+      }),
+    );
+  });
+
+  it('só quem enviou apaga o documento', async () => {
+    await seed(`conversations/${CONVERSATION_ID}/attachments/a1`, ATTACHMENT);
+
+    await assertFails(
+      deleteDoc(doc(dbAs(PROFESSOR), 'conversations', CONVERSATION_ID, 'attachments', 'a1')),
+    );
+    await assertSucceeds(
+      deleteDoc(doc(dbAs(ALUNO), 'conversations', CONVERSATION_ID, 'attachments', 'a1')),
+    );
+  });
+});
+
 describe('blocks - um bloqueio corta a ligação para os dois', () => {
   const BLOCK_ID = `${ALUNO.uid}_${PROFESSOR.uid}`;
 

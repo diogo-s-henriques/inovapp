@@ -605,7 +605,7 @@ src/app/
   notifications.tsx                  Pedidos de conexão + de sessão pendentes
   sessions.tsx                       Agenda (calendário + lista)
   session-request.tsx                Formulário "Pedir sessão"
-  materials.tsx                      Material (links) partilhado nas conversas
+  materials.tsx                      Material (links e documentos) partilhado nas conversas
 ```
 
 Resto do código-fonte:
@@ -615,6 +615,7 @@ src/auth/          estado de sessão (store Zustand, listener do Firebase Auth, 
 src/lib/            acesso a dados - um ficheiro por domínio (chat.ts, sessions.ts,
                      requests.ts, matching.ts, materials.ts, ratings.ts, activity.ts),
                      mais firebase.ts (inicialização), storage.ts (fotos em base64),
+                     attachments.ts (documentos anexados e a abertura de anexos),
                      initials.ts, time.ts, url.ts (validação de links), navigation.ts,
                      recent-searches.ts (AsyncStorage)
                      live-query.ts (leitura viva partilhada por vários ecrãs),
@@ -764,14 +765,21 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
   Firestore `onSnapshot` (`conversations/{id}/messages`). Abre com as últimas 50 mensagens e um
   botão para carregar as anteriores.
 - **Agenda / sessões** - calendário mensal + lista do dia; pedido de sessão
-  (disciplina/data/hora/modalidade/mensagem) a partir do perfil do outro utilizador ou do chat.
-  Ao contrário do pedido de conexão, o pedido de sessão pode partir de qualquer um dos dois lados
-  de uma ligação já aceite - e **quem aceita fica como Tutor dessa sessão**, sendo a única parte
-  que a pode terminar (ver [Decisões tomadas](#decisões-tomadas)).
-- **Materiais** - um material é um **link http/https partilhado dentro de uma conversa** (não há
-  coleção `materials` nem upload de ficheiros). O ecrã de Materiais agrega, em tempo real, os
-  anexos das conversas do utilizador, filtráveis por enviados/recebidos. O link é validado ao ser
-  escrito e outra vez ao ser aberto (`src/lib/url.ts`), porque vem de outro utilizador.
+  (data/hora/modalidade/mensagem) a partir do perfil do outro utilizador ou do chat. O formulário
+  deixou de pedir a disciplina: o pedido é sobre a pessoa e o horário. O pedido aparece no chat
+  como um cartão com Aceitar/Recusar; ao ser aceite, a sessão entra no calendário dos dois e o
+  cartão passa a ter um atalho para a agenda do dia. As respostas (aceite ou recusa) entram ao vivo
+  nas Notificações. Ao contrário do pedido de conexão, o pedido de sessão pode partir de qualquer
+  um dos dois lados de uma ligação já aceite - e **quem aceita fica como Tutor dessa sessão**,
+  sendo a única parte que a pode terminar (ver [Decisões tomadas](#decisões-tomadas)).
+- **Materiais** - um material é um **link http/https** ou um **documento até 10 MB** partilhado
+  dentro de uma conversa (não há coleção `materials` nem armazenamento externo). Os documentos
+  ficam repartidos por um cabeçalho e blocos de 700 KB em base64 na subcoleção
+  `conversations/{id}/attachments` (o Firestore limita cada documento a 1 MiB) e a mensagem leva só
+  os metadados; o ecrã de Materiais agrega, em tempo real, os anexos das conversas do utilizador,
+  filtráveis por enviados/recebidos, e só lê o ficheiro quando este é aberto. O link é validado ao
+  ser escrito e outra vez ao ser aberto (`src/lib/url.ts`), porque vem de outro utilizador; os
+  documentos são abertos pelo menu de partilha do sistema (`expo-sharing`).
 - **Avaliação por estrelas pós-sessão** - anónima, aparece automaticamente ao Tutorando quando
   uma sessão passada ainda não foi avaliada nem dispensada; 1 avaliação por sessão.
 - **Bloquear utilizadores** - a partir do perfil de outra pessoa, com confirmação. Um bloqueio
@@ -797,7 +805,8 @@ O idioma (PT/EN) é escolhido nos ecrãs de autenticação e fica guardado no di
 | `sessionRequests/{id}` (ID automático) | pedido de sessão entre dois utilizadores já ligados; qualquer um dos dois pode iniciar |
 | `sessions/{id}` | sessão agendada, criada ao aceitar um `sessionRequest`; guarda `sessionRequestId` para a regra de segurança conseguir validar a origem. O campo `mentorUid` (e o `SessionRole` `'mentor'`) mantém o nome antigo do papel: é quem dá a sessão, hoje o **Tutor** |
 | `conversations/{uidA_uidB}` (ID ordenado alfabeticamente) | conversa 1-para-1, criada só ao aceitar um `connectionRequest` |
-| `conversations/{id}/messages/{id}` | mensagens da conversa (e os anexos de links que alimentam os Materiais) |
+| `conversations/{id}/messages/{id}` | mensagens da conversa (e os metadados dos anexos que alimentam os Materiais) |
+| `conversations/{id}/attachments/{id}` | documentos anexados (cabeçalho + blocos em base64, até 10 MB), legíveis pelos dois participantes e apagáveis só por quem os enviou |
 | `ratings/{sessionId}` (ID = ID da sessão) | avaliação anónima pós-sessão; nunca guarda quem avaliou |
 | `blocks/{blockerUid_blockedUid}` | bloqueio entre dois utilizadores; o documento tem um sentido, o efeito é simétrico (ver Decisões) |
 
@@ -1287,9 +1296,10 @@ parte da app.
 
 - **As disciplinas passaram a ser áreas, e o campo das disciplinas passou a ter pesquisa.** Doze
   nomes soltos davam um ecrã de etiquetas; ~80 não dão - e era isso que o passo das disciplinas ia
-  ser depois de a lista crescer. Agora há `SUBJECT_AREAS` em `src/constants/profile.ts`: doze áreas
-  (as da oferta real da escola - aeronáutica, proteção civil, ótica, gestão, educação, comunicação e
-  design) e, dentro de cada uma, as disciplinas que se pedem para estudar. Três consequências que
+  ser depois de a lista crescer. Agora há `SUBJECT_AREAS` em `src/constants/profile.ts`: treze
+  áreas (as da oferta real da escola - aeronáutica, energia e ambiente, proteção civil, ótica,
+  gestão, educação, comunicação e design) e, dentro de cada uma, as disciplinas que se pedem para
+  estudar. Três consequências que
   valem mais do que a lista em si: **`SUBJECT_OPTIONS` é derivado** (achatado, pela ordem das áreas),
   por isso não há duas listas para manter em sincronia; **uma disciplina pertence a uma só área**, o
   que é o que permite contar áreas no match (ver a entrada seguinte) e garante que a lista achatada
@@ -1299,7 +1309,7 @@ parte da app.
   demonstração ensinam "Programação" e "Matemática"). O campo (`SubjectsField`) passou a ter **uma
   só** forma de escolher - as escolhidas como etiquetas removíveis mais um "Adicionar" que abre o
   seletor com pesquisa e cabeçalhos de área -, e a variante que mostrava as opções todas lado a lado
-  saiu: com 80 etiquetas à vista, isso eram três ecrãs de scroll e nenhuma forma de procurar. O
+  saiu: com quase 90 etiquetas à vista, isso eram três ecrãs de scroll e nenhuma forma de procurar. O
   mesmo seletor serve o passo de criação e a edição do perfil, até aqui diferentes. A pesquisa é a
   mesma do seletor de cursos (`normalizeForSearch` em `src/lib/text.ts`, partilhada pelos três sítios
   com pesquisa) e a disciplina **escolhida** nunca desaparece de um filtro por causa da pesquisa - um
@@ -1317,14 +1327,20 @@ parte da app.
   do perfil (`src/app/profile/[id].tsx`) desenhava `{course}, {year}` sempre, e um tutor aparecia com
   uma **vírgula solta** por baixo do nome. Passou a haver um sítio só a decidir a linha
   (`joinCourseAndYear`, em `src/constants/profile.ts`): sem curso e sem ano, a linha não existe.
-- **O match ordena por disciplinas e desempata por áreas - e mostra-o no cartão.** A descoberta
-  (`fetchTutorCandidates`) nunca excluiu ninguém por não partilhar nada: quem ensina aparece sempre,
-  ordenado pelo número de disciplinas que ensina que estão nas que eu procuro. Isso deixava um empate
-  frequente e mal resolvido - dois tutores que ensinam «Cálculo» ficavam por ordem de leitura, mesmo
-  quando um deles ensinava outra coisa da área de que eu preciso. Agora o desempate é o número de
-  **áreas** em comum, contando cada área uma só vez, e a decisão inteira é uma função pura e
-  exportada (`rankCandidates`) precisamente por ser invisível: a lista continua a aparecer, só por
-  outra ordem. E porque a ordem não chega para quem olha para um cartão, as disciplinas que eu
+- **O match ordena por disciplinas e desempata por áreas - e mostra-o no cartão.**  A descoberta
+  (`fetchTutorCandidates`) deixou de ser uma lista de todos os tutores ordenada por disciplinas: o
+  deck mostra só quem partilha pelo menos uma **área** com quem procura, e ordena primeiro pelas
+  áreas e só depois pelas disciplinas exatas. As áreas de quem procura vêm de dois sítios - o
+  **curso** (`COURSE_AREAS`, em `src/constants/profile.ts`, liga cada um dos cursos do ISEC às
+  áreas da escola) e as disciplinas escolhidas (`subjectAreaIds`) -, e as de quem ensina vêm das
+  disciplinas que ensina; um docente não tem curso no perfil. É o que faz quem está em Gestão
+  Hoteleira encontrar um tutor de Turismo sem ter escolhido essa cadeira, e o que separa
+  Aeronáutica de Energias Renováveis (eram a mesma área). Quem ainda não escolheu curso nem
+  disciplinas não fica sem deck: sem sinal nenhum, a lista volta a mostrar toda a gente - "não sei o
+  que procuras" não é razão para não mostrar nada. A **pesquisa** fica de fora do filtro de
+  propósito: é um diretório, e esconder lá quem não é match tornava impossível encontrar uma
+  pessoa pelo nome. A decisão inteira é uma função pura e exportada (`rankCandidates`) precisamente
+  por ser invisível: a lista continua a aparecer, só por outra ordem. E porque a ordem não chega para quem olha para um cartão, as disciplinas que eu
   procuro ficam **destacadas e à frente** das outras em `CandidateCard`/`StudentCard` (via
   `highlight`, o novo modo não interativo do `TagProfile`): nas duas que cabem, podem ser justamente
   as que não me dizem nada.
@@ -1572,9 +1588,14 @@ parte da app.
   por isso ele informa muito menos do que informava a vermelho. O quadrado, esse, ganhou com a
   troca: sobre o cabeçalho, a ameixa suave separa-se mais (1,19:1) do que o cinzento que lá estava
   (1,05:1).
-- **Materiais por link, não por upload de ficheiro** - o projeto não usa Firebase Storage
-  (exige plano Blaze/pago); um material é um link externo (Google Drive, YouTube…) partilhado
-  numa conversa. Pela mesma razão, fotos de perfil são guardadas em base64 diretamente no
+- **Materiais por link ou por documento até 10 MB** - o projeto não usa Firebase Storage (exige
+  plano Blaze/pago). Um material é um link externo (Google Drive, YouTube…) **ou** um documento
+  escolhido do telemóvel, guardado em blocos na subcoleção `conversations/{id}/attachments` e
+  referenciado na mensagem só pelos metadados - se o base64 fosse para dentro da mensagem, a lista
+  de Materiais (que lê as últimas mensagens de todas as conversas) descarregava megabytes por
+  linha. O limite de 1 MiB por documento do Firestore obriga a dividir o base64 em blocos de
+  700 KB (`src/lib/attachment-chunks.ts`); abrir o anexo volta a juntá-los. Acima de 10 MB, o
+  caminho é o link. Pela mesma razão, fotos de perfil são guardadas em base64 diretamente no
   Firestore, redimensionadas no dispositivo para 400px (`src/lib/storage.ts`).
 - **Só links http/https** - `Linking.openURL` abre o que lhe derem, e o URL vem de outro
   utilizador; esquemas arbitrários (`intent://`, `file://`) seriam um caminho para lançar outra
@@ -1808,11 +1829,11 @@ confirmado** e o **perfil completo** - para o revisor ver a app e não o assiste
 | `demo@iseclisboa.pt` | **Tutor** (`professor`, modo `teach`) | o lado de quem ensina: tutorandos para si, pedidos de conexão a chegar, sessões |
 | `aluno.demo@alunos.iseclisboa.pt` | **Tutorando** (`student`, modo `both`) | o deck de descoberta inteiro, e as duas metades (aprende e ensina) |
 
-> **A conta de Tutor tem um defeito conhecido.** Quem só ensina e **não tem nenhum pedido pendente**
-> não vê lista nenhuma: cai no `BlockedScreen`, com o título "Funcionalidade bloqueada". É o
-> candidato mais provável ao *"such as Matches"* que a revisão da 1.0 (10) devolveu. Ver o aviso
-> nas notas de revisão do `STORE.md` - e é coisa para arrumar na próxima versão, porque numa app
-> aberta este ecrã aparece a qualquer tutor novo.
+> **A conta de Tutor começa sem pedidos.** Quem só ensina e **não tem nenhum pedido pendente** não
+> vê lista nenhuma: o separador mostra o estado "Não há matches por aceitar". É o candidato mais
+> provável ao *"such as Matches"* que a revisão da 1.0 (10) devolveu. Ver o aviso nas notas de
+> revisão do `STORE.md`; para o revisor ver a lista preenchida, o caminho é dar a essa conta um
+> pedido pendente de outra pessoa.
 
 **A palavra-passe não está aqui, e não pode estar**: este repositório é público. É a que foi passada
 em `--password` no dia em que cada conta nasceu, e escreve-se nos dois sítios onde os revisores a vão

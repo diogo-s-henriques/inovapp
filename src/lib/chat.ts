@@ -228,28 +228,6 @@ export async function sendMessage(
   });
 }
 
-/** Deixa um cartão de pedido de sessão na conversa (ver SessionRequestCard), com estado ao vivo
- * lido a partir de sessionRequests/{requestId} - não crítico, ver src/app/session-request.tsx. */
-export async function sendSessionRequestMessage(
-  conversationId: string,
-  fromUid: string,
-  toUid: string,
-  sessionRequest: ChatSessionRequestInfo,
-): Promise<void> {
-  await addDoc(collection(db, 'conversations', conversationId, 'messages'), {
-    text: '',
-    senderId: fromUid,
-    createdAt: serverTimestamp(),
-    sessionRequest,
-  });
-
-  await updateDoc(doc(db, 'conversations', conversationId), {
-    lastMessage: `📅 Pedido de sessão: ${sessionRequest.subject}`,
-    lastMessageAt: serverTimestamp(),
-    unreadFor: arrayUnion(toUid),
-  });
-}
-
 /**
  * O Chat só desbloqueia depois de o pedido de conexão ser aceite (ver src/lib/requests.ts).
  * As regras do Firestore negam a leitura quando o documento ainda não existe (não está nos

@@ -334,8 +334,8 @@ describe('matchesView - o que o ecrã dos Matches mostra', () => {
     );
   });
 
-  it('quem só ensina e não tem pedidos vê a explicação, não a lista vazia', () => {
-    assert.equal(matchesView({ ...SO_ENSINA, loading: true, loadError: false, requestCount: 0 }), 'blocked');
+  it('quem só ensina e não tem pedidos vê "Não há matches por aceitar", não a lista vazia', () => {
+    assert.equal(matchesView({ ...SO_ENSINA, loading: true, loadError: false, requestCount: 0 }), 'teachOnly');
   });
 
   it('a ler, mostra o carregamento', () => {
@@ -428,6 +428,32 @@ describe('rankCandidates - a ordem do deck de descoberta', () => {
     ];
 
     assert.deepEqual(ids(rankCandidates(candidatos, eu)), ['novo', 'antigo', 'nada']);
+  });
+
+  it('a área de interesse manda antes da disciplina exata', () => {
+    // O curso de Gestão Hoteleira dá Turismo e Gestão, e a disciplina escolhida acrescenta Turismo
+    // (que já lá estava). O primeiro candidato ensina a disciplina exata que procuro (1 área, 1
+    // disciplina); o segundo não ensina nenhuma delas, mas cobre as duas áreas (2 áreas). Com a
+    // área à frente, é o segundo que sobe - era o contrário quando a disciplina mandava.
+    const candidatos = [
+      candidato('disciplina-exata', ['Turismo']),
+      candidato('duas-areas', ['Economia', 'Protocolo e Eventos']),
+    ];
+
+    assert.deepEqual(
+      ids(rankCandidates(candidatos, ['Turismo'], 'Licenciatura em Gestão Hoteleira')),
+      ['duas-areas', 'disciplina-exata'],
+    );
+  });
+
+  it('o curso sozinho já ordena, mesmo sem disciplinas escolhidas', () => {
+    // Quem não escolheu disciplinas não fica sem sinal: o curso diz as áreas.
+    const candidatos = [candidato('fisica', ['Física']), candidato('gestao', ['Economia'])];
+
+    assert.deepEqual(
+      ids(rankCandidates(candidatos, [], 'Licenciatura em Gestão Hoteleira')),
+      ['gestao', 'fisica'],
+    );
   });
 
   it('não muda a lista que recebe', () => {

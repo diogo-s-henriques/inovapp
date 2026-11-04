@@ -37,6 +37,7 @@ export default function SearchScreen() {
   const filterSheetRef = useRef<BottomSheetModal>(null);
   const user = useAuthStore((state) => state.user);
   const learningSubjects = useAuthStore((state) => state.profile?.learningSubjects ?? []);
+  const courseName = useAuthStore((state) => state.profile?.course?.name);
 
   const filterGroups = useMemo<FilterGroup[]>(
     () => [{ id: 'subjects', title: i18n.filterSheet.subjectsGroupTitle, options: SUBJECT_OPTIONS }],
@@ -76,7 +77,9 @@ export default function SearchScreen() {
         if (cancelled) return;
         setAddedIds((current) => Array.from(new Set([...current, ...excludeIds])));
 
-        const candidates = await fetchTutorCandidates({ currentUid: user.uid, learningSubjects });
+        // A pesquisa mostra o diretório todo - o filtro por área é só do deck dos Matches. O curso
+        // entra na ordenação para os resultados mais próximos ficarem à frente.
+        const candidates = await fetchTutorCandidates({ currentUid: user.uid, learningSubjects, courseName });
         if (cancelled) return;
         setTutors(
           candidates.map((candidate) => ({

@@ -13,7 +13,8 @@ export interface SessionListItemProps extends ViewProps {
   firstName: string;
   lastName: string;
   image?: string;
-  subject: string;
+  /** Ausente nos pedidos novos, que já não perguntam a disciplina. */
+  subject?: string;
   modality: SessionModality;
   // Nomeado `sessionRole` (e não `role`) porque `ViewProps` já tem um `role` de acessibilidade.
   sessionRole: SessionRole; // papel do utilizador nesta sessão (ver src/types/session.ts)
@@ -63,7 +64,7 @@ export function SessionListItem({
           {firstName} {lastName}
         </ThemedText>
         <ThemedText type="small" themeColor="textMuted" numberOfLines={1}>
-          {subject} · {modality}
+          {subject ? `${subject} · ${modality}` : modality}
         </ThemedText>
         <Pill size="xs" style={[styles.rolePill, { backgroundColor: theme.primarySoft }]}>
           <ThemedText type="small" themeColor="primary">

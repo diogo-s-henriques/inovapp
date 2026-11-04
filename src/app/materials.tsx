@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
 import { useAuthStore } from '@/auth/store';
+import { openAttachment } from '@/lib/attachments';
 import { subscribeToSharedMaterials } from '@/lib/materials';
 import { goBack } from '@/lib/navigation';
 import { dateLocaleTag } from '@/lib/time';
-import { isHttpUrl } from '@/lib/url';
 import { useLocaleStore } from '@/i18n/store';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
@@ -26,8 +26,8 @@ function formatDateShort(date: Date | undefined, locale: 'pt' | 'en'): string {
   return date.toLocaleDateString(dateLocaleTag(locale), { day: '2-digit', month: 'short' });
 }
 
-// Só vê os materiais (anexos) já trocados nas conversas do utilizador - não há partilha
-// "para todos" nem upload real (ver src/lib/materials.ts).
+// Só vê os materiais (links ou documentos) já trocados nas conversas do utilizador - não há
+// partilha "para todos" (ver src/lib/materials.ts).
 export default function MaterialsScreen() {
   const theme = useTheme();
   const i18n = useI18n();
@@ -61,13 +61,10 @@ export default function MaterialsScreen() {
     return materials;
   }, [materials, filter]);
 
-  // Só abre links http/https: o URL foi escrito por outro utilizador (ver src/lib/url.ts).
+  // Links http/https são validados dentro de `openAttachment` (o URL foi escrito por outro
+  // utilizador); os documentos guardados são lidos do Firestore e abertos no menu do sistema.
   const handleOpen = (material: SharedMaterial) => {
-    if (!isHttpUrl(material.fileUrl)) {
-      Alert.alert(i18n.materials.invalidLink);
-      return;
-    }
-    Linking.openURL(material.fileUrl).catch(() => Alert.alert(i18n.materials.invalidLink));
+    openAttachment(material.conversationId, material).catch(() => Alert.alert(i18n.materials.openError));
   };
 
   return (

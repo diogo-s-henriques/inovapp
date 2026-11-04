@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { fetchBlockedPairs, fetchBlockedUids } from '@/lib/blocking';
 import { roleLabel } from '@/lib/roles';
 import { canTeach, type AccountRole } from '@/constants/auth';
-import { subjectAreaOf } from '@/constants/profile';
+import { courseAreaIds, interestAreaIds, subjectAreaIds } from '@/constants/profile';
 import type { CourseSelection } from '@/types/profile';
 import type { MatchCandidate } from '@/types/match';
 
@@ -66,41 +66,69 @@ function overlapScore(candidate: MatchCandidate, learningSubjects: string[]): nu
 }
 
 /**
- * Quantas **áreas** os dois têm em comum, contando cada área uma só vez.
+ * Quantas **áreas de interesse** os dois partilham, contando cada área uma só vez.
  *
- * É o desempate do `rankCandidates`: quem ensina Matemática e Estatística e procura Cálculo tem 1
- * disciplina em comum com um tutor de Cálculo e 0 com um de Física, e isso decide a ordem. Mas
- * dois tutores de Cálculo empatam, e aí vale a pena subir quem está mais perto do que se procura - o
- * de Matemática e Estatística, não o de Física que por acaso também dá Cálculo.
+ * É o sinal principal do match: as áreas de quem procura vêm do curso e das disciplinas escolhidas
+ * (`interestAreaIds`), e as de quem ensina vêm das disciplinas que ensina. Quem está em Gestão
+ * Hoteleira interessa-se por Turismo e por Gestão - e encontra um tutor de Turismo mesmo que nenhuma
+ * das cadeiras escolhidas seja exatamente essa.
+ *
+ * O curso só entra do lado de quem procura: um docente não tem curso no perfil, e as disciplinas
+ * que ensina já dizem a que áreas pertence.
  *
  * Disciplinas que já não estão na lista (perfis antigos) não contam para áreas - continuam a contar
- * para a disciplina, que é informação exata.
+ * para a disciplina, que é informação exata (ver `overlapScore`).
  */
-function areaOverlapScore(candidate: MatchCandidate, learningSubjects: string[]): number {
-  const minhasAreas = new Set(
-    learningSubjects.map(subjectAreaOf).flatMap((area) => (area ? [area.id] : [])),
-  );
-  const areasDoCandidato = new Set(candidate.subjects.map(subjectAreaOf).flatMap((area) => (area ? [area.id] : [])));
+function areaOverlapScore(candidate: MatchCandidate, interestAreas: string[]): number {
+  if (interestAreas.length === 0) return 0;
 
-  let comuns = 0;
-  areasDoCandidato.forEach((id) => {
-    if (minhasAreas.has(id)) comuns += 1;
-  });
-  return comuns;
+  const minhasAreas = new Set(interestAreas);
+  return subjectAreaIds(candidate.subjects).filter((id) => minhasAreas.has(id)).length;
 }
 
 /**
- * A ordem do deck de descoberta: primeiro quem partilha mais disciplinas, depois quem partilha mais
- * áreas. Ninguém é excluído por não partilhar nada - quem ensina aparece sempre, só que em baixo.
+ * A ordem do deck de descoberta: primeiro quem partilha mais áreas de interesse, depois quem
+ * partilha mais disciplinas exatas. A área manda porque é o critério do produto (o deck é "por área
+ * de interesse"); a disciplina é o desempate fino entre dois tutores da mesma área.
  *
  * É uma função pura (e exportada) para poder ser testada sem Firestore: a ordenação é o sinal de
  * match todo, e uma troca de critérios aqui é invisível (lista continua a aparecer, por outra ordem).
  */
-export function rankCandidates(candidates: MatchCandidate[], learningSubjects: string[]): MatchCandidate[] {
+export function rankCandidates(
+  candidates: MatchCandidate[],
+  learningSubjects: string[],
+  courseName?: string,
+): MatchCandidate[] {
+  const areas = interestAreaIds(learningSubjects, courseName);
+
   return [...candidates].sort((a, b) => {
-    const porDisciplina = overlapScore(b, learningSubjects) - overlapScore(a, learningSubjects);
-    return porDisciplina !== 0 ? porDisciplina : areaOverlapScore(b, learningSubjects) - areaOverlapScore(a, learningSubjects);
+    const porArea = areaOverlapScore(b, areas) - areaOverlapScore(a, areas);
+    if (porArea !== 0) return porArea;
+    return overlapScore(b, learningSubjects) - overlapScore(a, learningSubjects);
   });
+}
+
+/**
+ * Se vale a pena filtrar a descoberta: sem curso e sem disciplinas não há sinal nenhum, e mostrar
+ * toda a gente é melhor do que mostrar ninguém.
+ */
+function hasInterestSignal(learningSubjects: string[], courseName?: string): boolean {
+  return learningSubjects.length > 0 || courseAreaIds(courseName).length > 0;
+}
+
+/**
+ * Se o candidato pertence a alguma das áreas de interesse (ou ensina uma disciplina exata pedida).
+ *
+ * A segunda metade da condição é para os perfis antigos: uma disciplina que já saiu da lista não
+ * tem área, mas continua a ser exatamente a disciplina que a pessoa procura - excluí-la seria
+ * perder o único sinal que existe.
+ */
+function isInterestMatch(
+  candidate: MatchCandidate,
+  learningSubjects: string[],
+  interestAreas: string[],
+): boolean {
+  return overlapScore(candidate, learningSubjects) > 0 || areaOverlapScore(candidate, interestAreas) > 0;
 }
 
 /**
@@ -114,6 +142,14 @@ export function rankCandidates(candidates: MatchCandidate[], learningSubjects: s
 export async function fetchTutorCandidates(params: {
   currentUid: string;
   learningSubjects: string[];
+  /** Curso de quem procura: entra nas áreas de interesse (ver `interestAreaIds`). */
+  courseName?: string;
+  /**
+   * Só devolver quem partilha uma área (ou uma disciplina exata). É o que o deck dos Matches pede;
+   * a pesquisa **não**, porque um diretório em que não se encontra quem se procura por nome não é
+   * uma pesquisa.
+   */
+  matchInterest?: boolean;
   excludeIds?: Set<string>;
 }): Promise<MatchCandidate[]> {
   const snapshot = await getDocs(
@@ -130,7 +166,15 @@ export async function fetchTutorCandidates(params: {
     .filter(({ data }) => canTeach(data.role))
     .map(({ uid, data }) => toCandidate(uid, data));
 
-  return rankCandidates(candidates, params.learningSubjects);
+  const ranked = rankCandidates(candidates, params.learningSubjects, params.courseName);
+  if (!params.matchInterest || !hasInterestSignal(params.learningSubjects, params.courseName)) {
+    return ranked;
+  }
+
+  // As áreas de quem procura são as mesmas que ordenaram a lista - o filtro e a ordem não podem
+  // discordar sobre o que é um match.
+  const areas = interestAreaIds(params.learningSubjects, params.courseName);
+  return ranked.filter((candidate) => isInterestMatch(candidate, params.learningSubjects, areas));
 }
 
 export async function fetchCandidateById(uid: string): Promise<MatchCandidate | null> {
@@ -303,7 +347,7 @@ export async function getPassedCandidateIds(): Promise<string[]> {
   }
 }
 
-export type MatchesView = 'blocked' | 'requests' | 'loading' | 'error' | 'list';
+export type MatchesView = 'teachOnly' | 'requests' | 'loading' | 'error' | 'list';
 
 /**
  * Que vista o ecrã dos Matches deve mostrar.
@@ -315,7 +359,7 @@ export type MatchesView = 'blocked' | 'requests' | 'loading' | 'error' | 'list';
  * girar para sempre, com os pedidos de conexão que a pessoa tem por decidir escondidos atrás dele.
  *
  * Aqui a regra é explícita: quem não pode aprender **nunca** está a carregar. Se tem pedidos,
- * mostra-os; se não tem, mostra a explicação de porque não há lista.
+ * mostra-os; se não tem, mostra o estado próprio de quem só ensina ("Não há matches por aceitar").
  */
 export function matchesView(params: {
   canLearn: boolean;
@@ -323,7 +367,7 @@ export function matchesView(params: {
   loadError: boolean;
   requestCount: number;
 }): MatchesView {
-  if (!params.canLearn) return params.requestCount > 0 ? 'requests' : 'blocked';
+  if (!params.canLearn) return params.requestCount > 0 ? 'requests' : 'teachOnly';
   if (params.loading) return 'loading';
   if (params.loadError) return 'error';
   return 'list';

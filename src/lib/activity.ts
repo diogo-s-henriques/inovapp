@@ -24,7 +24,7 @@ export async function fetchRecentActivity(uid: string, i18n: Translations): Prom
 
   const tomorrowKey = toDateKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
 
-  const [connectionsSnap, sessionRequestsSnap, sessionsSnap] = await Promise.all([
+  const [connectionsSnap, sessionRequestsSnap, declinedSessionRequestsSnap, sessionsSnap] = await Promise.all([
     getDocs(
       query(
         collection(db, 'connectionRequests'),
@@ -40,6 +40,16 @@ export async function fetchRecentActivity(uid: string, i18n: Translations): Prom
         collection(db, 'sessionRequests'),
         where('from', '==', uid),
         where('status', '==', 'accepted'),
+        orderBy('respondedAt', 'desc'),
+        limit(RECENT_LIMIT),
+      ),
+    ),
+    // Recusas também são uma resposta: quem pediu tem de saber que não ficou à espera para nada.
+    getDocs(
+      query(
+        collection(db, 'sessionRequests'),
+        where('from', '==', uid),
+        where('status', '==', 'declined'),
         orderBy('respondedAt', 'desc'),
         limit(RECENT_LIMIT),
       ),
@@ -78,7 +88,21 @@ export async function fetchRecentActivity(uid: string, i18n: Translations): Prom
       id: `session-request-${docSnap.id}`,
       kind: 'session-accepted',
       title: i18n.notifications.requestAcceptedTitle,
-      description: i18n.notifications.sessionAccepted(profile?.firstName ?? i18n.common.user, data.subject),
+      description: i18n.notifications.sessionAccepted(profile?.firstName ?? i18n.common.user),
+      timestamp: respondedAt,
+    });
+  }
+
+  for (const docSnap of declinedSessionRequestsSnap.docs) {
+    const data = docSnap.data();
+    const respondedAt = data.respondedAt?.toDate();
+    if (!respondedAt) continue;
+    const profile = await resolveProfile(data.to);
+    items.push({
+      id: `session-request-${docSnap.id}`,
+      kind: 'session-declined',
+      title: i18n.notifications.sessionDeclinedTitle,
+      description: i18n.notifications.sessionDeclined(profile?.firstName ?? i18n.common.user),
       timestamp: respondedAt,
     });
   }
@@ -92,7 +116,7 @@ export async function fetchRecentActivity(uid: string, i18n: Translations): Prom
       id: `session-tomorrow-${docSnap.id}`,
       kind: 'session-tomorrow',
       title: i18n.notifications.sessionTomorrowTitle,
-      description: i18n.notifications.sessionTomorrow(data.subject, profile?.firstName ?? i18n.common.user, data.time),
+      description: i18n.notifications.sessionTomorrow(profile?.firstName ?? i18n.common.user, data.time),
       // Sem uma hora de criação real de "lembrete", usa-se agora - o que importa é aparecer
       // no topo da lista enquanto a sessão continuar marcada para amanhã.
       timestamp: new Date(),

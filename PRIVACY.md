@@ -62,8 +62,9 @@ para venda, e não se recolhe localização, contactos, microfone, câmara nem d
 **Da atividade na aplicação**
 
 - pedidos de conexão e de sessão (quem pediu, a quem, em que estado);
-- sessões marcadas (participantes, disciplina, data, hora, modalidade);
+- sessões marcadas (participantes, data, hora, modalidade);
 - mensagens trocadas entre pessoas ligadas;
+- documentos anexados às conversas (até 10 MB), guardados em blocos com a conversa a que pertencem;
 - avaliações das sessões - **anónimas por construção**: a avaliação de uma sessão não guarda quem a
   escreveu, só a sessão a que se refere;
 - bloqueios entre utilizadores.
@@ -109,8 +110,8 @@ Perfil → Definições → **Apagar conta**. É imediato e definitivo; não é 
 
 Com a conta desaparecem: o perfil (nome, fotografia, curso, interesses, apresentação), os dados da
 conta (email institucional e registos de entrada), os registos de avisos do telemóvel, os bloqueios
-que a pessoa fez, os pedidos de conexão e de sessão, as sessões marcadas, as conversas e as
-mensagens que ela escreveu.
+que a pessoa fez, os pedidos de conexão e de sessão, as sessões marcadas, as conversas, as
+mensagens e os documentos que ela escreveu ou anexou.
 
 Ficam, e explica-se por quê:
 

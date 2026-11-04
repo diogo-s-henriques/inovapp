@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +18,7 @@ import { IconSize, Spacing } from '@/constants/theme';
 import { BackButton } from '@/components/ui/BackButton';
 import { useAuthStore } from '@/auth/store';
 import { CHAT_MESSAGE_PAGE_SIZE, markConversationRead, sendMessage, subscribeToMessages } from '@/lib/chat';
+import { openAttachment, storeDocument, type PickedDocument } from '@/lib/attachments';
 import { goBack } from '@/lib/navigation';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/hooks/use-theme';
@@ -92,15 +94,25 @@ export default function ConversationScreen() {
     }
   };
 
+  // As falhas sobem para o AttachFileSheet, que as mostra dentro do formulário: a folha fica
+  // aberta com o erro ao lado do botão, em vez de fechar e deixar um aviso no rodapé do chat.
   const handleSendAttachment = async (attachment: ChatAttachment) => {
     if (!user) return;
-    setSendError(false);
-    try {
-      await sendMessage(id, user.uid, otherUid, '', attachment);
-      attachSheetRef.current?.dismiss();
-    } catch {
-      setSendError(true);
-    }
+    await sendMessage(id, user.uid, otherUid, '', attachment);
+    attachSheetRef.current?.dismiss();
+  };
+
+  const handleSendDocument = async (document: PickedDocument) => {
+    if (!user) return;
+    // Duas escritas de propósito: primeiro o ficheiro, depois a mensagem que lhe aponta (ver
+    // src/lib/attachments.ts). Se a mensagem falhar, o anexo fica inalcançável - nunca o contrário.
+    const attachment = await storeDocument(id, user.uid, document);
+    await sendMessage(id, user.uid, otherUid, '', attachment);
+    attachSheetRef.current?.dismiss();
+  };
+
+  const handleOpenAttachment = (attachment: ChatAttachment) => {
+    openAttachment(id, attachment).catch(() => Alert.alert(i18n.materials.openError));
   };
 
   // Só salta para o fundo quando chega uma mensagem nova. Quando o que cresceu foi o histórico
@@ -188,7 +200,12 @@ export default function ConversationScreen() {
                 otherImage={image || undefined}
               />
             ) : (
-              <ChatBubble text={item.text} fromMe={item.fromMe} attachment={item.attachment} />
+              <ChatBubble
+                text={item.text}
+                fromMe={item.fromMe}
+                attachment={item.attachment}
+                onOpenAttachment={handleOpenAttachment}
+              />
             )
           }
           ItemSeparatorComponent={() => <View style={styles.bubbleGap} />}
@@ -247,7 +264,11 @@ export default function ConversationScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      <AttachFileSheet ref={attachSheetRef} onSubmit={handleSendAttachment} />
+      <AttachFileSheet
+        ref={attachSheetRef}
+        onSubmit={handleSendAttachment}
+        onSubmitDocument={handleSendDocument}
+      />
     </SafeAreaView>
   );
 }

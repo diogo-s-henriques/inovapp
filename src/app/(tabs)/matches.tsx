@@ -19,7 +19,6 @@ import { respondToConnectionRequest, retryPendingConnectionRequests } from '@/li
 import type { ConnectionRequest } from '@/lib/requests';
 import { useConnectionRequests } from '@/hooks/use-connection-requests';
 import { useTheme } from '@/hooks/use-theme';
-import { BlockedScreen } from '@/components/ui/BlockedScreen';
 import { Button } from '@/components/ui/Button';
 import { SuccessModal } from '@/components/ui/SuccessModal';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -61,9 +60,10 @@ export default function MatchesScreen() {
   const user = useAuthStore((state) => state.user);
   const role = useAuthStore((state) => state.profile?.role);
   const learningSubjects = useAuthStore((state) => state.profile?.learningSubjects ?? []);
+  const courseName = useAuthStore((state) => state.profile?.course?.name);
   // O Match serve para procurar tutor; um docente não tem uso para esta funcionalidade - são os
-  // Tutorandos que o encontram, não o contrário - e por isso vê a vista de bloqueado.
-  const blocked = !canLearn(role);
+  // Tutorandos que o encontram, não o contrário - e por isso vê o estado próprio de quem só ensina.
+  const teachOnly = !canLearn(role);
 
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +77,7 @@ export default function MatchesScreen() {
   const [respondError, setRespondError] = useState(false);
 
   useEffect(() => {
-    if (!user || blocked) return;
+    if (!user || teachOnly) return;
     let cancelled = false;
 
     (async () => {
@@ -87,7 +87,16 @@ export default function MatchesScreen() {
         // passados neste dispositivo (local), para nenhum voltar a aparecer.
         const [excludeIds, passedIds] = await Promise.all([fetchExcludedCandidateIds(user.uid), getPassedCandidateIds()]);
         passedIds.forEach((id) => excludeIds.add(id));
-        const results = await fetchTutorCandidates({ currentUid: user.uid, learningSubjects, excludeIds });
+        // O deck é por área de interesse: o curso e as disciplinas de quem procura (ver
+        // `interestAreaIds` em src/constants/profile.ts) decidem quem é match. A pesquisa fica de
+        // fora deste filtro - é um diretório, não um deck.
+        const results = await fetchTutorCandidates({
+          currentUid: user.uid,
+          learningSubjects,
+          courseName,
+          matchInterest: true,
+          excludeIds,
+        });
         if (cancelled) return;
         setCandidates(results);
         setLoadError(false);
@@ -104,7 +113,7 @@ export default function MatchesScreen() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, blocked, reloadToken]);
+  }, [user?.uid, teachOnly, reloadToken, courseName, learningSubjects]);
 
   // O candidato sai da lista nos dois sentidos: quem passa já não o quer ver, e quem recebeu o
   // pedido também não (a lista já não teria o que fazer com ele, e voltaria a oferecer a mesma
@@ -157,7 +166,7 @@ export default function MatchesScreen() {
 
   // O estado do ecrã, decidido num sítio só (ver `matchesView`): quem só ensina **nunca** está a
   // carregar, mesmo que `loading` tenha ficado preso a true lá atrás.
-  const view = matchesView({ canLearn: !blocked, loading, loadError, requestCount: requests.length });
+  const view = matchesView({ canLearn: !teachOnly, loading, loadError, requestCount: requests.length });
 
   const header = (
     <>
@@ -183,8 +192,8 @@ export default function MatchesScreen() {
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Uma leitura dos pedidos que falhou aparece aqui, acima de qualquer vista (e não só na
-          lista): quem só ensina sem pedidos nenhuns cai na vista de "bloqueado", e era aí que o
-          aviso ficava escondido. */}
+          lista): quem só ensina sem pedidos nenhuns cai no estado "Não há matches por aceitar", e
+          é aí que o aviso não pode ficar escondido. */}
       {requestsError && (
         <RetryNotice
           message={i18n.requests.loadError}
@@ -193,8 +202,19 @@ export default function MatchesScreen() {
         />
       )}
 
-      {view === 'blocked' ? (
-        <BlockedScreen title={i18n.matches.blockedTitle} />
+      {view === 'teachOnly' ? (
+        // Quem só ensina não tem lista de candidatos: o que há para decidir são os pedidos de
+        // conexão, que aparecem por cima quando existem. Sem pedidos, o antigo cadeado com
+        // "Funcionalidade bloqueada" fazia parecer que a app lhe tinha tirado algo - quando o que
+        // falta é só um pedido por aceitar.
+        <View style={styles.centered}>
+          <ThemedText type="bodyBold" style={styles.centeredTitle}>
+            {i18n.matches.noRequestsTitle}
+          </ThemedText>
+          <ThemedText themeColor="textMuted" style={styles.centeredTitle}>
+            {i18n.matches.noRequestsDescription}
+          </ThemedText>
+        </View>
       ) : view === 'loading' ? (
         <View style={styles.centered}>
           <ActivityIndicator color={theme.primary} />
@@ -208,7 +228,7 @@ export default function MatchesScreen() {
         </View>
       ) : (
         <FlatList
-          data={blocked ? [] : candidates}
+          data={teachOnly ? [] : candidates}
           keyExtractor={(candidate) => candidate.id}
           // A cor por trás da lista é a do topo do gradiente: é esta superfície que aparece na
           // faixa que se vê ao puxar a lista para baixo (e a lista, clara, cobre o resto).

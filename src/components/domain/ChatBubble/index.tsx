@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IconSize, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -9,11 +9,13 @@ export interface ChatBubbleProps {
   text: string;
   fromMe: boolean;
   attachment?: ChatAttachment;
+  /** Abrir o anexo: link ou documento (ver src/lib/attachments.ts). */
+  onOpenAttachment?: (attachment: ChatAttachment) => void;
 }
 
 /** Balão de mensagem de chat, alinhado à direita e com destaque quando enviado pelo próprio
- * utilizador. Quando há anexo (link, sem upload real), mostra-o como cartão tocável. */
-export function ChatBubble({ text, fromMe, attachment }: ChatBubbleProps) {
+ * utilizador. Quando há anexo (link ou documento), mostra-o como cartão tocável. */
+export function ChatBubble({ text, fromMe, attachment, onOpenAttachment }: ChatBubbleProps) {
   const theme = useTheme();
   const textColor = fromMe ? theme.onPrimary : theme.textPrimary;
 
@@ -28,7 +30,7 @@ export function ChatBubble({ text, fromMe, attachment }: ChatBubbleProps) {
         ]}>
         {attachment && (
           <Pressable
-            onPress={() => Linking.openURL(attachment.fileUrl)}
+            onPress={() => onOpenAttachment?.(attachment)}
             accessibilityRole="link"
             accessibilityLabel={`Abrir anexo ${attachment.fileName}`}
             style={[styles.attachment, { borderColor: fromMe ? theme.onPrimary : theme.border }]}>

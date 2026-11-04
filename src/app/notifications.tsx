@@ -14,7 +14,12 @@ import { goBack } from '@/lib/navigation';
 import { dateLocaleTag, formatTimeAgo } from '@/lib/time';
 import { retryPendingConnectionRequests, subscribeToAcceptedConnectionRequests } from '@/lib/requests';
 import type { ConnectionResponse } from '@/lib/requests';
-import { respondToSessionRequest, retryPendingSessionRequests } from '@/lib/sessions';
+import {
+  respondToSessionRequest,
+  retryPendingSessionRequests,
+  subscribeToSessionResponses,
+  type SessionResponse,
+} from '@/lib/sessions';
 import { useConnectionRequests } from '@/hooks/use-connection-requests';
 import { useConversations } from '@/hooks/use-conversations';
 import { useSessionRequests } from '@/hooks/use-session-requests';
@@ -46,6 +51,17 @@ function formatDateShort(dateKey: string, locale: 'pt' | 'en'): string {
   return date.toLocaleDateString(dateLocaleTag(locale), { day: '2-digit', month: 'short' });
 }
 
+function formatSessionSubtitle(
+  subject: string | undefined,
+  date: string,
+  time: string,
+  modality: string,
+  locale: 'pt' | 'en',
+): string {
+  const when = `${formatDateShort(date, locale)}, ${time}`;
+  return subject ? `${subject} · ${when} · ${modality}` : `${when} · ${modality}`;
+}
+
 // Lista os pedidos de sessão e de conexão pendentes, agrupados por tipo.
 export default function NotificationsScreen() {
   const theme = useTheme();
@@ -55,6 +71,7 @@ export default function NotificationsScreen() {
   const user = useAuthStore((state) => state.user);
   const role = useAuthStore((state) => state.profile?.role);
   const learningSubjects = useAuthStore((state) => state.profile?.learningSubjects ?? []);
+  const courseName = useAuthStore((state) => state.profile?.course?.name);
   const [suggestions, setSuggestions] = useState<MatchCandidate[]>([]);
   const { requests: connectionRequests, error: connectionRequestsError } = useConnectionRequests();
   const { requests: sessionRequests, error: sessionRequestsError } = useSessionRequests();
@@ -64,6 +81,7 @@ export default function NotificationsScreen() {
   // As respostas aos pedidos que **eu** enviei, ao vivo (ver `subscribeToAcceptedConnectionRequests`):
   // o histórico é uma leitura pontual, e quem pede só sabia da resposta ao voltar a este ecrã.
   const [responses, setResponses] = useState<ConnectionResponse[]>([]);
+  const [sessionResponses, setSessionResponses] = useState<SessionResponse[]>([]);
   const [sharedMaterials, setSharedMaterials] = useState<SharedMaterial[]>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +89,12 @@ export default function NotificationsScreen() {
   useEffect(() => {
     if (!user) return;
     return subscribeToAcceptedConnectionRequests(user.uid, setResponses);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribeToSessionResponses(user.uid, setSessionResponses);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
@@ -98,7 +122,14 @@ export default function NotificationsScreen() {
       try {
         const excludeIds = await fetchExcludedCandidateIds(user.uid);
         if (cancelled) return;
-        const candidates = await fetchTutorCandidates({ currentUid: user.uid, learningSubjects, excludeIds });
+        const candidates = await fetchTutorCandidates({
+          currentUid: user.uid,
+          learningSubjects,
+          courseName,
+          // As sugestões são do mesmo deck dos Matches: só gente das áreas de interesse.
+          matchInterest: true,
+          excludeIds,
+        });
         if (!cancelled) setSuggestions(candidates.slice(0, SUGGESTIONS_LIMIT));
       } catch {
         if (!cancelled) setSuggestions([]);
@@ -130,6 +161,18 @@ export default function NotificationsScreen() {
     timestamp: response.respondedAt,
   }));
 
+  const sessionResponseItems: ActivityItem[] = sessionResponses.map((response) => ({
+    id: `session-request-${response.id}`,
+    kind: response.accepted ? 'session-accepted' : 'session-declined',
+    title: response.accepted
+      ? i18n.notifications.requestAcceptedTitle
+      : i18n.notifications.sessionDeclinedTitle,
+    description: response.accepted
+      ? i18n.notifications.sessionAccepted(response.firstName || i18n.common.user)
+      : i18n.notifications.sessionDeclined(response.firstName || i18n.common.user),
+    timestamp: response.respondedAt,
+  }));
+
   const materialItems: ActivityItem[] = sharedMaterials
     .filter((material) => !material.fromMe)
     .slice(0, 5)
@@ -144,7 +187,9 @@ export default function NotificationsScreen() {
     );
 
   const recentById = new Map<string, ActivityItem>();
-  for (const item of [...activity, ...responseItems, ...materialItems]) recentById.set(item.id, item);
+  for (const item of [...activity, ...responseItems, ...sessionResponseItems, ...materialItems]) {
+    recentById.set(item.id, item);
+  }
   const recentItems = [...recentById.values()]
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
     .slice(0, RECENT_LIMIT);
@@ -243,7 +288,7 @@ export default function NotificationsScreen() {
                 key={request.id}
                 firstName={request.firstName}
                 lastName={request.lastName}
-                subtitle={`${request.subject} · ${formatDateShort(request.date, locale)}, ${request.time} · ${request.modality}`}
+                subtitle={formatSessionSubtitle(request.subject, request.date, request.time, request.modality, locale)}
                 message={request.message || undefined}
                 timeAgo={request.createdAt ? formatTimeAgo(request.createdAt, i18n.common.now) : undefined}
                 image={request.image}

@@ -289,6 +289,78 @@ service cloud.firestore {
       // inalcançáveis, porque é a conversa que a regra abaixo lê para deixar ler lá dentro.)
       allow delete: if isVerified() && request.auth.uid in resource.data.participants;
 
+      // Documentos anexados à conversa (ver src/lib/attachments.ts). O base64 vive aqui, e não
+      // dentro da mensagem, para que a lista de Materiais - que lê as últimas mensagens de todas
+      // as conversas - continue a ler só metadados. Um documento até 10 MB é um cabeçalho (nome,
+      // tipo, tamanho e número de blocos) + blocos de 700 KB; o limite antigo de 600 KB continua
+      // aceite para as instalações que ainda não atualizaram. Os limites do cliente estão
+      // repetidos aqui: um cliente alterado não pode encher o Firestore com lixo.
+      //
+      // A leitura é dos dois participantes, e cai quando há um bloqueio - a mesma regra das
+      // mensagens. Apagar é só de quem enviou: ninguém apaga o material do outro.
+      match /attachments/{attachmentId} {
+        allow read: if isVerified()
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          && !isBlocked(
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants[0],
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants[1]);
+        allow create: if isVerified()
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          && !isBlocked(
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants[0],
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants[1])
+          && (
+            // Cabeçalho do documento: sem conteúdo, só metadados e o número de blocos.
+            (
+              request.resource.data.keys().hasOnly(['senderId', 'fileName', 'mimeType', 'size', 'chunkCount', 'createdAt'])
+              && request.resource.data.fileName is string
+              && request.resource.data.fileName.size() > 0
+              && request.resource.data.fileName.size() <= 200
+              && request.resource.data.mimeType is string
+              && request.resource.data.mimeType.size() > 0
+              && request.resource.data.size is int
+              && request.resource.data.size > 0
+              && request.resource.data.size <= 10485760
+              && request.resource.data.chunkCount is int
+              && request.resource.data.chunkCount > 0
+              && request.resource.data.chunkCount <= 32
+            )
+            ||
+            // Bloco do documento: 700 000 caracteres, abaixo do 1 MiB por documento.
+            (
+              request.resource.data.keys().hasOnly(['senderId', 'attachmentId', 'chunkIndex', 'contentBase64', 'createdAt'])
+              && request.resource.data.attachmentId is string
+              && request.resource.data.attachmentId.size() > 0
+              && request.resource.data.attachmentId.size() <= 200
+              && request.resource.data.chunkIndex is int
+              && request.resource.data.chunkIndex >= 0
+              && request.resource.data.chunkIndex < 32
+              && request.resource.data.contentBase64 is string
+              && request.resource.data.contentBase64.size() > 0
+              && request.resource.data.contentBase64.size() <= 720000
+            )
+            ||
+            // Formato antigo, de 600 KB num documento só - para quem ainda não atualizou.
+            (
+              request.resource.data.keys().hasOnly(['senderId', 'fileName', 'mimeType', 'size', 'contentBase64', 'createdAt'])
+              && request.resource.data.fileName is string
+              && request.resource.data.fileName.size() > 0
+              && request.resource.data.fileName.size() <= 200
+              && request.resource.data.mimeType is string
+              && request.resource.data.mimeType.size() > 0
+              && request.resource.data.size is int
+              && request.resource.data.size > 0
+              && request.resource.data.size <= 614400
+              && request.resource.data.contentBase64 is string
+              && request.resource.data.contentBase64.size() > 0
+              && request.resource.data.contentBase64.size() <= 830000
+            )
+          );
+        allow delete: if isVerified() && resource.data.senderId == request.auth.uid;
+        allow update: if false;
+      }
+
       match /messages/{messageId} {
         // Um bloqueio entre os dois participantes corta a conversa para ambos: ninguém lê nem
         // escreve mais nada ali. O histórico não é apagado (nada neste projeto apaga), fica

@@ -84,11 +84,13 @@ export class FirestoreError extends Error {}
 export class Timestamp {}
 
 export const addDoc = naoUsadoNestesTestes('addDoc');
+export const arrayUnion = naoUsadoNestesTestes('arrayUnion');
 export const collection = naoUsadoNestesTestes('collection');
 export const getDocs = naoUsadoNestesTestes('getDocs');
 export const updateDoc = naoUsadoNestesTestes('updateDoc');
 export const writeBatch = naoUsadoNestesTestes('writeBatch');
 export const onSnapshot = naoUsadoNestesTestes('onSnapshot');
 export const limit = naoUsadoNestesTestes('limit');
+export const orderBy = naoUsadoNestesTestes('orderBy');
 export const query = naoUsadoNestesTestes('query');
 export const where = naoUsadoNestesTestes('where');

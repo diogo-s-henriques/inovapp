@@ -26,7 +26,7 @@ export interface SubjectPickerSheetProps {
 /**
  * Menu deslizante para adicionar disciplinas à variante 'picker' de SubjectsField.
  *
- * São ~80 disciplinas em 12 áreas: sem pesquisa, isto era uma parede de etiquetas para percorrer a
+ * São quase 90 disciplinas em 13 áreas: sem pesquisa, isto era uma parede de etiquetas para percorrer a
  * olho. A pesquisa (sem acentos, ver src/lib/text.ts) é o caminho normal, e os cabeçalhos de área
  * ficam para quem prefere navegar - por isso uma pesquisa que não encontra nada desaparece com as
  * áreas dela, em vez de deixar doze secções vazias.

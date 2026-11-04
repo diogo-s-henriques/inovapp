@@ -1,21 +1,23 @@
-import { addDoc, collection, doc, onSnapshot, query, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { arrayUnion, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
 
 import { db } from '@/lib/firebase';
 import { createLiveQuery } from '@/lib/live-query';
-import { createProfileResolver } from '@/lib/matching';
+import { createProfileResolver, matchId } from '@/lib/matching';
 import { toSessionKey } from '@/lib/time';
+import type { ChatSessionRequestInfo } from '@/types/chat';
 import type { AgendaSession, SessionModality, SessionRequest, SessionStatus } from '@/types/session';
 
 interface SessionRequestDoc {
   from: string;
   to: string;
-  subject: string;
+  subject?: string;
   date: string;
   time: string;
   modality: SessionModality;
   message: string;
   status: 'pending' | 'accepted' | 'declined';
   createdAt?: Timestamp;
+  respondedAt?: Timestamp;
 }
 
 interface SessionDoc {
@@ -23,7 +25,7 @@ interface SessionDoc {
   studentUid: string;
   mentorUid: string;
   sessionRequestId: string;
-  subject: string;
+  subject?: string;
   date: string;
   time: string;
   modality: SessionModality;
@@ -32,11 +34,17 @@ interface SessionDoc {
 }
 
 export interface NewSessionRequestData {
-  subject: string;
+  /** Opcional: os pedidos novos não perguntam a disciplina. */
+  subject?: string;
   date: string;
   time: string;
   modality: SessionModality;
   message: string;
+}
+
+export interface SendSessionRequestOptions {
+  /** Deixa também o cartão na conversa, na mesma escrita que o pedido (ver o chat). */
+  attachToChat?: boolean;
 }
 
 /** O que é preciso saber de uma sessão para a contar (ver `summarizeSessions`). */
@@ -62,15 +70,59 @@ export interface SessionStats {
  * ligação já aceite pode pedir (perfil do tutor ou "Marcar sessão" no chat). Quem pede fica
  * "Tutorando" nessa sessão específica; quem recebe fica "Tutor" - no documento, o campo continua a
  * chamar-se `mentorUid`, do tempo em que o papel se chamava assim. */
-export async function sendSessionRequest(fromUid: string, toUid: string, data: NewSessionRequestData): Promise<string> {
-  const ref = await addDoc(collection(db, 'sessionRequests'), {
+export async function sendSessionRequest(
+  fromUid: string,
+  toUid: string,
+  data: NewSessionRequestData,
+  options: SendSessionRequestOptions = {},
+): Promise<string> {
+  const requestRef = doc(collection(db, 'sessionRequests'));
+  const requestData = {
     from: fromUid,
     to: toUid,
-    ...data,
+    date: data.date,
+    time: data.time,
+    modality: data.modality,
+    message: data.message,
+    ...(data.subject ? { subject: data.subject } : {}),
     status: 'pending',
     createdAt: serverTimestamp(),
+  };
+
+  if (!options.attachToChat) {
+    await setDoc(requestRef, requestData);
+    return requestRef.id;
+  }
+
+  // O pedido e o cartão no chat são uma escrita só. Antes eram duas, e uma falha a meio deixava
+  // um pedido criado sem cartão nenhum na conversa - exatamente o que não pode acontecer quando o
+  // cartão é a forma de aceitar. A conversa já existe (só se pede sessão a quem já está ligado).
+  const conversationId = matchId(fromUid, toUid);
+  const sessionRequest: ChatSessionRequestInfo = {
+    requestId: requestRef.id,
+    ...(data.subject ? { subject: data.subject } : {}),
+    date: data.date,
+    time: data.time,
+    modality: data.modality,
+    ...(data.message.trim() ? { message: data.message.trim() } : {}),
+  };
+
+  const batch = writeBatch(db);
+  batch.set(requestRef, requestData);
+  batch.set(doc(collection(db, 'conversations', conversationId, 'messages')), {
+    text: '',
+    senderId: fromUid,
+    createdAt: serverTimestamp(),
+    sessionRequest,
   });
-  return ref.id;
+  batch.update(doc(db, 'conversations', conversationId), {
+    lastMessage: '📅 Pedido de sessão',
+    lastMessageAt: serverTimestamp(),
+    unreadFor: arrayUnion(toUid),
+  });
+  await batch.commit();
+
+  return requestRef.id;
 }
 
 /** Ouve, em tempo real, o estado de um pedido de sessão específico - usado pelo cartão de
@@ -157,6 +209,61 @@ export function retryPendingSessionRequests(): void {
   pendingSessionRequests.retry();
 }
 
+/** Resposta a um pedido que **eu** enviei, para o histórico das Notificações. */
+export interface SessionResponse {
+  id: string;
+  accepted: boolean;
+  /** Nome de quem respondeu (o destinatário do pedido). */
+  firstName: string;
+  respondedAt: Date;
+}
+
+/** Quantas respostas recentes a subscrição traz - a lista final já corta em oito. */
+const SESSION_RESPONSE_LIMIT = 5;
+
+/**
+ * Ouve, ao vivo, as respostas aos pedidos de sessão que **eu** enviei.
+ *
+ * A consulta junta aceites e recusas (`in`), ordenadas por `respondedAt`; o índice composto de
+ * `sessionRequests` (from + status + respondedAt) já cobre os dois casos. Sem isto, quem pedia só
+ * via a resposta ao voltar a abrir as Notificações - e uma recusa nunca aparecia.
+ */
+export function subscribeToSessionResponses(
+  uid: string,
+  onChange: (responses: SessionResponse[]) => void,
+): () => void {
+  const responsesQuery = query(
+    collection(db, 'sessionRequests'),
+    where('from', '==', uid),
+    where('status', 'in', ['accepted', 'declined']),
+    orderBy('respondedAt', 'desc'),
+    limit(SESSION_RESPONSE_LIMIT),
+  );
+  const resolveProfile = createProfileResolver();
+  let latestResponseId = 0;
+
+  return onSnapshot(responsesQuery, async (snapshot) => {
+    const responseId = ++latestResponseId;
+    const resolved = await Promise.all(
+      snapshot.docs.map(async (docSnap): Promise<SessionResponse | null> => {
+        const data = docSnap.data() as SessionRequestDoc;
+        const respondedAt = data.respondedAt?.toDate();
+        if (!respondedAt) return null;
+        const candidate = await resolveProfile(data.to);
+        return {
+          id: docSnap.id,
+          accepted: data.status === 'accepted',
+          firstName: candidate?.firstName ?? '',
+          respondedAt,
+        };
+      }),
+    );
+
+    if (responseId !== latestResponseId) return;
+    onChange(resolved.filter((response): response is SessionResponse => response !== null));
+  });
+}
+
 /** Aceita ou recusa um pedido de sessão. Ao aceitar, cria a sessão confirmada que alimenta a
  * agenda de ambos os participantes. As duas escritas vão no mesmo batch: ou aceitam o pedido E
  * criam a sessão, ou nenhuma das duas acontece - nunca fica um pedido "accepted" sem sessão. */
@@ -174,7 +281,7 @@ export async function respondToSessionRequest(request: SessionRequest, toUid: st
       studentUid: request.fromUid,
       mentorUid: toUid,
       sessionRequestId: request.id,
-      subject: request.subject,
+      subject: request.subject ?? '',
       date: request.date,
       time: request.time,
       modality: request.modality,
@@ -217,7 +324,7 @@ export function subscribeToSessions(uid: string, onChange: (sessions: AgendaSess
           firstName: candidate.firstName,
           lastName: candidate.lastName,
           image: candidate.image,
-          subject: data.subject,
+          subject: data.subject ?? '',
           date: data.date,
           time: data.time,
           modality: data.modality,

@@ -89,13 +89,16 @@ export const DELETION_BATCH_SIZE = 400;
  * o que permite a uma tentativa falhada voltar a correr do princípio.
  */
 export async function deleteAccountData(uid: string): Promise<void> {
-  // 1. As conversas. Por dentro de cada uma, primeiro as mensagens que **esta** pessoa escreveu e
-  //    só depois a conversa: a regra das mensagens exige que a conversa exista, e apagada a
-  //    conversa as que sobrassem ficavam inalcançáveis - e, por isso mesmo, impossíveis de apagar.
+  // 1. As conversas. Por dentro de cada uma, primeiro as mensagens e os documentos que **esta**
+  //    pessoa escreveu, e só depois a conversa: as regras exigem que a conversa exista, e apagada
+  //    a conversa o que sobrasse ficava inalcançável - e, por isso mesmo, impossível de apagar.
   const conversations = await findShared('conversations', uid);
   for (const conversation of conversations) {
     await deleteInBatches(
       await findWhere(`conversations/${conversation.id}/messages`, 'senderId', 'equals', uid),
+    );
+    await deleteInBatches(
+      await findWhere(`conversations/${conversation.id}/attachments`, 'senderId', 'equals', uid),
     );
   }
   await deleteInBatches(conversations);

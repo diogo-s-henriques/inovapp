@@ -7,7 +7,8 @@ export interface SessionRequest {
   firstName: string;
   lastName: string;
   image?: string;
-  subject: string;
+  /** Opcional: o formulário novo não pergunta a disciplina (ver session-request.tsx). */
+  subject?: string;
   date: string;
   time: string;
   modality: SessionModality;
@@ -30,6 +31,7 @@ export interface AgendaSession {
   firstName: string;
   lastName: string;
   image?: string;
+  // Vazio quando o pedido não tinha disciplina (o formulário novo não pergunta).
   subject: string;
   date: string;
   time: string;

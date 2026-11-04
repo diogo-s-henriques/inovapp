@@ -1,17 +1,21 @@
 export interface ChatAttachment {
   fileName: string;
-  fileUrl: string;
+  /** Link http/https. Um anexo tem `fileUrl` **ou** `attachmentId`, nunca os dois. */
+  fileUrl?: string;
+  /** Documento guardado em `conversations/{id}/attachments` (ver src/lib/attachments.ts). */
+  attachmentId?: string;
+  mimeType?: string;
+  size?: number;
 }
 
 export interface ChatSessionRequestInfo {
   requestId: string;
-  subject: string;
+  /** Opcional: os pedidos novos já não perguntam a disciplina. Fica para os pedidos antigos. */
+  subject?: string;
   date: string;
   time: string;
   modality: string;
   message?: string;
-  // Nome de quem recebeu o pedido (não de quem vê a mensagem - ver ChatSessionRequestCard).
-  toFirstName: string;
 }
 
 export interface ChatMessage {

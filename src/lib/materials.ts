@@ -8,12 +8,19 @@ import type { SharedMaterial } from '@/types/material';
 interface MessageWithAttachmentDoc {
   senderId: string;
   createdAt?: Timestamp;
-  attachment?: { fileName: string; fileUrl: string };
+  attachment?: {
+    fileName: string;
+    fileUrl?: string;
+    attachmentId?: string;
+    mimeType?: string;
+    size?: number;
+  };
 }
 
 // Os links são validados na origem (AttachFileSheet recusa o que não seja http/https, ver
-// src/lib/url.ts) e outra vez ao abrir, em src/app/materials.tsx, porque o URL foi escrito por
-// outro utilizador.
+// src/lib/url.ts) e outra vez ao abrir, em src/lib/attachments.ts, porque o URL foi escrito por
+// outro utilizador. Os documentos guardados só levam aqui os metadados; o base64 vive na
+// subcoleção `attachments` e só é lido quando se abre o material.
 
 /** Mensagens lidas por conversa ao procurar anexos. Sem este limite, o ecrã de Materiais lia o
  * histórico completo de todas as conversas do utilizador. Custo: um material mais antigo do que
@@ -23,7 +30,7 @@ const MESSAGES_PER_CONVERSATION_LIMIT = 50;
 
 /**
  * Não existe uma coleção "materials" nem partilha "para todos" - um material é só um anexo
- * (ver AttachFileSheet) trocado numa conversa. Este ecrã agrega, em tempo real, os anexos de
+ * (link ou documento, ver AttachFileSheet) trocado numa conversa. Este ecrã agrega, em tempo real, os anexos de
  * todas as conversas do utilizador (enviados ou recebidos), ordenados do mais recente.
  *
  * Subscreve as conversas e, para cada uma, as suas mensagens - número de listeners proporcional
@@ -77,6 +84,9 @@ export function subscribeToSharedMaterials(uid: string, onChange: (materials: Sh
             conversationId,
             fileName: data.attachment.fileName,
             fileUrl: data.attachment.fileUrl,
+            attachmentId: data.attachment.attachmentId,
+            mimeType: data.attachment.mimeType,
+            size: data.attachment.size,
             otherFirstName: profile?.firstName ?? getTranslations().common.user,
             otherLastName: profile?.lastName ?? '',
             otherImage: profile?.image,

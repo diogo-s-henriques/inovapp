@@ -814,6 +814,56 @@ describe('descoberta de tutores', () => {
       'quem partilha mais áreas tem de vir primeiro quando as disciplinas empatam',
     );
   });
+
+  it('o deck por área exclui quem não partilha nenhuma, mas a pesquisa continua a mostrá-lo', async () => {
+    // A Ana procura Matemática e não tem curso: a área dela é só matemática. O Bruno ensina
+    // Matemática (match) e a Carla ensina Física (nenhuma área em comum). O deck filtra a Carla;
+    // a pesquisa não, porque um diretório em que não se encontra alguém por nome não é pesquisa.
+    await entrarComo(CONTAS.aluna);
+
+    const deck = await fetchTutorCandidates({
+      currentUid: cenario.ana,
+      learningSubjects: ['Matemática'],
+      matchInterest: true,
+    });
+    assert.deepEqual(deck.map((candidato) => candidato.id), [cenario.bruno]);
+
+    const pesquisa = await fetchTutorCandidates({
+      currentUid: cenario.ana,
+      learningSubjects: ['Matemática'],
+    });
+    assert.ok(
+      pesquisa.some((candidato) => candidato.id === cenario.carla),
+      'a pesquisa tem de continuar a mostrar quem está fora das áreas',
+    );
+  });
+
+  it('o curso de quem procura conta como área de interesse no deck', async () => {
+    // Sem disciplinas escolhidas, o curso é o único sinal: um tutor de Economia é match de quem
+    // está em Gestão Hoteleira (gestão), e um de Física não é.
+    const gestao = await criarConta('pesquisa.gestao@alunos.iseclisboa.pt');
+    await configurarPerfil(gestao, {
+      fullName: 'Gonçalo Gestão',
+      course: { type: 'Licenciatura', name: 'Licenciatura em Gestão Hoteleira' },
+    });
+
+    const economista = await criarConta('pesquisa.economia@iseclisboa.pt');
+    await configurarPerfil(economista, {
+      fullName: 'Eva Economia',
+      teachingSubjects: ['Economia'],
+    });
+
+    await entrarComo(CONTAS.aluna);
+    const deck = await fetchTutorCandidates({
+      currentUid: gestao,
+      learningSubjects: [],
+      courseName: 'Licenciatura em Gestão Hoteleira',
+      matchInterest: true,
+    });
+
+    assert.ok(deck.some((candidato) => candidato.id === economista), 'o curso devia pôr a Eva no deck');
+    assert.ok(!deck.some((candidato) => candidato.id === cenario.carla), 'Física não é da área de Gestão Hoteleira');
+  });
 });
 
 describe('quem fica fora da descoberta', () => {

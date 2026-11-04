@@ -27,6 +27,7 @@ export const ACTIVITY_ITEM_ICON: Record<
 > = {
   'connection-accepted': { icon: 'checkmark-circle-outline', color: 'textPrimary', background: 'successSoft' },
   'session-accepted': { icon: 'checkmark-circle-outline', color: 'textPrimary', background: 'successSoft' },
+  'session-declined': { icon: 'close-circle-outline', color: 'danger', background: 'dangerSoft' },
   'session-tomorrow': { icon: 'calendar-outline', color: 'primary', background: 'primarySoft' },
   'material-received': { icon: 'document-text-outline', color: 'primary', background: 'primarySoft' },
 };
