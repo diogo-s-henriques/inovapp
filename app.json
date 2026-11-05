@@ -2,14 +2,14 @@
   "expo": {
     "name": "InovApp",
     "slug": "INOVAPP",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "inovapp",
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.diyogo.inovapp",
-      "buildNumber": "13",
+      "buildNumber": "14",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -26,7 +26,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.diyogo.inovapp",
-      "versionCode": 12,
+      "versionCode": 13,
       "googleServicesFile": "./google-services.json"
     },
     "web": {

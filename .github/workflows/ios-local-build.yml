@@ -29,6 +29,12 @@
 # Corre-se à mão (Actions > "Build iOS (para a loja)" > Run workflow). Não dispara por push, de
 # propósito: uma build de loja é um ato deliberado, não um efeito de gravar um ficheiro.
 #
+# **Por omissão só compila.** Quem publica é a Codemagic (`codemagic.yaml`, workflow `ios-release`).
+# Os dois caminhos leem o mesmo `app.json`: a correr os dois, o segundo tenta subir o mesmo
+# `buildNumber`, a Apple recusa o repetido (4238) e o `eas submit` não tem como o saber - foi assim
+# que a build 13 apareceu como falhada depois de o EAS dizer que tinha terminado. A submissão fica
+# disponível, mas tem de ser pedida (marcar a opção).
+#
 # **O texto de "o que testar" no TestFlight não sai daqui.** O `eas submit` aceita `--what-to-test`,
 # mas por baixo ele é o parâmetro `changelog`, e a Expo só o permite no plano **Enterprise** - a
 # submissão é recusada depois de o `.ipa` já ter sido carregado:
@@ -54,9 +60,9 @@ on:
   workflow_dispatch:
     inputs:
       submit:
-        description: 'Submeter ao App Store Connect (TestFlight) no fim da build'
+        description: 'Submeter ao App Store Connect (TestFlight) no fim da build - a Codemagic é quem publica'
         type: boolean
-        default: true
+        default: false
 
 # Duas builds da loja ao mesmo tempo só gastam tempo e podem colidir nas credenciais.
 concurrency:

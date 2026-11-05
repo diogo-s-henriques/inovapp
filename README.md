@@ -375,10 +375,29 @@ As versões passaram a ser **locais e explícitas**, em `app.json` - é o único
 construtores (EAS e CI) as vão ler, e é onde se vê o que está publicado:
 
 ```
-version             1.0.1     # versão de marketing (as duas lojas)
-ios.buildNumber     "13"      # a seguir ao 12, que é o que já está no App Store Connect
-android.versionCode 12        # a seguir ao 11, que é o que já está na Play
+version             1.0.2     # versão de marketing (as duas lojas)
+ios.buildNumber     "14"      # o 13 foi recusado no upload (ver abaixo)
+android.versionCode 13        # a seguir ao 12, que é o que já está na Play
 ```
+
+**No iOS o `version` também tem de subir, e é isso que decide o upload.** O envio de 4/11 (1.0.1,
+build 13) foi aceite pelo `eas submit` e recusado pela Apple minutos depois, no processamento:
+
+```
+90062: This bundle is invalid. The value for key CFBundleShortVersionString [1.0.1] in the Info.plist
+       file must contain a higher version than that of the previously approved version [1.0.1].
+90186: Invalid Pre-Release Train. The train version '1.0.1' is closed for new build submissions.
+```
+
+A 1.0.1 já está aprovada e a *train* dela fechada: **aumentar só o `buildNumber` não serve** - um
+build novo da mesma versão de marketing é recusado, por muito que o número da build seja maior. A
+seguinte tem de ser `1.0.2` (ou 1.1.0), num registo de versão novo no App Store Connect. Do lado da
+Play isto não muda nada: o `versionCode` é o que conta, e o `version` é só o nome que se lê na loja.
+
+**A versão nova cria-se no App Store Connect antes de a levar a revisão.** O build 14 entra no
+TestFlight sozinho assim que o upload passe; para o submeter é preciso um registo de versão
+**1.0.2** (*App Store* > a app > **+ Versão ou plataforma**), com o texto e as capturas que
+transitam da 1.0.1. A 1.0.1 fica fechada para uploads, como o 90186 disse.
 
 Antes de cada envio, sobe-se o número da loja que vai receber o bundle - e o `eas.json` passou a
 `appVersionSource: local` para o EAS não manter um contador paralelo a estes valores (dois
